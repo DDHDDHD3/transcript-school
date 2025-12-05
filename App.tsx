@@ -6,7 +6,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import AdminStudents from './pages/AdminStudents';
 import AdminSettings from './pages/AdminSettings';
 import AdminLogin from './pages/AdminLogin';
-import { seedDatabase, isAuthenticated } from './services/mockBackend';
+import { seedDatabase, isAuthenticated } from './services/api';
 
 // Auth Guard
 const AdminGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -28,19 +28,19 @@ const App = () => {
         {/* Public Routes */}
         <Route path="/" element={<PublicLayout><PublicHome /></PublicLayout>} />
         <Route path="/verify" element={<PublicLayout><PublicHome /></PublicLayout>} />
-        
+
         {/* Auth Route */}
         <Route path="/admin/login" element={<AdminLogin />} />
-        
+
         {/* Protected Admin Routes */}
         <Route path="/admin" element={<Navigate to="/admin/dashboard" />} />
-        
+
         <Route path="/admin/dashboard" element={
           <AdminGuard>
             <AdminDashboard />
           </AdminGuard>
         } />
-        
+
         <Route path="/admin/students" element={
           <AdminGuard>
             <AdminStudents />

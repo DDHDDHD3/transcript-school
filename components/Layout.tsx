@@ -2,24 +2,24 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Users, FileBadge, Settings, LogOut, LayoutDashboard, Home, Menu, X } from 'lucide-react';
-import { logout } from '../services/mockBackend';
+import { logout } from '../services/api';
 
 // Mini Logo Component
 const QahiLogoMini = () => (
   <svg viewBox="0 0 500 500" className="w-full h-full">
     <defs>
       <linearGradient id="grad1-mini" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" style={{stopColor:'#f97316', stopOpacity:1}} />
-        <stop offset="100%" style={{stopColor:'#ea580c', stopOpacity:1}} />
+        <stop offset="0%" style={{ stopColor: '#f97316', stopOpacity: 1 }} />
+        <stop offset="100%" style={{ stopColor: '#ea580c', stopOpacity: 1 }} />
       </linearGradient>
       <linearGradient id="grad2-mini" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" style={{stopColor:'#7c3aed', stopOpacity:1}} />
-        <stop offset="100%" style={{stopColor:'#5b21b6', stopOpacity:1}} />
+        <stop offset="0%" style={{ stopColor: '#7c3aed', stopOpacity: 1 }} />
+        <stop offset="100%" style={{ stopColor: '#5b21b6', stopOpacity: 1 }} />
       </linearGradient>
     </defs>
     <path d="M250 80 L60 270 L250 460 L210 490 L10 270 L210 40 Z" fill="url(#grad1-mini)" />
     <path d="M250 80 L440 270 L250 460 L290 490 L490 270 L290 40 Z" fill="url(#grad2-mini)" />
-    <path d="M250 130 L390 270 L250 410 L110 270 Z" fill="#ffffff" opacity="0.9"/>
+    <path d="M250 130 L390 270 L250 410 L110 270 Z" fill="#ffffff" opacity="0.9" />
     <path d="M250 180 C220 180 200 200 200 230 C200 260 220 280 250 280 C280 280 300 260 300 230 C300 200 280 180 250 180 Z M250 200 C265 200 275 215 275 230 C275 245 265 260 250 260 C235 260 225 245 225 230 C225 215 235 200 250 200 Z" fill="#5b21b6" />
     <path d="M150 330 Q250 380 350 330 L350 350 Q250 400 150 350 Z" fill="#5b21b6" />
     <path d="M150 355 Q250 405 350 355 L350 375 Q250 425 150 375 Z" fill="#ea580c" />
@@ -57,15 +57,14 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children 
         {navItems.map((item) => {
           const isActive = location.pathname === item.path;
           return (
-            <Link 
-              key={item.path} 
+            <Link
+              key={item.path}
               to={item.path}
               onClick={() => setIsMobileMenuOpen(false)}
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${
-                isActive 
-                  ? 'bg-gradient-to-l from-qabas-purple/10 to-transparent text-qabas-purple border-r-4 border-qabas-purple' 
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${isActive
+                  ? 'bg-gradient-to-l from-qabas-purple/10 to-transparent text-qabas-purple border-r-4 border-qabas-purple'
                   : 'text-slate-500 hover:bg-slate-50 hover:text-qabas-orange'
-              }`}
+                }`}
             >
               {item.icon}
               {item.label}
@@ -76,8 +75,8 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children 
 
       <div className="p-4 border-t border-slate-100 space-y-2">
         <Link to="/" className="flex w-full items-center gap-3 px-4 py-3 text-slate-500 hover:text-qabas-purple text-sm font-medium transition-colors hover:bg-purple-50 rounded-xl">
-            <Home size={20} />
-            العودة للرئيسية
+          <Home size={20} />
+          العودة للرئيسية
         </Link>
         <button onClick={handleLogout} className="flex w-full items-center gap-3 px-4 py-3 text-slate-500 hover:text-red-600 text-sm font-medium transition-colors hover:bg-red-50 rounded-xl">
           <LogOut size={20} />
@@ -89,14 +88,14 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children 
 
   return (
     <div dir="rtl" className="min-h-screen bg-slate-50 flex font-sans">
-      
+
       {/* Mobile Header */}
       <div className="md:hidden fixed top-0 w-full bg-white z-30 border-b border-slate-200 px-4 py-3 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-2">
-           <div className="w-8 h-8">
-             <QahiLogoMini />
-           </div>
-           <span className="font-bold text-slate-800">نظام الشهادات</span>
+          <div className="w-8 h-8">
+            <QahiLogoMini />
+          </div>
+          <span className="font-bold text-slate-800">نظام الشهادات</span>
         </div>
         <button onClick={() => setIsMobileMenuOpen(true)} className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg">
           <Menu size={24} />
@@ -112,7 +111,7 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       <AnimatePresence>
         {isMobileMenuOpen && (
           <>
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -126,7 +125,7 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children 
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
               className="fixed inset-y-0 right-0 w-72 bg-white z-50 md:hidden shadow-2xl flex flex-col"
             >
-              <button 
+              <button
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="absolute top-4 left-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full"
               >
@@ -153,7 +152,7 @@ export const PublicLayout: React.FC<{ children: React.ReactNode }> = ({ children
     <div className="min-h-screen bg-gradient-to-br from-white to-purple-50 flex flex-col font-sans">
       <nav className="bg-white/90 backdrop-blur-md border-b border-purple-100 sticky top-0 z-50 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 md:h-20 flex flex-col md:flex-row items-center justify-between gap-4" dir="rtl">
-          
+
           <Link to="/" className="flex items-center gap-3 group">
             <div className="w-10 h-10 transition-transform group-hover:scale-110">
               <QahiLogoMini />
@@ -165,7 +164,7 @@ export const PublicLayout: React.FC<{ children: React.ReactNode }> = ({ children
           </Link>
 
           <div className="flex flex-wrap justify-center items-center gap-4">
-             <Link to="/verify" className="text-sm font-bold text-slate-600 hover:text-qabas-orange transition-colors hidden sm:block">
+            <Link to="/verify" className="text-sm font-bold text-slate-600 hover:text-qabas-orange transition-colors hidden sm:block">
               التحقق من الشهادة
             </Link>
             <Link to="/admin/dashboard" className="px-5 py-2 bg-gradient-to-r from-qabas-purple to-purple-800 text-white text-sm font-bold rounded-xl hover:shadow-lg hover:shadow-purple-200 transition-all flex items-center gap-2">
@@ -175,7 +174,7 @@ export const PublicLayout: React.FC<{ children: React.ReactNode }> = ({ children
           </div>
         </div>
       </nav>
-      
+
       <main className="flex-1">
         {children}
       </main>
