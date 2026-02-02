@@ -34,6 +34,7 @@ const AdminGuard: React.FC<{ children: React.ReactNode, requireSuper?: boolean }
 
 const App = () => {
   useEffect(() => {
+    console.log('App Mounted - Version: 2026-02-02 Update 1'); // Deployment verification tag
     seedDatabase();
   }, []);
 
