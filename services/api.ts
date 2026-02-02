@@ -21,13 +21,21 @@ export const SUBJECT_LIST = [
 
 // Default Configuration (Fallback only)
 const DEFAULT_CONFIG: CertificateConfig = {
-  schoolName: 'معهد قبس الهدى للدراسات الشرعية واللغوية',
-  schoolNameEn: 'QABAS AL-HUDA INSTITUTE FOR SHARIA AND LINGUISTIC STUDIES',
-  logoUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MDAgNTAwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImdyYWQxIiB4MT0iMCUiIHkxPSIwJSIgeDI9IjEwMCUiIHkyPSIxMDAlIj48c3RvcCBvZmZzZXQ9IjAlIiBzdHlsZT0ic3RvcC1jb2xvcjojZWE1ODBjO3N0b3Atb3BhY2l0eToxIiAvPjxzdG9wIG9mZnNldD0iMTAwJSIgc3R5bGU9InN0b3AtY29sb3I6I2M5NDAwYztzdG9wLW9wYWNpdHk6MSIgLz48L2xpbmVhckdyYWRpZW50PjxsaW5lYXJHcmFkaWVudCBpZD0iZ3JhZDIiIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPjxzdG9wIG9mZnNldD0iMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiM3YzNhZWQ7c3RvcC1vcGFjaXR5OjEiIC8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdHlsZT0ic3RvcC1jb2xvcjojNWIyMWI2O3N0b3Atb3BhY2l0eToxIiAvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjwhLS0gT3V0ZXIgRGlhbW9uZCBTaGFwZSAoT3JhbmdlKSAtLT48cGF0aCBkPSJNMjUwIDUwIEw1MCAyNTAgTDI1MCA0NTAgTDIwMCA0ODAgTDAgMjUwIEwyMDAgMjAgWiIgZmlsbD0idXJsKCNncmFkMSkiIC8+PHBhdGggZD0iTTI1MCA1MCBMNDUwIDI1MCBMMjUwIDQ1MCBMMzAwIDQ4MCBMNTAwIDI1MCBMMzAwIDIwIFoiIGZpbGw9InVybCgjZ3JhZDIpIiAvPjwhLS0gSW5uZXIgV2hpdGUgQmFja2dyb3VuZCAtLT48cGF0aCBkPSJNMjUwIDEwMCBMMzkwIDI1MCBMMjUwIDQwMCBMMTEwIDI1MCBaIiBmaWxsPSIjZmZmZmZmIiAvPjwhLS0gQXJhYmljIENhbGxpZ3JhcGh5IChTdHlsaXplZCkgLS0+PHBhdGggZD0iTTI1MCAxNzAgQzIyMCAxNzAgMjAwIDE5MCAyMDAgMjIwIEMyMDAgMjUwIDIyMCAyNzAgMjUwIDI3MCBDMjgwIDI3MCAzMDAgMjUwIDMwMCAyMjAgQzMwMCAxOTAgMjgwIDE3MCAyNTAgMTcwIFogTTI1MCAxOTAgQzI2NSAxOTAgMjc1IDIwNSAyNzUgMjIwIEMyNzUgMjM1IDI2NSAyNTAgMjUwIDI1MCBDMjM1IDI1MCAyMjUgMjM1IDIyNSAyMjAgQzIyNSAyMDUgMjM1IDE5MCAyNTAgMTkwIFoiIGZpbGw9IiM1YjIxYjYiIC8+PCEtLSBCb29rIFNoYXBlIChQdXJwbGUvT3JhbmdlKSAtLT48cGF0aCBkPSJNMTMwIDMzMCBRMjUwIDM4MCAzNzAgMzMwIEwzNzAgMzYwIFEyNTAgNDEwIDEzMCAzNjAgWiIgZmlsbD0iIzViMjFiNiIgLz48cGF0aCBkPSJNMTMwIDM2MCBRMjUwIDQxMCAzNzAgMzYwIEwzNzAgMzg1IFEyNTAgNDM1IDEzMCAzODUgWiIgZmlsbD0iI2VhNTgwYyIgLz48IS0tIFFBSEkgVGV4dCAtLT48dGV4dCB4PSIyNTAiIHk9IjMwNSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjI0IiBmb250LXdlaWdodD0ibm9ybWFsIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjNWIyMWI2Ij5RQUhJPC90ZXh0Pjwvc3ZnPg==',
+  schoolName: 'أقوني ديجيتال',
+  schoolNameEn: 'Aqooni Digital',
+  logoUrl: '/logo.png',
   stampUrl: '', // Gold stamp
   managerName: '',
   managerSignatureUrl: '',
   themeColor: '#5b21b6',
+  gradingMethod: 'sum',
+  passThreshold: 50,
+  assessmentColumns: [
+    { id: 'monthly1', name: 'Monthly Exam 1', maxMarks: 100, type: 'number' },
+    { id: 'midterm', name: 'Midterm Exam', maxMarks: 100, type: 'number' },
+    { id: 'monthly2', name: 'Monthly Exam 2', maxMarks: 100, type: 'number' },
+    { id: 'final', name: 'Final Exam', maxMarks: 100, type: 'number' }
+  ]
 };
 
 // --- Utilities ---
@@ -36,7 +44,7 @@ export const generateUUID = () => {
     return crypto.randomUUID();
   }
   // Fallback for environments without crypto.randomUUID
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
     var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
     return v.toString(16);
   });
@@ -52,9 +60,9 @@ export const seedDatabase = async () => {
   dbInitPromise = (async () => {
     try {
       console.log('Initializing database tables...');
-      
+
       // Execute table creations sequentially to avoid "Failed to fetch" errors due to concurrency
-      
+
       // 1. Create Students Table
       await sql`
         CREATE TABLE IF NOT EXISTS students (
@@ -95,13 +103,10 @@ export const seedDatabase = async () => {
       }
 
       // Seed Admin if not exists
-      const admins = await sql`SELECT count(*) FROM admins WHERE email = 'admin@qahi.edu'`;
+      const admins = await sql`SELECT count(*) FROM admins WHERE email = 'admin@aqoonidigital.edu'`;
       if (parseInt(admins[0].count) === 0) {
         // Use the requested password for new installations
-        await sql`INSERT INTO admins (email, password) VALUES ('admin@qahi.edu', 'QabasAL-huda2025@!')`;
-      } else {
-        // FORCE UPDATE: Ensure the password matches what the user requested
-        await sql`UPDATE admins SET password = 'QabasAL-huda2025@!' WHERE email = 'admin@qahi.edu'`;
+        await sql`INSERT INTO admins (email, password) VALUES ('admin@aqoonidigital.edu', 'QabasAL-huda2025@!')`;
       }
 
       console.log("Database initialized successfully");
@@ -123,13 +128,13 @@ export const isAuthenticated = () => {
 
 export const login = async (email: string, pass: string) => {
   try {
-     await seedDatabase();
-     const users = await sql`SELECT * FROM admins WHERE email = ${email} AND password = ${pass}`;
-     if (users.length > 0) {
-       localStorage.setItem(STORAGE_KEYS.ADMIN_AUTH, 'true');
-       return true;
-     }
-  } catch(e) { console.error(e); }
+    await seedDatabase();
+    const users = await sql`SELECT * FROM admins WHERE email = ${email} AND password = ${pass}`;
+    if (users.length > 0) {
+      localStorage.setItem(STORAGE_KEYS.ADMIN_AUTH, 'true');
+      return true;
+    }
+  } catch (e) { console.error(e); }
   return false;
 };
 
@@ -141,7 +146,7 @@ export const changeAdminPassword = async (newPassword: string) => {
   try {
     await seedDatabase();
     // Updates the default admin password
-    await sql`UPDATE admins SET password = ${newPassword} WHERE email = 'admin@qahi.edu'`;
+    await sql`UPDATE admins SET password = ${newPassword} WHERE email = 'admin@aqoonidigital.edu'`;
     return true;
   } catch (e) {
     console.error("Failed to change password:", e);
@@ -151,11 +156,7 @@ export const changeAdminPassword = async (newPassword: string) => {
 
 export const recoverPassword = async () => {
   try {
-    await seedDatabase();
-    const users = await sql`SELECT password FROM admins WHERE email = 'admin@qahi.edu'`;
-    if (users.length > 0) {
-      return users[0].password;
-    }
+    // For security, we no longer return the password via this function
     return null;
   } catch (e) {
     console.error("Failed to recover password:", e);
@@ -229,28 +230,28 @@ export const saveStudent = async (student: Student) => {
     let shouldUpdate = false;
 
     if (existingById.length > 0) {
-       // We are editing a known record (e.g., from the Edit Modal)
-       shouldUpdate = true;
-       // Validation: Ensure we aren't changing the Student Number to one that belongs to someone else
-       if (existingByRegId.length > 0 && existingByRegId[0].id !== student.id) {
-           throw new Error(`رقم الطالب ${student.studentId} مستخدم بالفعل لطالب آخر.`);
-       }
+      // We are editing a known record (e.g., from the Edit Modal)
+      shouldUpdate = true;
+      // Validation: Ensure we aren't changing the Student Number to one that belongs to someone else
+      if (existingByRegId.length > 0 && existingByRegId[0].id !== student.id) {
+        throw new Error(`رقم الطالب ${student.studentId} مستخدم بالفعل لطالب آخر.`);
+      }
     } else {
-       // We are creating a New record OR Importing
-       if (existingByRegId.length > 0) {
-           // A student with this Number exists. We should UPDATE that student instead of inserting a duplicate.
-           // This is the "Import Excel" upsert logic.
-           targetId = existingByRegId[0].id; // Use the ID from the database
-           shouldUpdate = true;
-       } else {
-           // Totally new student
-           shouldUpdate = false;
-       }
+      // We are creating a New record OR Importing
+      if (existingByRegId.length > 0) {
+        // A student with this Number exists. We should UPDATE that student instead of inserting a duplicate.
+        // This is the "Import Excel" upsert logic.
+        targetId = existingByRegId[0].id; // Use the ID from the database
+        shouldUpdate = true;
+      } else {
+        // Totally new student
+        shouldUpdate = false;
+      }
     }
-    
+
     // Safety check: Ensure targetId is valid before DB ops
     if (!shouldUpdate && !targetId) {
-        targetId = generateUUID();
+      targetId = generateUUID();
     }
 
     if (shouldUpdate) {
@@ -297,14 +298,14 @@ export const deleteStudent = async (id: string) => {
   try {
     console.log(`Attempting to delete student with ID: ${id}`);
     await seedDatabase();
-    
+
     // Using RETURNING to verify deletion
     const result = await sql`DELETE FROM students WHERE id = ${id} RETURNING id`;
-    
+
     if (result.length === 0) {
-        console.warn(`Attempted to delete student ${id} but no record was found in DB.`);
+      console.warn(`Attempted to delete student ${id} but no record was found in DB.`);
     } else {
-        console.log(`Successfully deleted student ${id} from DB.`);
+      console.log(`Successfully deleted student ${id} from DB.`);
     }
     return true;
   } catch (error) {
@@ -322,8 +323,8 @@ export const getConfig = async (): Promise<CertificateConfig> => {
     if (rows.length > 0) {
       return { ...DEFAULT_CONFIG, ...rows[0].data };
     }
-  } catch(e) { 
-    console.error("Error getting config (using default):", e); 
+  } catch (e) {
+    console.error("Error getting config (using default):", e);
   }
   return DEFAULT_CONFIG;
 };
@@ -346,18 +347,18 @@ export const saveConfig = async (config: CertificateConfig) => {
 // --- Analytics ---
 
 export const getAnalytics = async (): Promise<Analytics> => {
-   try {
-     await seedDatabase();
-     const total = await sql`SELECT count(*) as c FROM students`;
-     const passed = await sql`SELECT count(*) as c FROM students WHERE final_result = 'ناجح'`;
-     
-     return {
-       totalStudents: parseInt(total[0].c),
-       passed: parseInt(passed[0].c),
-       failed: parseInt(total[0].c) - parseInt(passed[0].c),
-       recentVerifications: Math.floor(Math.random() * 20) + 5
-     };
-   } catch (e) {
-     return { totalStudents: 0, passed: 0, failed: 0, recentVerifications: 0 };
-   }
+  try {
+    await seedDatabase();
+    const total = await sql`SELECT count(*) as c FROM students`;
+    const passed = await sql`SELECT count(*) as c FROM students WHERE final_result = 'ناجح'`;
+
+    return {
+      totalStudents: parseInt(total[0].c),
+      passed: parseInt(passed[0].c),
+      failed: parseInt(total[0].c) - parseInt(passed[0].c),
+      recentVerifications: Math.floor(Math.random() * 20) + 5
+    };
+  } catch (e) {
+    return { totalStudents: 0, passed: 0, failed: 0, recentVerifications: 0 };
+  }
 };

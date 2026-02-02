@@ -872,90 +872,116 @@ const AdminAttendance = () => {
                 </div>
             </div>
 
-            {/* HIDDEN BRANDED TEMPLATE FOR PDF GENERATION */}
-            <div id="attendance-report-template" className="hidden bg-white p-12 w-[1200px]" dir="rtl">
+            <div id="attendance-report-template" className="hidden bg-white p-12 w-[1200px]" dir={i18n.dir()}>
                 {config && (
                     <div className="flex flex-col gap-8">
                         {/* Header Section */}
-                        <div className="flex justify-between items-center border-b-4 border-qabas-purple pb-6">
-                            <div className="text-right space-y-2">
-                                <h1 className="text-3xl font-black text-slate-900">{config.schoolName}</h1>
-                                <p className="text-xl text-slate-600 font-bold">{config.schoolNameEn}</p>
+                        <div className={`flex justify-center items-center gap-16 border-b-[6px] border-qabas-purple pb-14 ${i18n.dir() === 'rtl' ? 'flex-row' : 'flex-row-reverse'}`}>
+                            {config.logoUrl && <img src={config.logoUrl} className="h-56 w-auto object-contain" alt="Logo" />}
+                            <div className="text-center space-y-4">
+                                <h1 className="text-7xl font-black text-slate-900 leading-tight">
+                                    {i18n.language === 'ar' ? config.schoolName : config.schoolNameEn || config.schoolName}
+                                </h1>
+                                <p className="text-5xl text-slate-600 font-bold opacity-80">
+                                    {i18n.language === 'ar' ? config.schoolNameEn : config.schoolName}
+                                </p>
                             </div>
-                            {config.logoUrl && <img src={config.logoUrl} className="h-40 w-auto object-contain" alt="Logo" />}
+                        </div>
+
+                        {/* School Information Details */}
+                        <div className="bg-slate-50 p-14 rounded-[50px] border-2 border-slate-200 mt-12 shadow-sm">
+                            <h3 className="text-5xl font-black text-qabas-purple mb-10 border-b-4 border-slate-200 pb-5 uppercase tracking-[0.2em] text-center">
+                                {t('settings.school.title')}
+                            </h3>
+                            <div className="grid grid-cols-1 gap-12">
+                                <div className="flex flex-col gap-4 text-center">
+                                    <span className="text-3xl font-bold text-slate-400 uppercase tracking-widest">{t('settings.school.nameAr')}</span>
+                                    <span className="text-6xl font-black text-slate-800 leading-tight">{config.schoolName}</span>
+                                </div>
+                                <div className="flex flex-col gap-4 text-center">
+                                    <span className="text-3xl font-bold text-slate-400 uppercase tracking-widest">{t('settings.school.nameEn')}</span>
+                                    <span className="text-6xl font-black text-slate-800 leading-tight">{config.schoolNameEn || config.schoolName}</span>
+                                </div>
+                            </div>
                         </div>
 
                         {/* Report Title */}
-                        <div className="text-center space-y-2 mt-4">
-                            <h2 className="text-4xl font-black text-qabas-purple uppercase tracking-widest">تقرير الحضور الشهري</h2>
-                            <p className="text-2xl font-bold text-slate-500">{t('attendance.selectMonth')}: {selectedMonth}</p>
-                            <p className="text-xl font-bold text-slate-500">{t('attendance.selectClass')}: {classFilter}</p>
+                        <div className="text-center space-y-6 mt-16 pb-6 border-b-2 border-slate-100">
+                            <h2 className="text-6xl font-black text-qabas-purple uppercase tracking-[0.1em]">{t('pdf.attendanceTitle')}</h2>
+                            <div className="flex justify-center gap-12">
+                                <p className="text-4xl font-bold text-slate-500">{t('attendance.selectMonth')}: <span className="text-slate-800 underline decoration-qabas-purple/30 underline-offset-8">{selectedMonth}</span></p>
+                                <p className="text-4xl font-bold text-slate-500">{t(`students.levels.${classFilter}`) || classFilter}: <span className="text-slate-800 underline decoration-qabas-purple/30 underline-offset-8">{classFilter}</span></p>
+                            </div>
                         </div>
 
                         {/* Statistics Summary */}
-                        <div className="grid grid-cols-3 gap-6 mt-6">
-                            <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100 text-center">
-                                <div className="text-4xl font-black text-slate-800">{reportData.length}</div>
-                                <div className="text-lg font-bold text-slate-500 uppercase">{t('attendance.reports.total')}</div>
+                        <div className="grid grid-cols-3 gap-10 mt-12">
+                            <div className="bg-slate-50 p-10 rounded-[40px] border-2 border-slate-100 text-center shadow-sm">
+                                <div className="text-6xl font-black text-slate-800 mb-2">{reportData.length}</div>
+                                <div className="text-2xl font-bold text-slate-400 uppercase tracking-widest">{t('attendance.reports.total')}</div>
                             </div>
-                            <div className="bg-green-50 p-6 rounded-3xl border border-green-100 text-center">
-                                <div className="text-4xl font-black text-green-600">
+                            <div className="bg-green-50 p-10 rounded-[40px] border-2 border-green-100 text-center shadow-sm">
+                                <div className="text-6xl font-black text-green-600 mb-2">
                                     {Math.round(reportData.reduce((acc, curr) => acc + curr.attendanceRate, 0) / (reportData.length || 1))}%
                                 </div>
-                                <div className="text-lg font-bold text-green-600 uppercase">متوسط الحضور</div>
+                                <div className="text-2xl font-bold text-green-600 uppercase tracking-widest">{t('pdf.avgRate')}</div>
                             </div>
-                            <div className="bg-red-50 p-6 rounded-3xl border border-red-100 text-center">
-                                <div className="text-4xl font-black text-red-600">
+                            <div className="bg-red-50 p-10 rounded-[40px] border-2 border-red-100 text-center shadow-sm">
+                                <div className="text-6xl font-black text-red-600 mb-2">
                                     {reportData.reduce((acc, curr) => acc + curr.absentDays, 0)}
                                 </div>
-                                <div className="text-lg font-bold text-red-600 uppercase">إجمالي الغيابات</div>
+                                <div className="text-2xl font-bold text-red-600 uppercase tracking-widest">{t('pdf.totalAbsences')}</div>
                             </div>
                         </div>
 
                         {/* Table Section */}
-                        <table className="w-full border-collapse mt-8 text-xl">
-                            <thead>
-                                <tr className="bg-slate-900 text-white">
-                                    <th className="p-6 text-right border border-slate-800 rounded-tr-3xl">اسم الطالب</th>
-                                    <th className="p-6 text-center border border-slate-800">إجمالي الأيام</th>
-                                    <th className="p-6 text-center border border-slate-800 text-green-400">حضور</th>
-                                    <th className="p-6 text-center border border-slate-800 text-red-400">غياب</th>
-                                    <th className="p-6 text-center border border-slate-800 rounded-tl-3xl">النسبة</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {reportData.map((row, idx) => (
-                                    <tr key={row.studentId} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
-                                        <td className="p-6 border border-slate-100 font-bold">{row.studentName}</td>
-                                        <td className="p-6 border border-slate-100 text-center font-bold font-mono">{row.totalDays}</td>
-                                        <td className="p-6 border border-slate-100 text-center font-bold font-mono text-green-600">{row.presentDays}</td>
-                                        <td className="p-6 border border-slate-100 text-center font-bold font-mono text-red-600">{row.absentDays}</td>
-                                        <td className="p-6 border border-slate-100 text-center font-black">{row.attendanceRate}%</td>
+                        <div className="mt-16 overflow-hidden rounded-[40px] border-2 border-slate-200">
+                            <table className="w-full border-collapse text-3xl">
+                                <thead>
+                                    <tr className="bg-slate-900 text-white">
+                                        <th className={`p-10 border-b border-slate-800 ${i18n.dir() === 'rtl' ? 'text-right' : 'text-left'}`}>{t('pdf.studentName')}</th>
+                                        <th className="p-10 text-center border-b border-slate-800">{t('pdf.totalDays')}</th>
+                                        <th className="p-10 text-center border-b border-slate-800 text-green-400">{t('pdf.present')}</th>
+                                        <th className="p-10 text-center border-b border-slate-800 text-red-400">{t('pdf.absent')}</th>
+                                        <th className="p-10 text-center border-b border-slate-800">{t('pdf.percentage')}</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody className="bg-white">
+                                    {reportData.map((row, idx) => (
+                                        <tr key={row.studentId} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}>
+                                            <td className={`p-10 border-b border-slate-100 font-bold ${i18n.dir() === 'rtl' ? 'text-right' : 'text-left'}`}>{row.studentName}</td>
+                                            <td className="p-10 border-b border-slate-100 text-center font-bold font-mono text-slate-600">{row.totalDays}</td>
+                                            <td className="p-10 border-b border-slate-100 text-center font-bold font-mono text-green-600">{row.presentDays}</td>
+                                            <td className="p-10 border-b border-slate-100 text-center font-bold font-mono text-red-600">{row.absentDays}</td>
+                                            <td className="p-10 border-b border-slate-100 text-center font-black text-slate-900">{row.attendanceRate}%</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
 
                         {/* Footer / Signature Section */}
-                        <div className="mt-20 flex justify-between items-end px-12">
-                            <div className="text-center space-y-4">
-                                <p className="text-2xl font-bold text-slate-800">التاريخ</p>
-                                <p className="text-xl font-mono text-slate-600 border-b-2 border-slate-300 pb-2 px-8">
-                                    {new Date().toLocaleDateString('ar-EG')}
-                                </p>
-                            </div>
-                            <div className="text-center space-y-4">
-                                <p className="text-2xl font-bold text-slate-800">ختم المدرسة</p>
-                                <div className="h-40 w-40 border-2 border-slate-200 border-dashed rounded-full flex items-center justify-center">
-                                    {config.stampUrl && <img src={config.stampUrl} className="h-32 w-32 object-contain opacity-50 rotate-12" />}
+                        <div className="mt-32 flex justify-between items-end px-16 pb-12">
+                            <div className="text-center space-y-6">
+                                <p className="text-4xl font-black text-slate-800 tracking-wider mb-4">{t('pdf.date')}</p>
+                                <div className="text-3xl font-mono text-slate-600 border-b-[4px] border-slate-300 pb-4 px-12 min-w-[250px]">
+                                    {new Date().toLocaleDateString(i18n.language === 'ar' ? 'ar-EG' : i18n.language)}
                                 </div>
                             </div>
-                            <div className="text-center space-y-4">
-                                <p className="text-2xl font-bold text-slate-800">توقيع المسؤول</p>
-                                <div className="h-20 flex items-end justify-center min-w-[200px]">
+                            <div className="text-center space-y-6">
+                                <p className="text-4xl font-black text-slate-800 tracking-wider mb-4">{t('pdf.stamp')}</p>
+                                <div className="h-56 w-56 border-[4px] border-slate-200 border-dashed rounded-full flex items-center justify-center bg-slate-50/30">
+                                    {config.stampUrl && <img src={config.stampUrl} className="h-44 w-44 object-contain opacity-60 rotate-12" />}
+                                </div>
+                            </div>
+                            <div className="text-center space-y-6">
+                                <p className="text-4xl font-black text-slate-800 tracking-wider mb-4">{t('pdf.signature')}</p>
+                                <div className="h-28 flex items-end justify-center min-w-[300px]">
                                     {config.managerSignatureUrl && <img src={config.managerSignatureUrl} className="h-full object-contain" />}
                                 </div>
-                                <p className="text-xl font-bold text-slate-600 border-t-2 border-slate-200 pt-2">{config.managerName || '________________'}</p>
+                                <p className="text-3xl font-black text-slate-700 border-t-[4px] border-slate-200 pt-5 mt-4 min-w-[300px]">
+                                    {config.managerName || '________________'}
+                                </p>
                             </div>
                         </div>
                     </div>

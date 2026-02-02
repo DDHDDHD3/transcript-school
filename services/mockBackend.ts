@@ -75,7 +75,7 @@ export const seedDatabase = async () => {
       await sql`
         CREATE TABLE IF NOT EXISTS students (
           id TEXT PRIMARY KEY,
-          school_id TEXT DEFAULT 'qahi-default',
+          school_id TEXT DEFAULT 'aqd-default',
           student_id TEXT NOT NULL,
           full_name TEXT NOT NULL,
           academic_year TEXT,
@@ -108,7 +108,7 @@ export const seedDatabase = async () => {
       try {
         await sql`ALTER TABLE admins ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'school_admin'`;
         await sql`ALTER TABLE admins ADD COLUMN IF NOT EXISTS school_id TEXT`;
-        await sql`ALTER TABLE students ADD COLUMN IF NOT EXISTS school_id TEXT DEFAULT 'qahi-default'`;
+        await sql`ALTER TABLE students ADD COLUMN IF NOT EXISTS school_id TEXT DEFAULT 'aqd-default'`;
         // Financial migrations
         await sql`ALTER TABLE schools ADD COLUMN IF NOT EXISTS plan_type TEXT DEFAULT 'monthly'`;
         await sql`ALTER TABLE schools ADD COLUMN IF NOT EXISTS sub_start_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP`;
@@ -142,23 +142,31 @@ export const seedDatabase = async () => {
         )
       `;
 
-      const schools = await sql`SELECT count(*) FROM schools WHERE id = 'qahi-default'`;
+      await sql`
+        CREATE TABLE IF NOT EXISTS admin_attendance (
+          id TEXT PRIMARY KEY,
+          email TEXT NOT NULL,
+          role TEXT NOT NULL,
+          school_id TEXT,
+          login_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          last_active_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          is_online BOOLEAN DEFAULT TRUE
+        )
+      `;
+
+      const schools = await sql`SELECT count(*) FROM schools WHERE id = 'aqd-default'`;
       if (parseInt(schools[0].count) === 0) {
-        await sql`INSERT INTO schools (id, name, sub_status) VALUES ('qahi-default', 'معهد قبس الهدى', 'active')`;
+        await sql`INSERT INTO schools (id, name, sub_status) VALUES ('aqd-default', 'أقوني ديجيتال', 'active')`;
       }
 
       const superAdminCount = await sql`SELECT count(*) FROM admins WHERE email = 'super@control.com'`;
       if (parseInt(superAdminCount[0].count) === 0) {
         await sql`INSERT INTO admins (email, password, role) VALUES ('super@control.com', 'SuperControl2025!', 'super_admin')`;
-      } else {
-        await sql`UPDATE admins SET password = 'SuperControl2025!', role = 'super_admin' WHERE email = 'super@control.com'`;
       }
 
-      const qabasAdminCount = await sql`SELECT count(*) FROM admins WHERE email = 'admin@qahi.edu'`;
+      const qabasAdminCount = await sql`SELECT count(*) FROM admins WHERE email = 'admin@aqoonidigital.edu'`;
       if (parseInt(qabasAdminCount[0].count) === 0) {
-        await sql`INSERT INTO admins (email, password, school_id, role) VALUES ('admin@qahi.edu', 'QabasAL-huda2025@!', 'qahi-default', 'school_admin')`;
-      } else {
-        await sql`UPDATE admins SET password = 'QabasAL-huda2025@!', school_id = 'qahi-default', role = 'school_admin' WHERE email = 'admin@qahi.edu'`;
+        await sql`INSERT INTO admins (email, password, school_id, role) VALUES ('admin@aqoonidigital.edu', 'QabasAL-huda2025@!', 'aqd-default', 'school_admin')`;
       }
 
       try {
@@ -257,7 +265,7 @@ export const getUserSession = () => {
 export const changeAdminPassword = async (newPassword: string, email?: string) => {
   try {
     await seedDatabase();
-    const targetEmail = email || 'admin@qahi.edu';
+    const targetEmail = email || 'admin@aqoonidigital.edu';
     await sql`UPDATE admins SET password = ${newPassword} WHERE email = ${targetEmail}`;
     return true;
   } catch (e) {
@@ -268,11 +276,7 @@ export const changeAdminPassword = async (newPassword: string, email?: string) =
 
 export const recoverPassword = async () => {
   try {
-    await seedDatabase();
-    const users = await sql`SELECT password FROM admins WHERE email = 'admin@qahi.edu'`;
-    if (users.length > 0) {
-      return users[0].password;
-    }
+    // For security, we no longer return the password via this function
     return null;
   } catch (e) {
     console.error("Failed to recover password:", e);
@@ -316,7 +320,7 @@ export const getStudents = async (schoolId?: string): Promise<Student[]> => {
 export const getStudentByRegId = async (regId: string, schoolId?: string): Promise<Student | null> => {
   try {
     await seedDatabase();
-    const sid = schoolId || localStorage.getItem(STORAGE_KEYS.SCHOOL_ID) || 'qahi-default';
+    const sid = schoolId || localStorage.getItem(STORAGE_KEYS.SCHOOL_ID) || 'aqd-default';
     const rows = await sql`SELECT * FROM students WHERE student_id = ${regId} AND school_id = ${sid}`;
     if (rows.length === 0) return null;
     const row = rows[0];
@@ -341,7 +345,7 @@ export const getStudentByRegId = async (regId: string, schoolId?: string): Promi
 export const saveStudent = async (student: Student) => {
   try {
     await seedDatabase();
-    const sid = localStorage.getItem(STORAGE_KEYS.SCHOOL_ID) || 'qahi-default';
+    const sid = localStorage.getItem(STORAGE_KEYS.SCHOOL_ID) || 'aqd-default';
 
     // Check credits and fetch school data
     const school = (await sql`SELECT credits, student_count, sub_status FROM schools WHERE id = ${sid}`)[0];
@@ -437,7 +441,7 @@ export const deleteStudent = async (id: string) => {
 // --- Config Services ---
 
 export const getConfig = async (schoolId?: string): Promise<CertificateConfig> => {
-  const sid = schoolId || localStorage.getItem(STORAGE_KEYS.SCHOOL_ID) || 'qahi-default';
+  const sid = schoolId || localStorage.getItem(STORAGE_KEYS.SCHOOL_ID) || 'aqd-default';
 
   // Try LocalStorage first (Fastest/Offline support)
   try {
@@ -466,7 +470,7 @@ export const getConfig = async (schoolId?: string): Promise<CertificateConfig> =
 };
 
 export const saveConfig = async (config: CertificateConfig, schoolId?: string) => {
-  const sid = schoolId || localStorage.getItem(STORAGE_KEYS.SCHOOL_ID) || 'qahi-default';
+  const sid = schoolId || localStorage.getItem(STORAGE_KEYS.SCHOOL_ID) || 'aqd-default';
 
   // Always save to LocalStorage (Reliable fallback)
   try {
@@ -498,7 +502,7 @@ export const saveConfig = async (config: CertificateConfig, schoolId?: string) =
 export const getAnalytics = async (schoolId?: string): Promise<Analytics> => {
   try {
     await seedDatabase();
-    const sid = schoolId || localStorage.getItem(STORAGE_KEYS.SCHOOL_ID) || 'qahi-default';
+    const sid = schoolId || localStorage.getItem(STORAGE_KEYS.SCHOOL_ID) || 'aqd-default';
     const total = await sql`SELECT count(*) as c FROM students WHERE school_id = ${sid}`;
     const passed = await sql`SELECT count(*) as c FROM students WHERE final_result = 'ناجح' AND school_id = ${sid}`;
 
@@ -598,6 +602,21 @@ export const trackActivity = async (email: string) => {
 
     // We update BOTH is_online and last_active_at on every heartbeat
     await sql`UPDATE admins SET is_online = TRUE, last_active_at = CURRENT_TIMESTAMP WHERE email = ${email}`;
+
+    // Upsert into admin_attendance for the current day
+    const today = new Date().toISOString().split('T')[0];
+    const attendanceId = `${email}_${today}`;
+    const existingEntry = await sql`SELECT id FROM admin_attendance WHERE id = ${attendanceId}`;
+
+    if (existingEntry.length > 0) {
+      await sql`UPDATE admin_attendance SET last_active_at = CURRENT_TIMESTAMP, is_online = TRUE WHERE id = ${attendanceId}`;
+    } else {
+      await sql`
+        INSERT INTO admin_attendance (id, email, role, school_id, login_at, last_active_at, is_online)
+        VALUES (${attendanceId}, ${email}, ${admin.role || 'admin'}, ${admin.school_id || 'system'}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, TRUE)
+      `;
+    }
+
     return true;
   } catch (e) {
     console.error("Track Activity Error:", e);
@@ -724,37 +743,71 @@ export const getAttendance = async (date?: string, classLevel?: string): Promise
   try {
     await seedDatabase();
     const schoolId = localStorage.getItem(STORAGE_KEYS.SCHOOL_ID);
-    if (!schoolId) return [];
+    const role = localStorage.getItem(STORAGE_KEYS.ADMIN_ROLE);
+
+    // Super Admin can bypass schoolId filter if it's missing
+    if (!schoolId && role !== 'super_admin') return [];
 
     let query;
     if (date && classLevel) {
-      const students = await sql`SELECT student_id FROM students WHERE school_id = ${schoolId} AND class_level = ${classLevel}`;
-      const studentIds = students.map(s => s.student_id);
-      if (studentIds.length === 0) return [];
-      query = await sql`
-        SELECT a.*, s.full_name as student_name, s.class_level 
-        FROM attendance a 
-        LEFT JOIN students s ON a.student_id = s.student_id AND s.school_id = a.school_id
-        WHERE a.school_id = ${schoolId} AND a.date = ${date} AND a.student_id = ANY(${studentIds})
-        ORDER BY s.full_name
-      `;
+      if (schoolId) {
+        const students = await sql`SELECT student_id FROM students WHERE school_id = ${schoolId} AND class_level = ${classLevel}`;
+        const studentIds = students.map(s => s.student_id);
+        if (studentIds.length === 0) return [];
+        query = await sql`
+          SELECT a.*, s.full_name as student_name, s.class_level 
+          FROM attendance a 
+          LEFT JOIN students s ON a.student_id = s.student_id AND s.school_id = a.school_id
+          WHERE a.school_id = ${schoolId} AND a.date = ${date} AND a.student_id = ANY(${studentIds})
+          ORDER BY s.full_name
+        `;
+      } else {
+        // Super Admin viewing all classes of a level across all schools
+        query = await sql`
+          SELECT a.*, s.full_name as student_name, s.class_level 
+          FROM attendance a 
+          LEFT JOIN students s ON a.student_id = s.student_id AND s.school_id = a.school_id
+          WHERE a.date = ${date} AND s.class_level = ${classLevel}
+          ORDER BY s.full_name
+        `;
+      }
     } else if (date) {
-      query = await sql`
-        SELECT a.*, s.full_name as student_name, s.class_level 
-        FROM attendance a 
-        LEFT JOIN students s ON a.student_id = s.student_id AND s.school_id = a.school_id
-        WHERE a.school_id = ${schoolId} AND a.date = ${date}
-        ORDER BY s.full_name
-      `;
+      if (schoolId) {
+        query = await sql`
+          SELECT a.*, s.full_name as student_name, s.class_level 
+          FROM attendance a 
+          LEFT JOIN students s ON a.student_id = s.student_id AND s.school_id = a.school_id
+          WHERE a.school_id = ${schoolId} AND a.date = ${date}
+          ORDER BY s.full_name
+        `;
+      } else {
+        query = await sql`
+          SELECT a.*, s.full_name as student_name, s.class_level 
+          FROM attendance a 
+          LEFT JOIN students s ON a.student_id = s.student_id AND s.school_id = a.school_id
+          WHERE a.date = ${date}
+          ORDER BY s.full_name
+        `;
+      }
     } else {
-      query = await sql`
-        SELECT a.*, s.full_name as student_name, s.class_level 
-        FROM attendance a 
-        LEFT JOIN students s ON a.student_id = s.student_id AND s.school_id = a.school_id
-        WHERE a.school_id = ${schoolId}
-        ORDER BY a.date DESC, s.full_name
-        LIMIT 500
-      `;
+      if (schoolId) {
+        query = await sql`
+          SELECT a.*, s.full_name as student_name, s.class_level 
+          FROM attendance a 
+          LEFT JOIN students s ON a.student_id = s.student_id AND s.school_id = a.school_id
+          WHERE a.school_id = ${schoolId}
+          ORDER BY a.date DESC, s.full_name
+          LIMIT 500
+        `;
+      } else {
+        query = await sql`
+          SELECT a.*, s.full_name as student_name, s.class_level 
+          FROM attendance a 
+          LEFT JOIN students s ON a.student_id = s.student_id AND s.school_id = a.school_id
+          ORDER BY a.date DESC, s.full_name
+          LIMIT 500
+        `;
+      }
     }
 
     return query.map(row => ({
@@ -775,6 +828,30 @@ export const getAttendance = async (date?: string, classLevel?: string): Promise
   }
 };
 
+// --- REST API Sync Service ---
+const syncToNeonRest = async (record: AttendanceRecord) => {
+  const apiUrl = import.meta.env.VITE_NEON_API_URL;
+  if (!apiUrl) return;
+
+  try {
+    const response = await fetch(`${apiUrl}/attendance`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        ...record,
+        synced_at: new Date().toISOString()
+      }),
+    });
+    if (!response.ok) {
+      console.warn("Failed to sync attendance to REST API:", response.statusText);
+    }
+  } catch (e) {
+    console.warn("REST API Sync Error:", e);
+  }
+};
+
 export const saveAttendance = async (records: AttendanceRecord[]) => {
   try {
     await seedDatabase();
@@ -782,9 +859,10 @@ export const saveAttendance = async (records: AttendanceRecord[]) => {
     if (!schoolId) return false;
 
     for (const record of records) {
+      const sid = record.schoolId || schoolId;
       const existing = await sql`
         SELECT id FROM attendance 
-        WHERE student_id = ${record.studentId} AND school_id = ${schoolId} AND date = ${record.date}
+        WHERE student_id = ${record.studentId} AND school_id = ${sid} AND date = ${record.date}
       `;
 
       if (existing.length > 0) {
@@ -797,9 +875,12 @@ export const saveAttendance = async (records: AttendanceRecord[]) => {
         const id = generateUUID();
         await sql`
           INSERT INTO attendance (id, student_id, school_id, date, status, session, notes, recorded_by)
-          VALUES (${id}, ${record.studentId}, ${schoolId}, ${record.date}, ${record.status}, ${record.session || ''}, ${record.notes || ''}, ${record.recordedBy})
+          VALUES (${id}, ${record.studentId}, ${sid}, ${record.date}, ${record.status}, ${record.session || ''}, ${record.notes || ''}, ${record.recordedBy})
         `;
       }
+
+      // Async sync to REST API
+      syncToNeonRest(record).catch(err => console.error("Sync error:", err));
     }
     return true;
   } catch (e) {
@@ -924,6 +1005,36 @@ export const getMonthlyAttendance = async (year: number, month: number, classLev
     }));
   } catch (e) {
     console.error("Get Monthly Attendance Error:", e);
+    return [];
+  }
+};
+
+export const getSchoolActivity = async (schoolId: string) => {
+  try {
+    await seedDatabase();
+    // Get recent student additions
+    const students = await sql`
+      SELECT full_name as action, created_at as timestamp, 'Student Added' as type 
+      FROM students 
+      WHERE school_id = ${schoolId} 
+      ORDER BY created_at DESC 
+      LIMIT 5
+    `;
+
+    // Get recent login activity
+    const logins = await sql`
+      SELECT email as action, last_active_at as timestamp, 'Admin Active' as type 
+      FROM admins 
+      WHERE school_id = ${schoolId} 
+      ORDER BY last_active_at DESC 
+      LIMIT 5
+    `;
+
+    return [...students, ...logins].sort((a, b) =>
+      new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    ).slice(0, 10);
+  } catch (e) {
+    console.error("Get School Activity Error:", e);
     return [];
   }
 };

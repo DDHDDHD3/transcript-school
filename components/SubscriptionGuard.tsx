@@ -90,7 +90,7 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({ children }) => {
                                 </div>
                                 <div>
                                     <h4 className="text-sm font-bold text-slate-800 mb-1">{t('subscription.contactSupport')}</h4>
-                                    <p className="text-xs text-slate-500 font-mono">support@qahi.edu</p>
+                                    <p className="text-xs text-slate-500 font-mono">support@aqoonidigital.edu</p>
                                 </div>
                             </div>
 

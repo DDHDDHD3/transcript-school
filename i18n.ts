@@ -32,10 +32,10 @@ const resources = {
                 }
             },
             common: {
-                certificateSystem: "Certificate System",
-                instituteName: "Qabas Al-Huda Institute",
-                qahi: "QAHI",
-                digitalCertificateSystem: "Digital Certificate System",
+                certificateSystem: "Aqooni Digital Portal",
+                instituteName: "Aqooni Digital",
+                qahi: "AQD",
+                digitalCertificateSystem: "Aqooni Digital Management System",
                 edit: "Edit",
                 save: "Save",
                 cancel: "Cancel",
@@ -55,7 +55,7 @@ const resources = {
                 publicPortal: "Public Verification Portal",
                 title: "Certificate Authenticity Verification",
                 subtitle: "Enter a certificate code to verify its authenticity and view official details instantly.",
-                placeholder: "Enter Certificate Code (e.g., QAHI-2024-001)",
+                placeholder: "Enter Certificate Code (e.g., AQD-2024-001)",
                 verifyBtn: "Verify Now",
                 features: {
                     secure: "Secure & Verifiable",
@@ -207,7 +207,8 @@ const resources = {
                 backHome: "Back to Main Home",
                 errors: {
                     invalid: "Invalid email or password",
-                    noAccount: "Admin account not found."
+                    noAccount: "Admin account not found.",
+                    contactAdmin: "Please contact the system administrator to reset your password."
                 },
                 alerts: {
                     currentPass: "Current password is:\n\n{{pass}}\n\nPlease save it."
@@ -387,7 +388,10 @@ const resources = {
                 historyTitle: "Monthly Attendance History",
                 monthSelect: "Select Month",
                 present: "Present",
-                absent: "Absent"
+                absent: "Absent",
+                totalDays: "Total Days",
+                avgAttendance: "Average Attendance",
+                totalAbsences: "Total Absences"
             }
         }
     },
@@ -420,10 +424,10 @@ const resources = {
                 }
             },
             common: {
-                certificateSystem: "نظام الشهادات",
-                instituteName: "معهد قبس الهدى",
-                qahi: "QAHI",
-                digitalCertificateSystem: "نظام الشهادات الرقمية",
+                certificateSystem: "بوابة أقوني ديجيتال",
+                instituteName: "أقوني ديجيتال",
+                qahi: "AQD",
+                digitalCertificateSystem: "نظام إدارة أقوني ديجيتال",
                 edit: "تعديل",
                 save: "حفظ",
                 cancel: "إلغاء",
@@ -443,7 +447,7 @@ const resources = {
                 publicPortal: "بوابة التحقق العام",
                 title: "التحقق من صحة الشهادات",
                 subtitle: "أدخل رمز الشهادة للتحقق من مصداقيتها وعرض التفاصيل الرسمية فوراً.",
-                placeholder: "أدخل رمز الشهادة (مثال: QAHI-2024-001)",
+                placeholder: "أدخل رمز الشهادة (مثال: AQD-2024-001)",
                 verifyBtn: "تحقق الآن",
                 features: {
                     secure: "آمن وقابل للتحقق",
@@ -595,7 +599,8 @@ const resources = {
                 backHome: "العودة للواجهة الرئيسية",
                 errors: {
                     invalid: "البريد الإلكتروني أو كلمة المرور غير صحيحة",
-                    noAccount: "لم يتم العثور على حساب المسؤول."
+                    noAccount: "لم يتم العثور على حساب المسؤول.",
+                    contactAdmin: "يرجى التواصل مع إدارة النظام لإعادة تعيين كلمة المرور."
                 },
                 alerts: {
                     currentPass: "كلمة المرور الحالية هي:\n\n{{pass}}\n\nيرجى حفظها."
@@ -775,7 +780,10 @@ const resources = {
                 historyTitle: "سجل الحضور الشهري",
                 monthSelect: "اختر الشهر",
                 present: "حاضر",
-                absent: "غائب"
+                absent: "غائب",
+                totalDays: "إجمالي الأيام",
+                avgAttendance: "متوسط الحضور",
+                totalAbsences: "إجمالي الغيابات"
             }
         }
     },
@@ -810,7 +818,7 @@ const resources = {
             common: {
                 certificateSystem: "Nidaamka Shahaadooyinka",
                 instituteName: "Machadka Qabas Al-Huda",
-                qahi: "QAHI",
+                qahi: "AQD",
                 digitalCertificateSystem: "Nidaamka Shahaadada Digital-ka",
                 edit: "Wax ka beddel",
                 save: "Keydi",
@@ -831,7 +839,7 @@ const resources = {
                 publicPortal: "Albaabka Hubinta Shahaadada",
                 title: "Xaqiijinta Sugnaanta Shahaadada",
                 subtitle: "Gali koodhka shahaadada si aad u hubiso ansaxnimadeeda iyo faahfaahinteeda rasmiga ah.",
-                placeholder: "Gali Koodhka Shahaadada (tusaale: QAHI-2024-001)",
+                placeholder: "Gali Koodhka Shahaadada (tusaale: AQD-2024-001)",
                 verifyBtn: "Hubi Hadda",
                 features: {
                     secure: "Aamin & La Hubin karo",
@@ -1168,7 +1176,10 @@ const resources = {
                 historyTitle: "Taariikhda Imaanshiyaha ee Bisha",
                 monthSelect: "Dooro Bisha",
                 present: "Jooga",
-                absent: "Ma Joogo"
+                absent: "Ma Joogo",
+                totalDays: "Wadarta Maalmaha",
+                avgAttendance: "Celceliska Imaanshiyaha",
+                totalAbsences: "Wadarta Maqnaanshaha"
             }
         }
     }

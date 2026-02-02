@@ -42,12 +42,7 @@ const AdminLogin = () => {
   };
 
   const handleForgotPassword = async () => {
-    const pwd = await recoverPassword();
-    if (pwd) {
-      alert(t('login.alerts.currentPass', { pass: pwd }));
-    } else {
-      alert(t('login.errors.noAccount'));
-    }
+    alert(t('login.errors.contactAdmin') || 'Please contact the system administrator to reset your password.');
   };
 
   return (
@@ -70,10 +65,10 @@ const AdminLogin = () => {
             {logoUrl ? (
               <div className="relative">
                 <div className="absolute inset-0 bg-purple-500 blur-2xl opacity-20 rounded-full"></div>
-                <img src={logoUrl} alt="QAHI Logo" className="w-36 h-36 object-contain relative z-10" />
+                <img src={logoUrl} alt="Aqooni Logo" className="w-36 h-36 object-contain relative z-10" />
               </div>
             ) : (
-              <div className="w-24 h-24 bg-qabas-purple rounded-full flex items-center justify-center text-white font-bold text-2xl">QAHI</div>
+              <div className="w-24 h-24 bg-qabas-purple rounded-full flex items-center justify-center text-white font-bold text-2xl">Aqooni Digital</div>
             )}
           </div>
           <h1 className="text-3xl font-black font-cairo text-qabas-purple">{t('common.instituteName')}</h1>
@@ -90,7 +85,7 @@ const AdminLogin = () => {
                   required
                   className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-qabas-purple focus:ring-4 focus:ring-purple-50 outline-none transition-all text-left font-medium"
                   dir="ltr"
-                  placeholder="admin@qahi.edu"
+                  placeholder="admin@aqoonidigital.edu"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />

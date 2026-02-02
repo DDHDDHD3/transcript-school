@@ -1,9 +1,13 @@
+/// <reference types="vite/client" />
 
 import { neon } from '@neondatabase/serverless';
 
 // Neon PostgreSQL Connection String
-// Note: Parameters like sslmode are handled automatically by the driver/platform
-const DATABASE_URL = 'postgresql://neondb_owner:npg_URAWtT5zMhP8@ep-sparkling-wave-a4zj5ldb-pooler.us-east-1.aws.neon.tech/neondb';
+const DATABASE_URL = import.meta.env.VITE_DATABASE_URL;
+
+if (!DATABASE_URL) {
+    throw new Error('VITE_DATABASE_URL is not defined in environment variables');
+}
 
 // Initialize the Neon serverless SQL client
 const sql = neon(DATABASE_URL);

@@ -1,7 +1,7 @@
 {
-    "name": "نظام الشهادات - معهد قبس الهدى",
-    "short_name": "Student Grades",
-    "description": "Digital Certificate & Student Grades System - Qabas Al-Huda Institute",
+    "name": "Aqooni Digital - Management Portal",
+    "short_name": "Aqooni Dig",
+    "description": "Aqooni Digital - Digital Management Portal",
     "start_url": "/",
     "display": "standalone",
     "background_color": "#f8fafc",

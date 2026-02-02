@@ -7,25 +7,8 @@ import { logout, getUserSession, trackActivity } from '../services/mockBackend';
 import LanguageSwitcher from './LanguageSwitcher';
 
 // Mini Logo Component
-const QahiLogoMini = () => (
-  <svg viewBox="0 0 500 500" className="w-full h-full">
-    <defs>
-      <linearGradient id="grad1-mini" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" style={{ stopColor: '#f97316', stopOpacity: 1 }} />
-        <stop offset="100%" style={{ stopColor: '#ea580c', stopOpacity: 1 }} />
-      </linearGradient>
-      <linearGradient id="grad2-mini" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" style={{ stopColor: '#7c3aed', stopOpacity: 1 }} />
-        <stop offset="100%" style={{ stopColor: '#5b21b6', stopOpacity: 1 }} />
-      </linearGradient>
-    </defs>
-    <path d="M250 80 L60 270 L250 460 L210 490 L10 270 L210 40 Z" fill="url(#grad1-mini)" />
-    <path d="M250 80 L440 270 L250 460 L290 490 L490 270 L290 40 Z" fill="url(#grad2-mini)" />
-    <path d="M250 130 L390 270 L250 410 L110 270 Z" fill="#ffffff" opacity="0.9" />
-    <path d="M250 180 C220 180 200 200 200 230 C200 260 220 280 250 280 C280 280 300 260 300 230 C300 200 280 180 250 180 Z M250 200 C265 200 275 215 275 230 C275 245 265 260 250 260 C235 260 225 245 225 230 C225 215 235 200 250 200 Z" fill="#5b21b6" />
-    <path d="M150 330 Q250 380 350 330 L350 350 Q250 400 150 350 Z" fill="#5b21b6" />
-    <path d="M150 355 Q250 405 350 355 L350 375 Q250 425 150 375 Z" fill="#ea580c" />
-  </svg>
+const AqooniLogoMini = () => (
+  <img src="/logo.png" alt="Aqooni Logo" className="w-full h-full object-contain" />
 );
 
 // --- ADMIN LAYOUT ---
@@ -68,7 +51,7 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     <>
       <div className="p-6 flex items-center gap-3 border-b border-slate-100 justify-center">
         <div className="w-10 h-10">
-          <QahiLogoMini />
+          <AqooniLogoMini />
         </div>
         <div className="flex flex-col">
           <span className="font-bold text-slate-800 leading-none">
@@ -134,7 +117,7 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       <div className="md:hidden fixed top-0 w-full bg-white z-30 border-b border-slate-200 px-4 py-3 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8">
-            <QahiLogoMini />
+            <AqooniLogoMini />
           </div>
           <span className="font-bold text-slate-800">{t('common.certificateSystem')}</span>
         </div>
@@ -203,7 +186,7 @@ export const PublicLayout: React.FC<{ children: React.ReactNode }> = ({ children
 
           <Link to="/" className="flex items-center gap-3 group">
             <div className="w-10 h-10 transition-transform group-hover:scale-110">
-              <QahiLogoMini />
+              <AqooniLogoMini />
             </div>
             <div className="flex flex-col">
               <span className="font-bold text-xl text-qabas-purple font-cairo leading-none">{t('common.instituteName')}</span>
