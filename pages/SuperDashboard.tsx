@@ -13,7 +13,9 @@ import {
     recordPayment,
     createSchoolAdmin,
     updateBillingDetails,
-    getSchoolActivity
+    getSchoolActivity,
+    getSystemSettings,
+    saveSystemSettings
 } from '../services/mockBackend';
 import {
     Plus,
@@ -33,12 +35,16 @@ import {
     RefreshCw,
     Save,
     AlertCircle,
-    Activity
+    Activity,
+    Image as ImageIcon,
+    Type,
+    Upload
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import i18n from '../i18n';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 
 const formatTimeAgo = (date: string | Date | null) => {
     if (!date) return 'Never';
@@ -87,10 +93,17 @@ const SuperDashboard = () => {
     const [schoolActivity, setSchoolActivity] = useState<any[]>([]);
     const [visiblePassEmail, setVisiblePassEmail] = useState<string | null>(null);
 
+    // Platform Settings States
+    const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+    const [platformName, setPlatformName] = useState('Aqooni Digital');
+    const [platformLogo, setPlatformLogo] = useState('');
+    const [logoFile, setLogoFile] = useState<File | null>(null);
+
     const navigate = useNavigate();
 
     useEffect(() => {
         fetchInitialData();
+        fetchSystemSettingsData();
 
         // Poll for updates every 15 seconds to keep online status fresh
         const pollInterval = setInterval(() => {
@@ -99,6 +112,12 @@ const SuperDashboard = () => {
 
         return () => clearInterval(pollInterval);
     }, []);
+
+    const fetchSystemSettingsData = async () => {
+        const settings = await getSystemSettings();
+        setPlatformName(settings.name);
+        setPlatformLogo(settings.logo);
+    };
 
     const fetchInitialData = async () => {
         setLoading(true);
@@ -280,35 +299,71 @@ const SuperDashboard = () => {
 
     const totalRevenue = schools.reduce((acc, s) => acc + Number(s.total_paid || 0), 0);
 
+    const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setPlatformLogo(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleSavePlatformSettings = async () => {
+        setProcessing(true);
+        const success = await saveSystemSettings({ name: platformName, logo: platformLogo });
+        if (success) {
+            setStatusMsg({ type: 'success', text: 'Platform settings updated successfully!' });
+            setIsSettingsModalOpen(false);
+            window.location.reload(); // Reload to apply changes everywhere (simple way for now)
+        } else {
+            setStatusMsg({ type: 'error', text: 'Failed to save platform settings.' });
+        }
+        setProcessing(false);
+    };
+
     return (
         <div className="min-h-screen bg-[#f8fafc] flex flex-col font-cairo">
             {/* Navbar */}
-            <nav className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between sticky top-0 z-30 shadow-sm">
+            <nav className="bg-white border-b border-slate-200 px-4 md:px-6 py-4 flex items-center justify-between sticky top-0 z-30 shadow-sm">
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-qabas-purple rounded-xl flex items-center justify-center text-white shadow-lg shadow-purple-100">
+                    <div className="w-10 h-10 bg-qabas-purple rounded-xl flex items-center justify-center text-white shadow-lg shadow-purple-100 shrink-0">
                         <Shield size={24} />
                     </div>
-                    <div>
+                    <div className="hidden sm:block">
                         <h1 className="text-xl font-black text-slate-800 tracking-tight">{t('nav.superPanel')}</h1>
                         <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-none">Security Center</p>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-4">
-                    <button
-                        onClick={() => setIsSecurityModalOpen(true)}
-                        className="p-2.5 text-slate-500 hover:text-qabas-purple hover:bg-purple-50 rounded-xl transition-all"
-                        title="Platform Security"
-                    >
-                        <Lock size={22} />
-                    </button>
-                    <div className="h-6 w-px bg-slate-200"></div>
+                <div className="flex items-center gap-2 md:gap-4">
+                    <LanguageSwitcher />
+
+                    <div className="hidden sm:flex items-center gap-2 md:gap-4">
+                        <button
+                            onClick={() => setIsSettingsModalOpen(true)}
+                            className="p-2.5 text-slate-500 hover:text-qabas-purple hover:bg-purple-50 rounded-xl transition-all"
+                            title="Platform Settings"
+                        >
+                            <SettingsIcon size={22} />
+                        </button>
+                        <button
+                            onClick={() => setIsSecurityModalOpen(true)}
+                            className="p-2.5 text-slate-500 hover:text-qabas-purple hover:bg-purple-50 rounded-xl transition-all"
+                            title="Platform Security"
+                        >
+                            <Lock size={22} />
+                        </button>
+                        <div className="h-6 w-px bg-slate-200"></div>
+                    </div>
+
                     <button
                         onClick={() => { logout(); navigate('/admin/login'); }}
-                        className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-slate-500 hover:text-red-500 transition-colors"
+                        className="flex items-center gap-2 px-3 md:px-4 py-2 text-sm font-bold text-slate-500 hover:text-red-500 transition-colors bg-slate-50 md:bg-transparent rounded-xl"
                     >
                         <LogOut size={18} />
-                        <span>{t('nav.logout')}</span>
+                        <span className="hidden xs:inline">{t('nav.logout')}</span>
                     </button>
                 </div>
             </nav>
@@ -317,13 +372,13 @@ const SuperDashboard = () => {
                 {/* Header Section */}
                 <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
                     <div>
-                        <h2 className="text-3xl font-black text-slate-900 mb-2">{t('super.title')}</h2>
-                        <p className="text-slate-500 font-medium">{t('super.subtitle')}</p>
+                        <h2 className="text-2xl md:text-3xl font-black text-slate-900 mb-2">{t('super.title')}</h2>
+                        <p className="text-slate-500 text-sm font-medium">{t('super.subtitle')}</p>
                     </div>
 
                     <button
                         onClick={() => setIsAddModalOpen(true)}
-                        className="flex items-center gap-2 bg-qabas-purple hover:bg-qabas-purple/90 text-white px-6 py-3.5 rounded-2xl font-bold shadow-lg shadow-purple-200 transition-all active:scale-95"
+                        className="flex items-center gap-2 bg-qabas-purple hover:bg-qabas-purple/90 text-white px-6 py-3.5 rounded-2xl font-bold shadow-lg shadow-purple-200 transition-all active:scale-[0.98]"
                     >
                         <Plus size={20} />
                         <span>{t('super.createSchool')}</span>
@@ -337,11 +392,78 @@ const SuperDashboard = () => {
                         { label: 'Active Subscriptions', value: schools.filter(s => s.sub_status === 'active').length, color: 'text-green-600', bg: 'bg-green-50' },
                         { label: 'Total Platform Revenue', value: `$${totalRevenue.toFixed(2)}`, color: 'text-qabas-orange', bg: 'bg-orange-50' },
                     ].map((stat, i) => (
-                        <div key={i} className={`${stat.bg} p-6 rounded-3xl border border-white/50 shadow-sm transition-transform hover:scale-[1.02]`}>
+                        <div key={i} className={`${stat.bg} p-6 rounded-3xl border border-white/50 shadow-sm transition-transform md:hover:scale-[1.02]`}>
                             <p className="text-slate-500 text-sm font-bold mb-1">{stat.label}</p>
-                            <h3 className={`text-3xl font-black ${stat.color}`}>{stat.value}</h3>
+                            <h3 className={`text-2xl md:text-3xl font-black ${stat.color}`}>{stat.value}</h3>
                         </div>
                     ))}
+                </div>
+
+                {/* Platform Branding Section (Direct Access) */}
+                <div className="bg-white rounded-[32px] p-8 shadow-sm border border-slate-100 mb-10 overflow-hidden relative">
+                    <div className="absolute top-0 left-0 w-2 h-full bg-qabas-purple"></div>
+                    <div className="flex flex-col lg:flex-row items-center justify-between gap-10">
+                        <div className="flex-1 space-y-6 w-full">
+                            <div>
+                                <h3 className="text-2xl font-black text-slate-800 flex items-center gap-2 mb-2">
+                                    <ImageIcon className="text-qabas-purple" size={24} />
+                                    {t('System Branding')}
+                                </h3>
+                                <p className="text-slate-500 text-sm">{t('Manage your system name and brand logo across the platform.')}</p>
+                            </div>
+
+                            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 items-end">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{t('System Name')}</label>
+                                    <div className="relative">
+                                        <Type className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                                        <input
+                                            type="text"
+                                            className="w-full pl-12 pr-5 py-4 bg-slate-50 rounded-2xl border-none text-slate-800 font-bold focus:ring-2 focus:ring-purple-100 transition-all text-sm"
+                                            value={platformName}
+                                            onChange={(e) => setPlatformName(e.target.value)}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{t('Update Logo')}</label>
+                                    <label className="cursor-pointer px-6 py-4 bg-slate-50 text-slate-500 font-bold rounded-2xl border-2 border-dashed border-slate-200 hover:border-qabas-purple hover:text-qabas-purple transition-all flex items-center justify-center gap-2 h-[60px]">
+                                        <Upload className="shrink-0" size={18} />
+                                        <span className="text-sm truncate">{t('Upload Logo')}</span>
+                                        <input type="file" className="hidden" accept="image/*" onChange={handleLogoUpload} />
+                                    </label>
+                                </div>
+
+                                <div className="md:col-span-2 lg:col-span-1">
+                                    <button
+                                        onClick={handleSavePlatformSettings}
+                                        disabled={processing}
+                                        className="w-full py-4 bg-qabas-purple text-white font-bold rounded-2xl shadow-lg shadow-purple-100 hover:bg-qabas-purple/90 transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2 h-[60px]"
+                                    >
+                                        {processing ? <RefreshCw className="animate-spin" size={20} /> : <Save size={20} />}
+                                        <span>{t('Save Branding')}</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="shrink-0">
+                            <div className="relative group">
+                                <div className="absolute inset-0 bg-qabas-purple/10 blur-2xl rounded-full scale-125"></div>
+                                <div className="w-24 h-24 bg-white rounded-3xl p-4 shadow-xl border border-slate-50 flex items-center justify-center relative z-10 transition-transform group-hover:scale-105">
+                                    {platformLogo ? (
+                                        <img src={platformLogo} alt="Preview" className="w-full h-full object-contain" />
+                                    ) : (
+                                        <ImageIcon className="text-slate-200" size={40} />
+                                    )}
+                                </div>
+                                <div className="absolute -bottom-1 -right-1 bg-green-500 text-white p-1.5 rounded-lg shadow-lg z-20">
+                                    <CheckCircle2 size={12} />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 {/* Schools List */}
@@ -447,7 +569,7 @@ const SuperDashboard = () => {
                                             <td className="px-6 py-5">
                                                 <button
                                                     onClick={() => handleToggleSub(school.id, school.sub_status)}
-                                                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-black uppercase tracking-wider transition-all active:scale-95 ${school.sub_status === 'active'
+                                                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-black uppercase tracking-wider transition-all active:scale-[0.98] ${school.sub_status === 'active'
                                                         ? 'bg-green-50 text-green-600 hover:bg-green-100'
                                                         : 'bg-red-50 text-red-600 hover:bg-red-100'
                                                         }`}
@@ -585,7 +707,7 @@ const SuperDashboard = () => {
                                                                 />
                                                                 <button
                                                                     onClick={handleResetAdminPass}
-                                                                    className="px-4 py-3 bg-qabas-orange hover:bg-orange-600 text-white rounded-xl shadow-lg shadow-orange-100 transition-all active:scale-95"
+                                                                    className="px-4 py-3 bg-qabas-orange hover:bg-orange-600 text-white rounded-xl shadow-lg shadow-orange-100 transition-all active:scale-[0.98]"
                                                                 >
                                                                     <RefreshCw size={18} />
                                                                 </button>
@@ -621,7 +743,7 @@ const SuperDashboard = () => {
                                                             </div>
                                                             <button
                                                                 onClick={handleCreateAdmin}
-                                                                className="w-full py-4 bg-qabas-orange text-white font-bold rounded-xl shadow-lg shadow-orange-100 active:scale-95 transition-all flex items-center justify-center gap-2"
+                                                                className="w-full py-4 bg-qabas-orange text-white font-bold rounded-xl shadow-lg shadow-orange-100 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
                                                             >
                                                                 <Plus size={16} />
                                                                 Create Admin Account
@@ -707,7 +829,7 @@ const SuperDashboard = () => {
 
                                                 <button
                                                     onClick={handleSaveChanges}
-                                                    className="w-full py-4 bg-slate-800 text-white font-bold rounded-2xl shadow-lg shadow-slate-200 active:scale-95 transition-all flex items-center justify-center gap-2"
+                                                    className="w-full py-4 bg-slate-800 text-white font-bold rounded-2xl shadow-lg shadow-slate-200 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
                                                 >
                                                     <CheckCircle2 size={18} />
                                                     {t('super.manage.updateSub')}
@@ -767,7 +889,7 @@ const SuperDashboard = () => {
 
                                                     <button
                                                         onClick={handleUpdateBilling}
-                                                        className="w-full py-4 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-2xl shadow-xl transition-all active:scale-95 flex items-center justify-center gap-2"
+                                                        className="w-full py-4 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-2xl shadow-xl transition-all active:scale-[0.98] flex items-center justify-center gap-2"
                                                     >
                                                         <Save size={18} />
                                                         {t('super.manage.updateBilling')}
@@ -854,6 +976,70 @@ const SuperDashboard = () => {
                     )
                 }
             </AnimatePresence >
+
+            {/* Platform Settings Modal */}
+            <AnimatePresence>
+                {
+                    isSettingsModalOpen && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
+                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsSettingsModalOpen(false)} className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" />
+                            <motion.div initial={{ scale: 0.95, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 20 }} className="relative w-full max-w-md bg-white rounded-[32px] p-8 shadow-2xl">
+                                <div className="w-12 h-12 bg-purple-50 rounded-2xl flex items-center justify-center text-qabas-purple mb-6">
+                                    <SettingsIcon size={24} />
+                                </div>
+                                <h3 className="text-2xl font-black text-slate-800 mb-2">Platform Settings</h3>
+                                <p className="text-slate-500 text-sm mb-8 leading-relaxed">Manage your system name and brand logo across the platform.</p>
+
+                                <div className="space-y-6">
+                                    <div>
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">System Name</label>
+                                        <div className="relative">
+                                            <Type className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                                            <input
+                                                type="text"
+                                                className="w-full pl-12 pr-5 py-4 bg-slate-50 rounded-2xl border-none text-slate-800 font-bold focus:ring-2 focus:ring-purple-100 transition-all"
+                                                value={platformName}
+                                                onChange={(e) => setPlatformName(e.target.value)}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">System Logo</label>
+                                        <div className="flex flex-col items-center gap-4 p-6 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
+                                            {platformLogo ? (
+                                                <div className="relative group">
+                                                    <img src={platformLogo} alt="Preview" className="w-24 h-24 object-contain rounded-xl bg-white p-2 shadow-sm" />
+                                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center">
+                                                        <ImageIcon className="text-white" size={24} />
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="w-24 h-24 bg-white rounded-xl flex items-center justify-center text-slate-300">
+                                                    <ImageIcon size={32} />
+                                                </div>
+                                            )}
+
+                                            <label className="cursor-pointer px-4 py-2 bg-white text-slate-600 text-xs font-bold rounded-xl border border-slate-200 hover:bg-slate-50 transition-all shadow-sm">
+                                                <span>Upload New Logo</span>
+                                                <input type="file" className="hidden" accept="image/*" onChange={handleLogoUpload} />
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        onClick={handleSavePlatformSettings}
+                                        disabled={processing}
+                                        className="w-full mt-4 py-4 bg-qabas-purple hover:bg-qabas-purple/90 text-white font-bold rounded-2xl shadow-lg shadow-purple-100 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                                    >
+                                        {processing ? 'Saving...' : <><Save size={20} /> Save Platform Settings</>}
+                                    </button>
+                                </div>
+                            </motion.div>
+                        </div>
+                    )
+                }
+            </AnimatePresence>
         </div >
     );
 };

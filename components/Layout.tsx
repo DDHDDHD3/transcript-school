@@ -1,15 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Users, FileBadge, Settings, LogOut, LayoutDashboard, Home, Menu, X, Shield, Calendar } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { logout, getUserSession, trackActivity } from '../services/mockBackend';
+import { logout, getUserSession, trackActivity, getSystemSettings } from '../services/mockBackend';
 import LanguageSwitcher from './LanguageSwitcher';
 
-// Mini Logo Component
-const AqooniLogoMini = () => (
-  <img src="/logo.png" alt="Aqooni Logo" className="w-full h-full object-contain" />
-);
+// --- LOGO COMPONENT ---
+
+const AqooniLogoMini: React.FC<{ src?: string }> = ({ src }) => {
+  return (
+    <div className="w-full h-full">
+      {src ? (
+        <img src={src} alt="Logo" className="w-full h-full object-contain" />
+      ) : (
+        <div className="w-full h-full bg-qabas-purple rounded-lg flex items-center justify-center text-white font-bold text-[8px]">AQ</div>
+      )}
+    </div>
+  );
+};
 
 // --- ADMIN LAYOUT ---
 
@@ -20,7 +29,19 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const session = getUserSession();
 
-  React.useEffect(() => {
+  const [systemName, setSystemName] = useState('Aqooni Digital');
+  const [systemLogo, setSystemLogo] = useState('/logo.png');
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      const settings = await getSystemSettings();
+      if (settings) {
+        setSystemName(settings.name);
+        setSystemLogo(settings.logo);
+      }
+    };
+    fetchSettings();
+
     const email = localStorage.getItem('cv_user_email');
     if (email) {
       // Immediate track on mount
@@ -51,11 +72,11 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     <>
       <div className="p-6 flex items-center gap-3 border-b border-slate-100 justify-center">
         <div className="w-10 h-10">
-          <AqooniLogoMini />
+          <img src={systemLogo} alt="Logo" className="w-full h-full object-contain" />
         </div>
         <div className="flex flex-col">
           <span className="font-bold text-slate-800 leading-none">
-            {session.role === 'super_admin' ? t('nav.superAdmin') : (t('common.certificateSystem'))}
+            {session.role === 'super_admin' ? t('nav.superAdmin') : systemName}
           </span>
           <span className="text-[10px] text-qabas-orange font-bold uppercase truncate max-w-[120px]">
             {session.schoolId || 'Platform'}
@@ -114,16 +135,16 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     <div dir={i18n.dir()} className="min-h-screen bg-slate-50 flex font-sans overflow-x-hidden max-w-full">
 
       {/* Mobile Header */}
-      <div className="md:hidden fixed top-0 w-full bg-white z-30 border-b border-slate-200 px-4 py-3 flex items-center justify-between shadow-sm">
+      <div className="md:hidden fixed top-0 w-full bg-white z-50 border-b border-slate-200 px-4 py-2 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8">
-            <AqooniLogoMini />
+            <AqooniLogoMini src={systemLogo} />
           </div>
-          <span className="font-bold text-slate-800">{t('common.certificateSystem')}</span>
+          <span className="font-bold text-slate-800 text-sm xs:text-base">{t('common.certificateSystem')}</span>
         </div>
         <div className="flex items-center gap-2">
           <LanguageSwitcher />
-          <button onClick={() => setIsMobileMenuOpen(true)} className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg">
+          <button onClick={() => setIsMobileMenuOpen(true)} className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg active:scale-90 transition-transform">
             <Menu size={24} />
           </button>
         </div>
@@ -150,7 +171,7 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children 
               animate={{ x: 0 }}
               exit={{ x: i18n.dir() === 'rtl' ? '100%' : '-100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className={`fixed inset-y-0 ${i18n.dir() === 'rtl' ? 'right-0' : 'left-0'} w-72 bg-white z-50 md:hidden shadow-2xl flex flex-col`}
+              className={`fixed inset-y-0 ${i18n.dir() === 'rtl' ? 'right-0' : 'left-0'} w-64 bg-white z-50 md:hidden shadow-2xl flex flex-col`}
             >
               <button
                 onClick={() => setIsMobileMenuOpen(false)}
@@ -165,10 +186,12 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       </AnimatePresence>
 
       {/* Main Content */}
-      <main className={`flex-1 w-full ${i18n.dir() === 'rtl' ? 'md:mr-64' : 'md:ml-64'} p-4 md:p-8 pt-20 md:pt-8 overflow-y-auto min-h-screen bg-slate-50/50`}>
-        <div className="hidden md:flex justify-end mb-6">
-          <LanguageSwitcher />
-        </div>
+      <main className={`flex-1 w-full ${i18n.dir() === 'rtl' ? 'md:mr-64' : 'md:ml-64'} p-4 md:p-8 pt-[72px] md:pt-8 overflow-y-auto min-h-screen bg-slate-50/50`}>
+        {location.pathname !== '/super' && (
+          <div className="hidden md:flex justify-end mb-6">
+            <LanguageSwitcher />
+          </div>
+        )}
         {children}
       </main>
     </div>
@@ -179,6 +202,18 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children 
 
 export const PublicLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { t, i18n } = useTranslation();
+  const [systemLogo, setSystemLogo] = useState('/logo.png');
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      const settings = await getSystemSettings();
+      if (settings) {
+        setSystemLogo(settings.logo);
+      }
+    };
+    fetchSettings();
+  }, []);
+
   return (
     <div dir={i18n.dir()} className="min-h-screen bg-gradient-to-br from-white to-purple-50 flex flex-col font-sans">
       <nav className="bg-white/90 backdrop-blur-md border-b border-purple-100 sticky top-0 z-50 shadow-sm">
@@ -186,7 +221,7 @@ export const PublicLayout: React.FC<{ children: React.ReactNode }> = ({ children
 
           <Link to="/" className="flex items-center gap-3 group">
             <div className="w-10 h-10 transition-transform group-hover:scale-110">
-              <AqooniLogoMini />
+              <AqooniLogoMini src={systemLogo} />
             </div>
             <div className="flex flex-col">
               <span className="font-bold text-xl text-qabas-purple font-cairo leading-none">{t('common.instituteName')}</span>

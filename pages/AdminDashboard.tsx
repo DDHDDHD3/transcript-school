@@ -66,7 +66,7 @@ const AdminDashboard = () => {
               {billing.feeType === 'paid' && Number(billing.balance || 0) > 0 && (
                 <Link
                   to="/admin/settings"
-                  className="flex items-center gap-3 bg-white hover:bg-slate-50 text-slate-900 px-6 py-3 rounded-2xl font-bold text-sm shadow-lg transition-all active:scale-95 group/btn"
+                  className="flex items-center gap-3 bg-white hover:bg-slate-50 text-slate-900 px-6 py-3 rounded-2xl font-bold text-sm shadow-lg transition-all active:scale-[0.98] group/btn"
                 >
                   {t('settings.billing.payNow')}
                   <ArrowRight size={16} className="group-hover/btn:translate-x-1 transition-transform" />

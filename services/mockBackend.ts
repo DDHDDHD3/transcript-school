@@ -154,6 +154,21 @@ export const seedDatabase = async () => {
         )
       `;
 
+      await sql`
+        CREATE TABLE IF NOT EXISTS system_settings (
+          id TEXT PRIMARY KEY,
+          name TEXT DEFAULT 'Aqooni Digital',
+          logo TEXT,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `;
+
+      // Seed default system settings
+      const settingsCount = await sql`SELECT count(*) FROM system_settings WHERE id = 'main'`;
+      if (parseInt(settingsCount[0].count) === 0) {
+        await sql`INSERT INTO system_settings (id, name, logo) VALUES ('main', 'Aqooni Digital', ${DEFAULT_CONFIG.logoUrl})`;
+      }
+
       const schools = await sql`SELECT count(*) FROM schools WHERE id = 'aqd-default'`;
       if (parseInt(schools[0].count) === 0) {
         await sql`INSERT INTO schools (id, name, sub_status) VALUES ('aqd-default', 'أقوني ديجيتال', 'active')`;
@@ -490,10 +505,44 @@ export const saveConfig = async (config: CertificateConfig, schoolId?: string) =
     }
   } catch (error) {
     console.error("Failed to save config to DB (saved locally):", error);
-    // We do NOT throw here if LP saved successfully, effectively treating it as a success even if DB failed
-    // But if we want to warn the user, we might throw. 
-    // Given the user wants it to "work", we'll consider LocalStorage success as sufficient for this session.
-    // However, if we suppress the error, the user thinks it's saved.
+  }
+};
+
+export const getSystemSettings = async () => {
+  try {
+    await seedDatabase();
+    const rows = await sql`SELECT name, logo FROM system_settings WHERE id = 'main'`;
+    if (rows.length > 0) {
+      return {
+        name: rows[0].name,
+        logo: rows[0].logo
+      };
+    }
+    return {
+      name: 'Aqooni Digital',
+      logo: DEFAULT_CONFIG.logoUrl
+    };
+  } catch (e) {
+    console.error("Failed to get system settings:", e);
+    return {
+      name: 'Aqooni Digital',
+      logo: DEFAULT_CONFIG.logoUrl
+    };
+  }
+};
+
+export const saveSystemSettings = async (settings: { name: string, logo: string }) => {
+  try {
+    await seedDatabase();
+    await sql`
+      UPDATE system_settings 
+      SET name = ${settings.name}, logo = ${settings.logo}, updated_at = CURRENT_TIMESTAMP 
+      WHERE id = 'main'
+    `;
+    return true;
+  } catch (e) {
+    console.error("Failed to save system settings:", e);
+    return false;
   }
 };
 

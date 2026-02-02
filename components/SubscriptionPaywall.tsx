@@ -76,7 +76,7 @@ const SubscriptionPaywall: React.FC<SubscriptionPaywallProps> = ({ schoolId, onP
                         <button
                             onClick={handlePay}
                             disabled={loading}
-                            className="w-full py-6 bg-gradient-to-r from-royal-900 to-qabas-purple hover:to-royal-800 text-white font-black rounded-[28px] shadow-[0_20px_40px_-15px_rgba(91,33,182,0.4)] transition-all active:scale-95 flex items-center justify-center gap-3 text-xl group disabled:opacity-70 disabled:active:scale-100"
+                            className="w-full py-6 bg-gradient-to-r from-royal-900 to-qabas-purple hover:to-royal-800 text-white font-black rounded-[28px] shadow-[0_20px_40px_-15px_rgba(91,33,182,0.4)] transition-all active:scale-[0.98] flex items-center justify-center gap-3 text-xl group disabled:opacity-70 disabled:active:scale-100"
                         >
                             {loading ? (
                                 <div className="w-8 h-8 border-4 border-white/30 border-t-white rounded-full animate-spin" />

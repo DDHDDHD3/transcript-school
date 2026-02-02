@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { login, getConfig, recoverPassword } from '../services/mockBackend';
+import { login, recoverPassword, getSystemSettings } from '../services/mockBackend';
 import { Loader2, Lock, Home, HelpCircle, Eye, EyeOff } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
@@ -14,12 +14,20 @@ const AdminLogin = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [logoUrl, setLogoUrl] = useState('');
+  const [platformName, setPlatformName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const { t } = useTranslation();
   const navigate = useNavigate();
 
   useEffect(() => {
-    getConfig().then(config => setLogoUrl(config.logoUrl));
+    const fetchSettings = async () => {
+      const settings = await getSystemSettings();
+      if (settings) {
+        setLogoUrl(settings.logo);
+        setPlatformName(settings.name);
+      }
+    };
+    fetchSettings();
   }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -68,10 +76,10 @@ const AdminLogin = () => {
                 <img src={logoUrl} alt="Aqooni Logo" className="w-36 h-36 object-contain relative z-10" />
               </div>
             ) : (
-              <div className="w-24 h-24 bg-qabas-purple rounded-full flex items-center justify-center text-white font-bold text-2xl">Aqooni Digital</div>
+              <div className="w-24 h-24 bg-qabas-purple rounded-full flex items-center justify-center text-white font-bold text-center px-2 text-sm leading-tight">{platformName || 'Aqooni Digital'}</div>
             )}
           </div>
-          <h1 className="text-3xl font-black font-cairo text-qabas-purple">{t('common.instituteName')}</h1>
+          <h1 className="text-3xl font-black font-cairo text-qabas-purple">{platformName || t('common.instituteName')}</h1>
           <p className="text-qabas-orange mt-1 font-bold font-almarai text-sm tracking-wide">{t('login.subtitle')}</p>
         </div>
 
@@ -123,7 +131,7 @@ const AdminLogin = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-qabas-purple to-[#4c1d95] hover:to-[#5b21b6] text-white font-bold py-4 rounded-xl shadow-xl shadow-purple-200 transition-all active:scale-95 flex justify-center items-center gap-2 text-lg"
+              className="w-full bg-gradient-to-r from-qabas-purple to-[#4c1d95] hover:to-[#5b21b6] text-white font-bold py-4 rounded-xl shadow-xl shadow-purple-200 transition-all active:scale-[0.98] flex justify-center items-center gap-2 text-lg"
             >
               {loading ? <Loader2 className="animate-spin" /> : t('login.loginBtn')}
             </button>

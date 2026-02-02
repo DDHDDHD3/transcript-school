@@ -191,7 +191,7 @@ const PublicHome = () => {
                 <button
                   onClick={downloadPDF}
                   disabled={loading}
-                  className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-gradient-to-r from-qabas-orange to-orange-600 hover:to-orange-700 text-white px-8 py-3 rounded-full font-bold shadow-lg shadow-orange-200 transition-transform hover:scale-105 active:scale-95 font-cairo"
+                  className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-gradient-to-r from-qabas-orange to-orange-600 hover:to-orange-700 text-white px-8 py-3 rounded-full font-bold shadow-lg shadow-orange-200 transition-transform hover:scale-105 active:scale-[0.98] font-cairo"
                 >
                   {loading ? <Loader2 className="animate-spin" size={20} /> : <Download size={20} />}
                   {t('home.downloadPDF')}
@@ -199,7 +199,7 @@ const PublicHome = () => {
                 <button
                   onClick={downloadAttendancePDF}
                   disabled={loading}
-                  className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-white text-qabas-purple border-2 border-qabas-purple px-8 py-3 rounded-full font-bold transition-transform hover:scale-105 active:scale-95 font-cairo"
+                  className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-white text-qabas-purple border-2 border-qabas-purple px-8 py-3 rounded-full font-bold transition-transform hover:scale-105 active:scale-[0.98] font-cairo"
                 >
                   {loading ? <Loader2 className="animate-spin" size={20} /> : <Download size={20} />}
                   {t('nav.attendance')}

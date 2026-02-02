@@ -30,10 +30,10 @@ const LanguageSwitcher: React.FC = () => {
         <div className="relative">
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="flex items-center gap-2 px-3 py-2 text-sm font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-all border border-slate-200 bg-white shadow-sm"
+                className="flex items-center gap-2 px-3 py-2 md:px-4 md:py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-all border border-slate-200 bg-white shadow-sm active:scale-[0.98]"
             >
-                <Globe size={18} className="text-qabas-purple" />
-                <span>{currentLanguage.name}</span>
+                <Globe size={20} className="text-qabas-purple md:w-[18px] md:h-[18px]" />
+                <span className="hidden xs:inline">{currentLanguage.name}</span>
             </button>
 
             <AnimatePresence>

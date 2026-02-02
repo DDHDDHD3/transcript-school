@@ -603,7 +603,7 @@ const AdminStudents = () => {
                     <Plus size={12} /> {t('settings.grading.addColumn')}
                   </button>
                 </div>
-                <button type="button" onClick={handleAddSubject} className="text-xs text-royal-600 hover:text-royal-800 flex items-center gap-1 font-bold bg-royal-50 px-3 py-1.5 rounded-lg transition-all active:scale-95"><PlusCircle size={14} /> {t('students.modal.addSubject')}</button>
+                <button type="button" onClick={handleAddSubject} className="text-xs text-royal-600 hover:text-royal-800 flex items-center gap-1 font-bold bg-royal-50 px-3 py-1.5 rounded-lg transition-all active:scale-[0.98]"><PlusCircle size={14} /> {t('students.modal.addSubject')}</button>
               </div>
 
               <div className="border rounded-xl overflow-hidden mb-6 overflow-x-auto shadow-sm">
@@ -696,7 +696,7 @@ const AdminStudents = () => {
 
             <div className="px-6 py-4 border-t bg-slate-50 flex justify-end gap-3 items-center">
               <button onClick={() => setIsModalOpen(false)} className="px-5 py-2 text-slate-600 hover:text-slate-800 font-bold text-sm transition-colors">{t('students.modal.footer.cancel')}</button>
-              <button onClick={handleSubmit} className="px-8 py-2.5 bg-royal-900 hover:bg-slate-900 text-white rounded-xl font-black shadow-xl shadow-royal-900/20 flex items-center gap-2 transition-all active:scale-95 text-sm uppercase tracking-wide">
+              <button onClick={handleSubmit} className="px-8 py-2.5 bg-royal-900 hover:bg-slate-900 text-white rounded-xl font-black shadow-xl shadow-royal-900/20 flex items-center gap-2 transition-all active:scale-[0.98] text-sm uppercase tracking-wide">
                 <Save size={18} /> {t('students.modal.footer.save')}
               </button>
             </div>

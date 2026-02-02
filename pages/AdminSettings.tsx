@@ -179,7 +179,7 @@ const AdminSettings = () => {
                     setPaymentAmount(Number(billing.balance || 0));
                     setIsPaymentModalOpen(true);
                   }}
-                  className="bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-xl border border-blue-100 transition-all active:scale-95 text-left group"
+                  className="bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-xl border border-blue-100 transition-all active:scale-[0.98] text-left group"
                 >
                   <p className="text-[10px] font-black uppercase mb-1 flex items-center gap-2">
                     <CreditCard size={12} />
@@ -431,7 +431,7 @@ const AdminSettings = () => {
             <button
               type="submit"
               disabled={saving}
-              className="bg-royal-900 hover:bg-royal-800 text-white px-8 py-3 rounded-lg font-bold shadow-lg flex items-center gap-2 transition-all active:scale-95 disabled:opacity-50"
+              className="bg-royal-900 hover:bg-royal-800 text-white px-8 py-3 rounded-lg font-bold shadow-lg flex items-center gap-2 transition-all active:scale-[0.98] disabled:opacity-50"
             >
               <Save size={20} />
               {saving ? t('settings.saving') : t('settings.save')}
@@ -504,7 +504,7 @@ const AdminSettings = () => {
               <button
                 onClick={handlePayment}
                 disabled={paymentLoading || paymentAmount <= 0}
-                className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-700 text-white font-bold rounded-2xl shadow-xl shadow-blue-200 transition-all active:scale-95 disabled:opacity-50 disabled:active:scale-100 flex items-center justify-center gap-2 text-lg"
+                className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-700 text-white font-bold rounded-2xl shadow-xl shadow-blue-200 transition-all active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100 flex items-center justify-center gap-2 text-lg"
               >
                 {paymentLoading ? (
                   <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
