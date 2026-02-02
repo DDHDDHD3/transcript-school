@@ -1,18 +1,22 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2, Download, Search, XCircle } from 'lucide-react';
-import { getStudentByRegId, getConfig } from '../services/api';
-import { Student, CertificateConfig } from '../types';
+import { getStudentByRegId, getConfig, getStudentAttendanceHistory } from '../services/mockBackend';
+import { Student, CertificateConfig, AttendanceRecord } from '../types';
 import { generateCertificatePDF } from '../utils/pdfGenerator';
+import { generateAttendancePDF } from '../utils/attendancePdfGenerator';
 import { useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 const PublicHome = () => {
+  const { t, i18n } = useTranslation();
   const [searchId, setSearchId] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<Student | null>(null);
   const [error, setError] = useState('');
   const [config, setConfig] = useState<CertificateConfig | null>(null);
+  const [attendanceHistory, setAttendanceHistory] = useState<AttendanceRecord[]>([]);
+  const [perceivedMonth, setPerceivedMonth] = useState(new Date().toISOString().slice(0, 7));
   const [previewScale, setPreviewScale] = useState(0.25);
 
   const certificateRef = useRef<HTMLDivElement>(null);
@@ -27,16 +31,12 @@ const PublicHome = () => {
       handleVerify(idParam);
     }
 
-    // Calculate initial scale based on screen width
     const handleResize = () => {
       const width = window.innerWidth;
       const availableWidth = width - 40;
       let scale = availableWidth / 2480;
-
-      // Cap the scale
       if (scale > 0.45) scale = 0.45;
       if (scale < 0.13) scale = 0.13;
-
       setPreviewScale(scale);
     };
 
@@ -50,20 +50,55 @@ const PublicHome = () => {
 
     setLoading(true);
     setResult(null);
+    setAttendanceHistory([]);
     setError('');
 
     try {
       const student = await getStudentByRegId(idToVerify);
       if (student) {
         setResult(student);
+        const history = await getStudentAttendanceHistory(student.studentId);
+        setAttendanceHistory(history);
       } else {
-        setError('لم يتم العثور على رقم الطالب. يرجى التحقق والمحاولة مرة أخرى.');
+        setError(t('home.errorNotFound'));
       }
     } catch (err) {
-      setError('خطأ في النظام. حاول مرة أخرى.');
+      setError(t('home.errorSystem'));
     } finally {
       setLoading(false);
     }
+  };
+
+  const getLevelLabel = (level: string) => {
+    if (level.startsWith('level')) {
+      return t(`students.levels.${level}`);
+    }
+    // Handle cases where the level name might be stored in a specific language
+    const arabicLevels: Record<string, string> = {
+      'المستوى الأول': 'level1', 'المستوى الثاني': 'level2', 'المستوى الثالث': 'level3',
+      'المستوى الرابع': 'level4', 'المستوى الخامس': 'level5', 'المستوى السادس': 'level6',
+      'المستوى السابع': 'level7', 'المستوى الثامن': 'level8', 'المستوى التاسع': 'level9',
+      'المستوى العاشر': 'level10', 'المستوى الحادي عشر': 'level11', 'المستوى الثاني عشر': 'level12'
+    };
+    const key = arabicLevels[level];
+    if (key) return t(`students.levels.${key}`);
+    return level;
+  };
+
+  const getSubjectLabel = (name: string) => {
+    const mapping: Record<string, string> = {
+      'التفسير': 'common.subjects.tafsir',
+      'السيرة': 'common.subjects.sira',
+      'الحديث': 'common.subjects.hadith',
+      'القراءة والكتابة': 'common.subjects.reading',
+      'الفقه': 'common.subjects.fiqh',
+      'اللغة العربية': 'common.subjects.arabic',
+      'الأذكار': 'common.subjects.adhkar',
+      'الرياضيات': 'common.subjects.math',
+      'اللغة الصومالية': 'common.subjects.somali'
+    };
+    const key = mapping[name] || mapping[name.trim()];
+    return key ? t(key) : name;
   };
 
   const downloadPDF = async () => {
@@ -75,53 +110,67 @@ const PublicHome = () => {
     }
   };
 
+  const downloadAttendancePDF = async () => {
+    if (result && config) {
+      setLoading(true);
+      const filename = `Attendance_${result.studentId}_${perceivedMonth}`;
+      await generateAttendancePDF('public-attendance-report', filename, i18n.language);
+      setLoading(false);
+    }
+  };
+
   return (
-    <div dir="rtl" className="flex flex-col items-center min-h-[calc(100vh-64px)] bg-slate-50 font-sans">
+    <div dir={i18n.dir()} className="flex flex-col items-center min-h-[calc(100vh-64px)] bg-slate-50 font-sans overflow-x-hidden relative">
 
       {/* Search Section */}
       {!result && (
-        <>
-          <motion.div
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            className="w-full max-w-lg mt-10 md:mt-20 px-4 mb-10"
-          >
-            <div className="text-center mb-8">
-              <h1 className="text-4xl md:text-5xl font-black text-qabas-purple mb-4 font-cairo">التحقق من الشهادات</h1>
-              <p className="text-slate-500 font-almarai text-lg">أدخل رقم الطالب للتحقق من صحة الشهادة وعرضها</p>
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          className="w-full max-w-lg mt-10 md:mt-20 px-4 mb-10"
+        >
+          <div className="text-center mb-10">
+            <div className="inline-block px-4 py-1.5 bg-purple-100 text-purple-700 rounded-full text-xs font-bold uppercase tracking-widest mb-4 animate-pulse">
+              {t('home.publicPortal')}
             </div>
+            <h1 className="text-4xl md:text-6xl font-black text-qabas-purple mb-4 font-cairo leading-tight">
+              {t('home.title')}
+            </h1>
+            <p className="text-slate-500 font-almarai text-lg max-w-md mx-auto leading-relaxed">
+              {t('home.subtitle')}
+            </p>
+          </div>
 
-            <div className="flex flex-col md:flex-row shadow-2xl shadow-purple-200/50 rounded-2xl bg-white overflow-hidden p-2 border border-purple-100 gap-2">
-              <input
-                type="text"
-                placeholder="أدخل رقم الطالب"
-                className="flex-1 px-4 md:px-6 py-3 md:py-4 outline-none text-slate-800 placeholder:text-slate-300 font-bold text-lg md:text-xl text-center md:text-right font-cairo tracking-wide rounded-xl md:rounded-none"
-                value={searchId}
-                onChange={(e) => setSearchId(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleVerify()}
-              />
-              <button
-                onClick={() => handleVerify()}
-                disabled={loading}
-                className="bg-gradient-to-r from-qabas-purple to-purple-800 text-white px-8 py-3 rounded-xl font-bold hover:shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-70 font-cairo w-full md:w-auto"
-              >
-                {loading ? <Loader2 className="animate-spin" /> : 'عرض الشهادة'}
-              </button>
-            </div>
+          <div className="flex flex-col md:flex-row shadow-2xl shadow-purple-200/50 rounded-2xl bg-white overflow-hidden p-2 border border-purple-100 gap-2">
+            <input
+              type="text"
+              placeholder={t('home.placeholder')}
+              className={`flex-1 px-4 md:px-6 py-3 md:py-4 outline-none text-slate-800 placeholder:text-slate-300 font-bold text-lg md:text-xl text-center ${i18n.dir() === 'rtl' ? 'md:text-right' : 'md:text-left'} font-cairo tracking-wide rounded-xl md:rounded-none`}
+              value={searchId}
+              onChange={(e) => setSearchId(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleVerify()}
+            />
+            <button
+              onClick={() => handleVerify()}
+              disabled={loading}
+              className="bg-gradient-to-r from-qabas-purple to-purple-800 text-white px-8 py-3 rounded-xl font-bold hover:shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-70 font-cairo w-full md:w-auto"
+            >
+              {loading ? <Loader2 className="animate-spin" /> : t('home.verifyBtn')}
+            </button>
+          </div>
 
-            {error && (
-              <motion.div
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                className="mt-6 p-4 bg-red-50 text-red-700 rounded-xl flex items-center justify-center gap-2 border border-red-100 font-bold font-almarai"
-              >
-                <XCircle size={20} /> {error}
-              </motion.div>
-            )}
-          </motion.div>
-        </>
+          {error && (
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+              className="mt-6 p-4 bg-red-50 text-red-700 rounded-xl flex items-center justify-center gap-2 border border-red-100 font-bold font-almarai"
+            >
+              <XCircle size={20} /> {error}
+            </motion.div>
+          )}
+        </motion.div>
       )}
 
-      {/* Certificate Display Area */}
+      {/* Result View */}
       <AnimatePresence>
         {result && config && (
           <motion.div
@@ -136,140 +185,117 @@ const PublicHome = () => {
                 onClick={() => { setResult(null); setSearchId(''); }}
                 className="text-slate-500 hover:text-qabas-orange font-bold text-sm font-cairo transition-colors order-2 md:order-1"
               >
-                بحث جديد
+                {t('home.newSearch')}
               </button>
-              <button
-                onClick={downloadPDF}
-                disabled={loading}
-                className="w-full md:w-auto flex items-center justify-center gap-2 bg-gradient-to-r from-qabas-orange to-orange-600 hover:to-orange-700 text-white px-8 py-3 rounded-full font-bold shadow-lg shadow-orange-200 transition-transform hover:scale-105 active:scale-95 font-cairo order-1 md:order-2"
-              >
-                {loading ? <Loader2 className="animate-spin" size={20} /> : <Download size={20} />}
-                تحميل الشهادة PDF
-              </button>
+              <div className="flex gap-2 order-1 md:order-2 w-full md:w-auto">
+                <button
+                  onClick={downloadPDF}
+                  disabled={loading}
+                  className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-gradient-to-r from-qabas-orange to-orange-600 hover:to-orange-700 text-white px-8 py-3 rounded-full font-bold shadow-lg shadow-orange-200 transition-transform hover:scale-105 active:scale-95 font-cairo"
+                >
+                  {loading ? <Loader2 className="animate-spin" size={20} /> : <Download size={20} />}
+                  {t('home.downloadPDF')}
+                </button>
+                <button
+                  onClick={downloadAttendancePDF}
+                  disabled={loading}
+                  className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-white text-qabas-purple border-2 border-qabas-purple px-8 py-3 rounded-full font-bold transition-transform hover:scale-105 active:scale-95 font-cairo"
+                >
+                  {loading ? <Loader2 className="animate-spin" size={20} /> : <Download size={20} />}
+                  {t('nav.attendance')}
+                </button>
+              </div>
             </div>
 
             {/* Scrollable Preview Container */}
-            <div className="w-full overflow-auto bg-slate-100 p-4 md:p-8 flex justify-center items-start min-h-screen">
-
+            <div className="w-full overflow-x-auto bg-slate-200/50 p-6 md:p-12 flex justify-center items-start min-h-[600px]" dir="ltr">
               <div
-                className="bg-white shadow-[0_20px_50px_rgba(0,0,0,0.15)] relative"
+                className="bg-white shadow-[0_30px_60px_rgba(0,0,0,0.2)] relative transition-all duration-500 overflow-hidden"
                 style={{
                   width: `${2480 * previewScale}px`,
                   height: `${3508 * previewScale}px`,
                 }}
               >
-                {/* 
-                  ACTUAL CERTIFICATE ELEMENT 
-                  Dimensions: A4 @ 300 DPI (2480px x 3508px)
-                */}
                 <div
                   id="certificate-view"
                   ref={certificateRef}
-                  className="bg-white relative overflow-visible text-slate-900 origin-top-right leading-relaxed font-amiri"
-                  dir="rtl"
-                  lang="ar"
+                  className="bg-white absolute top-0 left-0 overflow-hidden text-slate-900 leading-relaxed font-amiri"
+                  dir={i18n.dir()}
+                  lang={i18n.language}
                   style={{
                     width: '2480px',
                     height: '3508px',
                     transform: `scale(${previewScale})`,
-                    fontVariantLigatures: 'common-ligatures',
-                    fontFeatureSettings: '"liga" 1, "dlig" 1',
+                    transformOrigin: 'top left',
                     textRendering: 'geometricPrecision',
                     letterSpacing: 'normal'
                   }}
                 >
-                  {/* Decorative Gradient Border */}
-                  <div className="absolute top-0 left-0 w-full h-[30px] bg-gradient-to-r from-qabas-orange via-qabas-purple to-qabas-orange"></div>
-                  <div className="absolute bottom-0 left-0 w-full h-[30px] bg-gradient-to-r from-qabas-orange via-qabas-purple to-qabas-orange"></div>
+                  <div className="absolute top-0 left-0 w-full h-[30px] bg-gradient-to-r from-qabas-orange via-qabas-purple to-qabas-orange" />
+                  <div className="absolute bottom-0 left-0 w-full h-[30px] bg-gradient-to-r from-qabas-orange via-qabas-purple to-qabas-orange" />
+                  <div className="absolute inset-[40px] border-[10px] border-qabas-purple/10 pointer-events-none rounded-[60px]" />
+                  <div className="absolute inset-[60px] border-[4px] border-qabas-orange/20 pointer-events-none rounded-[40px]" />
 
-                  {/* Outer Frame */}
-                  <div className="absolute inset-[40px] border-[10px] border-qabas-purple/10 pointer-events-none rounded-[60px]"></div>
-                  <div className="absolute inset-[60px] border-[4px] border-qabas-orange/20 pointer-events-none rounded-[40px]"></div>
-
-                  {/* Inner Content Area */}
                   <div className="w-full h-full p-[80px] pt-[60px] relative z-10 flex flex-col">
-
-                    {/* --- HEADER --- */}
                     <header className="flex flex-col items-center text-center mb-[50px]">
-                      {/* Logo Area */}
                       <div className="mb-[30px]">
-                        {config.logoUrl ? (
-                          <img src={config.logoUrl} className="h-[320px] w-auto object-contain drop-shadow-xl" alt="Logo" />
-                        ) : (
-                          <div className="h-[300px] w-[300px] bg-slate-50 rounded-full flex items-center justify-center border-4 border-qabas-purple text-qabas-purple text-[40px] font-bold font-cairo">شعار</div>
-                        )}
+                        {config.logoUrl && <img src={config.logoUrl} className="h-[320px] w-auto object-contain drop-shadow-xl" alt="Logo" />}
                       </div>
-
                       <div className="space-y-12 relative">
-                        {/* QAHI Purple Title */}
                         <h1 className="text-[110px] text-qabas-purple leading-none tracking-normal drop-shadow-sm font-bold font-amiri pb-4">
-                          معهد قبس الهدى للدراسات الشرعية واللغوية
+                          {config.schoolName}
                         </h1>
                         <h2 className="text-[45px] font-bold text-qabas-orange tracking-[0.2em] uppercase font-cairo">
                           {config.schoolNameEn}
                         </h2>
-                        {/* Decorative Divider */}
                         <div className="flex items-center justify-center gap-4 mt-6 opacity-60">
-                          <div className="w-[300px] h-[4px] bg-qabas-purple rounded-full"></div>
-                          <div className="w-[20px] h-[20px] bg-qabas-orange rotate-45"></div>
-                          <div className="w-[300px] h-[4px] bg-qabas-purple rounded-full"></div>
+                          <div className="w-[300px] h-[4px] bg-qabas-purple rounded-full" />
+                          <div className="w-[20px] h-[20px] bg-qabas-orange rotate-45" />
+                          <div className="w-[300px] h-[4px] bg-qabas-purple rounded-full" />
                         </div>
                       </div>
                     </header>
 
-                    {/* --- STUDENT INFO CARD (UPDATED GRID) --- */}
                     <div className="bg-gradient-to-br from-purple-50 to-orange-50/30 border-[4px] border-qabas-purple/10 rounded-[50px] p-[50px] mb-[60px] shadow-sm relative overflow-hidden">
-                      <div className="absolute top-0 right-0 w-[200px] h-[200px] bg-qabas-purple/5 rounded-bl-full"></div>
-
-                      {/* Structured 2x2 Grid for Perfect Alignment */}
+                      <div className="absolute top-0 right-0 w-[200px] h-[200px] bg-qabas-purple/5 rounded-bl-full" />
                       <div className="grid grid-cols-2 gap-x-[80px] gap-y-[50px] relative z-10">
-
-                        {/* Name */}
                         <div className="flex flex-col gap-2">
-                          <span className="text-[45px] font-bold text-qabas-purple font-amiri opacity-80">اسم الطالب :</span>
+                          <span className="text-[45px] font-bold text-qabas-purple font-amiri opacity-80">{t('pdf.studentName')} :</span>
                           <span className="text-[55px] text-slate-900 font-bold border-b-[3px] border-slate-300/50 pb-2">{result.fullName}</span>
                         </div>
-
-                        {/* ID */}
                         <div className="flex flex-col gap-2">
-                          <span className="text-[45px] font-bold text-qabas-purple font-amiri opacity-80">رقم الطالب :</span>
+                          <span className="text-[45px] font-bold text-qabas-purple font-amiri opacity-80">{t('pdf.studentId')} :</span>
                           <span className="text-[55px] text-qabas-orange font-bold font-cairo tracking-wider border-b-[3px] border-slate-300/50 pb-2" dir="ltr">{result.studentId}</span>
                         </div>
-
-                        {/* Level */}
                         <div className="flex flex-col gap-2">
-                          <span className="text-[45px] font-bold text-qabas-purple font-amiri opacity-80">المستوى :</span>
-                          <span className="text-[55px] text-slate-900 font-bold border-b-[3px] border-slate-300/50 pb-2">{result.classLevel}</span>
+                          <span className="text-[45px] font-bold text-qabas-purple font-amiri opacity-80">{t('pdf.level')} :</span>
+                          <span className="text-[55px] text-slate-900 font-bold border-b-[3px] border-slate-300/50 pb-2">{getLevelLabel(result.classLevel)}</span>
                         </div>
-
-                        {/* Year */}
                         <div className="flex flex-col gap-2">
-                          <span className="text-[45px] font-bold text-qabas-purple font-amiri opacity-80">العام الدراسي :</span>
+                          <span className="text-[45px] font-bold text-qabas-purple font-amiri opacity-80">{t('pdf.academicYear')} :</span>
                           <span className="text-[55px] text-slate-900 font-bold font-cairo border-b-[3px] border-slate-300/50 pb-2" dir="ltr">{result.academicYear}</span>
                         </div>
-
                       </div>
                     </div>
 
-                    {/* --- MARKS TABLE --- */}
                     <div className="flex-1 mb-[40px]">
                       <table className="w-full border-collapse">
                         <thead>
                           <tr className="font-almarai">
-                            <th className="bg-qabas-purple text-white py-[30px] text-[50px] font-bold border-b-[8px] border-qabas-orange w-[35%] rounded-tr-3xl">المادة</th>
-                            <th className="bg-qabas-purple/90 text-white py-[30px] text-[50px] font-bold border-b-[8px] border-qabas-orange w-[20%]">الدرجة الكاملة</th>
-                            <th className="bg-qabas-purple/90 text-white py-[30px] text-[50px] font-bold border-b-[8px] border-qabas-orange w-[20%]">درجة الطالب</th>
-                            <th className="bg-qabas-purple text-white py-[30px] text-[50px] font-bold border-b-[8px] border-qabas-orange w-[25%] rounded-tl-3xl">النتيجة</th>
+                            <th className={`bg-qabas-purple text-white py-[30px] text-[50px] font-bold border-b-[8px] border-qabas-orange w-[35%] ${i18n.dir() === 'rtl' ? 'rounded-tr-3xl' : 'rounded-tl-3xl'}`}>{t('pdf.subject')}</th>
+                            <th className="bg-qabas-purple/90 text-white py-[30px] text-[50px] font-bold border-b-[8px] border-qabas-orange w-[20%]">{t('pdf.fullMarks')}</th>
+                            <th className="bg-qabas-purple/90 text-white py-[30px] text-[50px] font-bold border-b-[8px] border-qabas-orange w-[20%]">{t('pdf.studentMarks')}</th>
+                            <th className={`bg-qabas-purple text-white py-[30px] text-[50px] font-bold border-b-[8px] border-qabas-orange w-[25%] ${i18n.dir() === 'rtl' ? 'rounded-tl-3xl' : 'rounded-tr-3xl'}`}>{t('pdf.result')}</th>
                           </tr>
                         </thead>
                         <tbody className="font-naskh">
                           {result.subjects.map((sub, idx) => (
-                            <tr key={idx} className="even:bg-purple-50/50 hover:bg-orange-50/30">
-                              <td className="border-b-[3px] border-slate-200 py-[22px] px-8 text-[50px] font-bold text-slate-800 text-right">{sub.name}</td>
+                            <tr key={idx} className="even:bg-purple-50/50">
+                              <td className={`border-b-[3px] border-slate-200 py-[22px] px-8 text-[50px] font-bold text-slate-800 ${i18n.dir() === 'rtl' ? 'text-right' : 'text-left'}`}>{getSubjectLabel(sub.name)}</td>
                               <td className="border-b-[3px] border-slate-200 py-[22px] text-[45px] font-bold text-center text-slate-500 font-cairo">100</td>
                               <td className="border-b-[3px] border-slate-200 py-[22px] text-[45px] font-bold text-center text-slate-900 font-cairo">{sub.studentMarks}</td>
-                              <td className={`border-b-[3px] border-slate-200 py-[22px] text-[45px] font-bold text-center ${sub.result === 'راسب' ? 'text-red-600' : 'text-green-700'}`}>
-                                {sub.result}
+                              <td className={`border-b-[3px] border-slate-200 py-[22px] text-[45px] font-bold text-center ${sub.studentMarks < 50 ? 'text-red-600' : 'text-green-700'}`}>
+                                {sub.studentMarks < 50 ? t('students.status.fail') : t('students.status.pass')}
                               </td>
                             </tr>
                           ))}
@@ -277,67 +303,238 @@ const PublicHome = () => {
                       </table>
                     </div>
 
-                    {/* --- SUMMARY SECTION --- */}
                     <div className="flex justify-between items-start mb-[60px] px-[20px] font-cairo">
                       <div className="w-[1100px] border-[4px] border-qabas-purple rounded-[40px] overflow-hidden flex shadow-lg">
-                        <div className="flex-1 flex flex-col items-center justify-center bg-white py-6 border-l-[4px] border-qabas-purple">
-                          <div className="text-[45px] text-qabas-purple font-bold mb-2">المجموع</div>
+                        <div className={`flex-1 flex flex-col items-center justify-center bg-white py-6 ${i18n.dir() === 'rtl' ? 'border-l-[4px]' : 'border-r-[4px]'} border-qabas-purple`}>
+                          <div className="text-[45px] text-qabas-purple font-bold mb-2">{t('pdf.total')}</div>
                           <div className="text-[55px] font-black text-slate-900">{result.total}</div>
                         </div>
-                        <div className="flex-1 flex flex-col items-center justify-center bg-white py-6 border-l-[4px] border-qabas-purple">
-                          <div className="text-[45px] text-qabas-purple font-bold mb-2">النسبة المئوية</div>
+                        <div className={`flex-1 flex flex-col items-center justify-center bg-white py-6 ${i18n.dir() === 'rtl' ? 'border-l-[4px]' : 'border-r-[4px]'} border-qabas-purple`}>
+                          <div className="text-[45px] text-qabas-purple font-bold mb-2">{t('pdf.percentage')}</div>
                           <div className="text-[55px] font-black text-slate-900" dir="ltr">{result.percentage}%</div>
                         </div>
                         <div className="flex-1 flex flex-col items-center justify-center bg-qabas-purple text-white py-6">
-                          <div className="text-[45px] font-bold mb-2 opacity-90">النتيجة النهائية</div>
-                          <div className="text-[60px] font-black">{result.finalResult}</div>
+                          <div className="text-[45px] font-bold mb-2 opacity-90">{t('pdf.finalResult')}</div>
+                          <div className="text-[60px] font-black">
+                            {result.percentage}% ({result.finalResult === 'ناجح' || result.finalResult === 'pass' ? t('students.status.pass') : t('students.status.fail')})
+                          </div>
                         </div>
                       </div>
                     </div>
-
-                    {/* --- FOOTER --- */}
-                    <div className="mt-auto px-[60px] pb-[80px]">
-                      <div className="flex justify-between items-end">
-                        <div className="text-center relative group">
-                          <div className="h-[200px] flex items-end justify-center mb-[20px]">
-                            {config.managerSignatureUrl ? (
-                              <img src={config.managerSignatureUrl} className="h-full object-contain" alt="Signature" />
-                            ) : (
-                              <div className="h-[100px] w-[300px] border-b-[4px] border-slate-300 border-dashed"></div>
-                            )}
-                          </div>
-                          <p className="text-[50px] font-bold text-qabas-purple font-scheherazade">توقيع المدير</p>
+                    <div className="flex justify-between items-end px-10">
+                      <div className="text-center">
+                        <div className="h-[200px] flex items-end justify-center mb-[20px]">
+                          {config.managerSignatureUrl && <img src={config.managerSignatureUrl} className="h-full object-contain" alt="Signature" />}
                         </div>
-
-                        <div className="relative bottom-8">
-                          {config.stampUrl ? (
-                            <img src={config.stampUrl} className="w-[350px] h-[350px] object-contain opacity-90 drop-shadow-xl rotate-[-15deg]" alt="Stamp" />
-                          ) : (
-                            <div className="w-[300px] h-[300px] rounded-full border-[10px] border-qabas-gold text-qabas-gold flex items-center justify-center text-[50px] font-bold rotate-[-15deg] opacity-50 font-amiri">
-                              ختم ذهبي
-                            </div>
-                          )}
+                        <p className="text-[50px] font-bold text-qabas-purple">{t('pdf.signature')}</p>
+                      </div>
+                      <div className="relative bottom-8">
+                        {config.stampUrl && <img src={config.stampUrl} className="w-[350px] h-[350px] object-contain opacity-90 drop-shadow-xl rotate-[-15deg]" alt="Stamp" />}
+                      </div>
+                      <div className="text-center">
+                        <div className="h-[200px] flex items-end justify-center mb-[20px]">
+                          <span className="text-[50px] font-bold text-slate-800 font-cairo">{new Date().toLocaleDateString(i18n.language === 'ar' ? 'ar-EG' : 'en-GB')}</span>
                         </div>
-
-                        <div className="text-center">
-                          <div className="h-[200px] flex items-end justify-center mb-[20px]">
-                            <span className="text-[50px] font-bold text-slate-800 font-cairo">{new Date().toLocaleDateString('ar-EG')}</span>
-                          </div>
-                          <p className="text-[50px] font-bold text-qabas-purple font-scheherazade">التاريخ</p>
-                        </div>
-
+                        <p className="text-[50px] font-bold text-qabas-purple">{t('pdf.recordedDate')}</p>
                       </div>
                     </div>
-
                   </div>
                 </div>
               </div>
+            </div>
 
+            {/* Attendance Summary for Parents */}
+            <div className="w-full max-w-[2480px] bg-slate-50 py-12 px-4 md:px-20">
+              <div
+                className="max-w-4xl mx-auto bg-white rounded-[40px] p-8 md:p-12 shadow-xl border border-slate-100"
+                style={{ direction: i18n.dir() }}
+              >
+                <h3 className="text-3xl md:text-4xl font-black text-slate-900 mb-8 flex items-center gap-4">
+                  <div className="w-3 h-12 bg-qabas-purple rounded-full" />
+                  {t('nav.attendanceRecord')}
+                </h3>
+
+                <div className="flex flex-col md:flex-row items-start md:items-center gap-6 mb-10 bg-slate-50 p-6 rounded-[30px] border border-slate-100">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs font-black text-slate-400 uppercase tracking-widest px-1">{t('nav.selectMonth')}</label>
+                    <input
+                      type="month"
+                      value={perceivedMonth}
+                      onChange={(e) => setPerceivedMonth(e.target.value)}
+                      className="bg-white border-2 border-slate-200 rounded-2xl px-6 py-3 font-bold text-slate-800 outline-none focus:border-qabas-purple transition-all shadow-sm"
+                    />
+                  </div>
+
+                  <div className="flex gap-4 flex-1 w-full">
+                    <div className="flex-1 bg-green-100/50 p-4 rounded-2xl border border-green-100 text-center">
+                      <div className="text-2xl font-black text-green-700">
+                        {attendanceHistory.filter(r => r.status === 'present' && r.date.startsWith(perceivedMonth)).length}
+                      </div>
+                      <div className="text-[10px] font-bold text-green-600 uppercase tracking-tighter">{t('nav.presentDays')}</div>
+                    </div>
+                    <div className="flex-1 bg-red-100/50 p-4 rounded-2xl border border-red-100 text-center">
+                      <div className="text-2xl font-black text-red-700">
+                        {attendanceHistory.filter(r => r.status === 'absent' && r.date.startsWith(perceivedMonth)).length}
+                      </div>
+                      <div className="text-[10px] font-bold text-red-600 uppercase tracking-tighter">{t('nav.absentDays')}</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  {attendanceHistory.filter(r => r.date.startsWith(perceivedMonth)).length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {attendanceHistory
+                        .filter(r => r.date.startsWith(perceivedMonth))
+                        .sort((a, b) => b.date.localeCompare(a.date))
+                        .map((rec) => (
+                          <div key={rec.id} className="flex items-center justify-between p-5 bg-white rounded-3xl border border-slate-100 hover:shadow-lg hover:border-purple-100 transition-all group">
+                            <div className="flex items-center gap-4">
+                              <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center group-hover:bg-purple-50 transition-colors shadow-inner text-slate-400 font-black font-mono text-lg">
+                                {rec.date.split('-')[2]}
+                              </div>
+                              <div>
+                                <div className="font-black text-slate-800 text-lg">{rec.date}</div>
+                                <div className="text-xs text-slate-400 font-bold uppercase tracking-wider">{rec.session === 'morning' ? t('nav.sessions.morning') : t('nav.sessions.afternoon')}</div>
+                              </div>
+                            </div>
+                            <div className={`px-5 py-2 rounded-2xl text-xs font-black uppercase tracking-widest ${rec.status === 'present' ? 'bg-green-600 text-white shadow-lg shadow-green-100' : 'bg-red-600 text-white shadow-lg shadow-red-100'}`}>
+                              {rec.status === 'present' ? t('nav.status.present') : t('nav.status.absent')}
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-20 bg-slate-50 rounded-[40px] border-4 border-dashed border-slate-200">
+                      <p className="text-slate-400 font-black italic text-xl">{t('nav.noAttendance', { month: perceivedMonth })}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+
+      {/* Hidden PDF Template for Parent Attendance Report - Positioned off-screen */}
+      {
+        result && config && (
+          <div
+            id="public-attendance-report"
+            className="bg-white p-[60px] w-[2480px]"
+            style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}
+            dir={i18n.dir()}
+            lang={i18n.language}
+          >
+            <div className="flex flex-col gap-10">
+              {/* Header Branded Section - Large & Clear */}
+              <div className={`flex ${i18n.dir() === 'rtl' ? 'flex-row' : 'flex-row-reverse'} justify-between items-center border-b-[8px] border-qabas-purple pb-10`}>
+                <div className={i18n.dir() === 'rtl' ? 'text-right' : 'text-left'}>
+                  <h1 className="text-[85px] font-black text-slate-900 leading-none">{config.schoolName}</h1>
+                  <p className="text-[45px] text-slate-600 font-bold uppercase tracking-wider">{config.schoolNameEn}</p>
+                </div>
+                {config.logoUrl && <img src={config.logoUrl} className="h-[280px] w-auto object-contain drop-shadow-xl" alt="Logo" />}
+              </div>
+
+              {/* Report Title Section - Prominent */}
+              <div className="text-center space-y-4 mt-6">
+                <h2 className="text-[80px] font-black text-qabas-purple uppercase tracking-widest font-amiri underline decoration-qabas-orange decoration-[6px] underline-offset-[15px]">
+                  {t('pdf.attendanceTitle')}
+                </h2>
+                <div className="flex items-center justify-center gap-20 mt-10 bg-slate-50 py-8 rounded-[40px] border-[2px] border-slate-200 px-20">
+                  <p className="text-[65px] font-black text-slate-900 font-amiri">{result.fullName}</p>
+                  <div className="flex items-center gap-8">
+                    <span className="text-[45px] font-bold text-slate-500 uppercase tracking-widest">{t('pdf.studentId')}:</span>
+                    <span className="text-[60px] font-black text-qabas-orange font-mono tracking-widest">{result.studentId}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Stats Summary - Large Impact Cards */}
+              <div className="grid grid-cols-2 gap-12 mt-6">
+                <div className="bg-green-50/50 p-10 rounded-[40px] border-[4px] border-green-100 flex items-center justify-between px-16 shadow-sm">
+                  <div className="text-[45px] font-bold text-green-700 uppercase tracking-widest">
+                    {t('pdf.presentDays')} {t('pdf.monthSelect')} {perceivedMonth}
+                  </div>
+                  <div className="text-[110px] font-black text-green-600 leading-none">
+                    {attendanceHistory.filter(r => r.status === 'present' && r.date.startsWith(perceivedMonth)).length}
+                  </div>
+                </div>
+                <div className="bg-red-50/50 p-10 rounded-[40px] border-[4px] border-red-100 flex items-center justify-between px-16 shadow-sm">
+                  <div className="text-[45px] font-bold text-red-700 uppercase tracking-widest">
+                    {t('pdf.absentDays')} {t('pdf.monthSelect')} {perceivedMonth}
+                  </div>
+                  <div className="text-[110px] font-black text-red-600 leading-none">
+                    {attendanceHistory.filter(r => r.status === 'absent' && r.date.startsWith(perceivedMonth)).length}
+                  </div>
+                </div>
+              </div>
+
+              {/* Attendance Table - High Scaled Density */}
+              <div className="mt-6">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="bg-slate-900">
+                      <th className={`p-6 text-center text-[45px] font-black text-white border border-slate-800 ${i18n.dir() === 'rtl' ? 'rounded-tr-[30px]' : 'rounded-tl-[30px]'}`}>
+                        {t('pdf.date')}
+                      </th>
+                      <th className="p-6 text-center text-[45px] font-black text-white border border-slate-800">
+                        {t('attendance.table.status')}
+                      </th>
+                      <th className={`p-6 text-center text-[45px] font-black text-white border border-slate-800 ${i18n.dir() === 'rtl' ? 'rounded-tl-[30px]' : 'rounded-tr-[30px]'}`}>
+                        {t('attendance.table.notes')}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {attendanceHistory
+                      .filter(r => r.date.startsWith(perceivedMonth))
+                      .sort((a, b) => b.date.localeCompare(a.date))
+                      .map((rec, idx) => (
+                        <tr key={rec.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}>
+                          <td className="p-5 border border-slate-100 font-bold font-mono text-center text-[45px] text-slate-700">{rec.date}</td>
+                          <td className="p-5 border border-slate-100 text-center font-black text-[50px]">
+                            <span className={rec.status === 'present' ? 'text-green-600' : 'text-red-600'}>
+                              {rec.status === 'present' ? t('pdf.present') : t('pdf.absent')}
+                            </span>
+                          </td>
+                          <td className={`p-5 border border-slate-100 ${i18n.dir() === 'rtl' ? 'text-right' : 'text-left'} text-[35px] text-slate-400 font-medium px-10`}>
+                            {rec.notes || t('pdf.noNotes')}
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Footer / Signature Section - Balanced */}
+              <div className="mt-12 flex justify-between items-end border-t-4 border-slate-100 pt-12 px-12 pb-10">
+                <div className="text-center space-y-4">
+                  <p className="text-[45px] font-black text-slate-800 font-amiri">{t('pdf.recordedDate')}</p>
+                  <p className="text-[40px] font-mono font-bold text-slate-500 bg-slate-50 py-4 px-12 rounded-[30px] border border-slate-200">
+                    {new Date().toLocaleDateString(i18n.language === 'ar' ? 'ar-EG' : 'en-GB')}
+                  </p>
+                </div>
+
+                <div className="relative -mb-10">
+                  {config.stampUrl && <img src={config.stampUrl} className="h-[320px] w-auto object-contain opacity-90 rotate-[-12deg] drop-shadow-2xl" alt="Stamp" />}
+                </div>
+
+                <div className="text-center space-y-4">
+                  <p className="text-[45px] font-black text-slate-800 font-amiri">{t('pdf.signature')}</p>
+                  <div className="h-[180px] flex items-end justify-center min-w-[350px]">
+                    {config.managerSignatureUrl && <img src={config.managerSignatureUrl} className="h-full object-contain" alt="Signature" />}
+                  </div>
+                  <p className="text-[40px] font-black text-slate-600 border-t-[4px] border-slate-200 pt-5 mt-4">
+                    {config.managerName || t('pdf.signature')}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+      }
+    </div >
   );
 };
 

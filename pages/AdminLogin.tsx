@@ -1,9 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { login, getConfig, recoverPassword } from '../services/api';
+import { login, getConfig, recoverPassword } from '../services/mockBackend';
 import { Loader2, Lock, Home, HelpCircle, Eye, EyeOff } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
+import i18n from '../i18n';
 
 const AdminLogin = () => {
   // Credentials state initialized to empty
@@ -13,6 +15,7 @@ const AdminLogin = () => {
   const [error, setError] = useState('');
   const [logoUrl, setLogoUrl] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -24,11 +27,16 @@ const AdminLogin = () => {
     setLoading(true);
     setError('');
 
-    const success = await login(email, password);
-    if (success) {
-      navigate('/admin/dashboard');
+    const result = await login(email, password);
+    if (result.success) {
+      localStorage.setItem('cv_user_email', email);
+      if (result.role === 'super_admin') {
+        navigate('/super');
+      } else {
+        navigate('/admin/dashboard');
+      }
     } else {
-      setError('البريد الإلكتروني أو كلمة المرور غير صحيحة');
+      setError(result.error || t('login.errors.invalid'));
       setLoading(false);
     }
   };
@@ -36,14 +44,14 @@ const AdminLogin = () => {
   const handleForgotPassword = async () => {
     const pwd = await recoverPassword();
     if (pwd) {
-      alert(`كلمة المرور الحالية هي:\n\n${pwd}\n\nيرجى حفظها.`);
+      alert(t('login.alerts.currentPass', { pass: pwd }));
     } else {
-      alert("لم يتم العثور على حساب المسؤول.");
+      alert(t('login.errors.noAccount'));
     }
   };
 
   return (
-    <div dir="rtl" className="min-h-screen bg-gradient-to-br from-[#2e1065] via-[#5b21b6] to-[#7c3aed] flex items-center justify-center p-4">
+    <div dir={i18n.dir()} className="min-h-screen bg-gradient-to-br from-[#2e1065] via-[#5b21b6] to-[#7c3aed] flex items-center justify-center p-4">
       {/* Background Decor */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
         <div className="absolute -top-[20%] -right-[10%] w-[600px] h-[600px] rounded-full bg-qabas-orange/20 blur-3xl"></div>
@@ -68,14 +76,14 @@ const AdminLogin = () => {
               <div className="w-24 h-24 bg-qabas-purple rounded-full flex items-center justify-center text-white font-bold text-2xl">QAHI</div>
             )}
           </div>
-          <h1 className="text-3xl font-black font-cairo text-qabas-purple">معهد قبس الهدى</h1>
-          <p className="text-qabas-orange mt-1 font-bold font-almarai text-sm tracking-wide">بوابة الإدارة الإلكترونية</p>
+          <h1 className="text-3xl font-black font-cairo text-qabas-purple">{t('common.instituteName')}</h1>
+          <p className="text-qabas-orange mt-1 font-bold font-almarai text-sm tracking-wide">{t('login.subtitle')}</p>
         </div>
 
         <div className="p-8 pt-0">
           <form onSubmit={handleLogin} className="space-y-6">
             <div>
-              <label className="block text-sm font-bold text-slate-700 mb-2">البريد الإلكتروني</label>
+              <label className="block text-sm font-bold text-slate-700 mb-2">{t('login.email')}</label>
               <div className="relative">
                 <input
                   type="email"
@@ -90,7 +98,7 @@ const AdminLogin = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-slate-700 mb-2">كلمة المرور</label>
+              <label className="block text-sm font-bold text-slate-700 mb-2">{t('login.password')}</label>
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
@@ -122,7 +130,7 @@ const AdminLogin = () => {
               disabled={loading}
               className="w-full bg-gradient-to-r from-qabas-purple to-[#4c1d95] hover:to-[#5b21b6] text-white font-bold py-4 rounded-xl shadow-xl shadow-purple-200 transition-all active:scale-95 flex justify-center items-center gap-2 text-lg"
             >
-              {loading ? <Loader2 className="animate-spin" /> : 'تسجيل الدخول'}
+              {loading ? <Loader2 className="animate-spin" /> : t('login.loginBtn')}
             </button>
 
             <div className="flex flex-col items-center gap-3 mt-6">
@@ -132,7 +140,7 @@ const AdminLogin = () => {
                 className="text-slate-500 hover:text-qabas-purple text-sm font-bold transition-colors flex items-center gap-1"
               >
                 <HelpCircle size={16} />
-                نسيت كلمة المرور؟ (أظهر كلمة المرور)
+                {t('login.forgotPass')}
               </button>
 
               <button
@@ -141,7 +149,7 @@ const AdminLogin = () => {
                 className="w-full bg-white border-2 border-slate-100 hover:border-qabas-orange hover:text-qabas-orange text-slate-600 font-bold py-3.5 rounded-xl transition-all flex justify-center items-center gap-2"
               >
                 <Home size={18} />
-                العودة للواجهة الرئيسية
+                {t('login.backHome')}
               </button>
             </div>
           </form>
