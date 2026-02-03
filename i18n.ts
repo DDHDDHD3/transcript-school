@@ -817,7 +817,7 @@ const resources = {
             },
             common: {
                 certificateSystem: "Nidaamka Shahaadooyinka",
-                instituteName: "Machadka Qabas Al-Huda",
+                instituteName: "Aqooni",
                 qahi: "AQD",
                 digitalCertificateSystem: "Nidaamka Shahaadada Digital-ka",
                 edit: "Wax ka beddel",
