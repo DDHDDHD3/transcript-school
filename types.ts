@@ -5,6 +5,15 @@ export interface AssessmentColumn {
   type: 'number' | 'text';
 }
 
+export interface SubjectConfig {
+  id: string;
+  nameAr: string;
+  nameEn: string;
+  nameSo: string;
+  maxMarks: number;
+  active: boolean;
+}
+
 export interface Subject {
   name: string;            // المادة
   fullMarks: number;       // الدرجة الكاملة (Total Max)
@@ -41,8 +50,17 @@ export interface CertificateConfig {
   managerSignatureUrl: string;
   themeColor: string;
   assessmentColumns?: AssessmentColumn[];
+  subjects?: SubjectConfig[];
   gradingMethod: 'sum' | 'average';
   passThreshold: number; // e.g., 50 (for 50%) or 100 (for total sum >= 100)
+
+  // New Template Features
+  templateId: string;
+  primaryColor: string;
+  secondaryColor: string;
+  accentColor: string;
+  textColor: string;
+  customStyles?: Record<string, React.CSSProperties>;
 }
 
 export interface AdminUser {

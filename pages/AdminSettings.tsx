@@ -1,9 +1,34 @@
 import React, { useState, useEffect } from 'react';
-import { getConfig, saveConfig, changeAdminPassword, getSchoolBilling, recordPayment, getUserSession } from '../services/mockBackend';
+import { getConfig, saveConfig, changeAdminPassword, getSchoolBilling, recordPayment, getUserSession, getStudents } from '../services/api';
 import { CertificateConfig } from '../types';
-import { Save, Upload, Lock, Shield, CreditCard, AlertTriangle, MessageSquare, X, CheckCircle2, Plus, Trash2 } from 'lucide-react';
+import { Save, Upload, Lock, Shield, CreditCard, AlertTriangle, MessageSquare, X, CheckCircle2, Plus, Trash2, Palette, Layout, Check, Users, BookOpen } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
+import CertificateTemplates, { TEMPLATE_DESIGNS } from '../components/CertificateTemplates';
+import { Student } from '../types';
+
+const MOCK_STUDENT: Student = {
+  id: 'mock-id',
+  studentId: 'cd-alhuda',
+  fullName: 'Yaasir Ali Ahmed',
+  academicYear: '2026',
+  classLevel: 'level3',
+  subjects: [
+    { name: 'tafsir', fullMarks: 100, studentMarks: 57, result: 'Pass', assessments: { 'Monthly Exam 1': 15, 'Midterm Exam': 15, 'Monthly Exam 2': 15, 'Final Exam': 12 } },
+    { name: 'sira', fullMarks: 100, studentMarks: 87, result: 'Pass', assessments: { 'Monthly Exam 1': 22, 'Midterm Exam': 22, 'Monthly Exam 2': 22, 'Final Exam': 21 } },
+    { name: 'hadith', fullMarks: 100, studentMarks: 64, result: 'Pass', assessments: { 'Monthly Exam 1': 18, 'Midterm Exam': 8, 'Monthly Exam 2': 29, 'Final Exam': 9 } },
+    { name: 'reading', fullMarks: 100, studentMarks: 73, result: 'Pass', assessments: { 'Monthly Exam 1': 29, 'Midterm Exam': 22, 'Monthly Exam 2': 20, 'Final Exam': 2 } },
+    { name: 'fiqh', fullMarks: 100, studentMarks: 72, result: 'Pass', assessments: { 'Monthly Exam 1': 18, 'Midterm Exam': 18, 'Monthly Exam 2': 18, 'Final Exam': 18 } },
+    { name: 'arabic', fullMarks: 100, studentMarks: 76, result: 'Pass', assessments: { 'Monthly Exam 1': 19, 'Midterm Exam': 19, 'Monthly Exam 2': 19, 'Final Exam': 19 } },
+    { name: 'adhkar', fullMarks: 100, studentMarks: 86, result: 'Pass', assessments: { 'Monthly Exam 1': 21, 'Midterm Exam': 22, 'Monthly Exam 2': 21, 'Final Exam': 22 } },
+    { name: 'math', fullMarks: 100, studentMarks: 68, result: 'Pass', assessments: { 'Monthly Exam 1': 17, 'Midterm Exam': 17, 'Monthly Exam 2': 17, 'Final Exam': 17 } },
+    { name: 'somali', fullMarks: 100, studentMarks: 65, result: 'Pass', assessments: { 'Monthly Exam 1': 16, 'Midterm Exam': 16, 'Monthly Exam 2': 16, 'Final Exam': 17 } },
+  ],
+  total: 542,
+  percentage: 60,
+  finalResult: '60% (Pass)',
+  createdAt: new Date().toISOString()
+};
 
 const AdminSettings = () => {
   const { t, i18n } = useTranslation();
@@ -21,10 +46,36 @@ const AdminSettings = () => {
   const [paymentMonths, setPaymentMonths] = useState(1);
   const [paymentLoading, setPaymentLoading] = useState(false);
 
+  // Student Data Integration State
+  const [allStudents, setAllStudents] = useState<Student[]>([]);
+  const [selectedLevel, setSelectedLevel] = useState<string>('');
+  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [studentsLoading, setStudentsLoading] = useState(false);
+
   useEffect(() => {
     getConfig().then(setConfig);
     getSchoolBilling().then(setBilling);
+    loadAllStudents();
   }, []);
+
+  const loadAllStudents = async () => {
+    setStudentsLoading(true);
+    try {
+      const data = await getStudents();
+      setAllStudents(data);
+
+      // Auto-select Yaasir Ali Ahmed if found in database
+      const yaasir = data.find(s => s.fullName.toLowerCase().includes('yaasir ali ahmed'));
+      if (yaasir) {
+        setSelectedLevel(yaasir.classLevel);
+        setSelectedStudent(yaasir);
+      }
+    } catch (e) {
+      console.error("Failed to load students for designer", e);
+    } finally {
+      setStudentsLoading(false);
+    }
+  };
 
   // Toast State
   const [toast, setToast] = useState<{ show: boolean; message: string; type: 'success' | 'error' }>({
@@ -242,6 +293,219 @@ const AdminSettings = () => {
         </div>
 
         <form onSubmit={handleSave} className="space-y-8">
+          {/* --- CERTIFICATE TEMPLATE SECTION --- */}
+          <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
+            <div className="flex items-center justify-between mb-8 pb-4 border-b border-slate-50">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-qabas-purple/10 rounded-xl flex items-center justify-center text-qabas-purple">
+                  <Palette size={24} />
+                </div>
+                <div>
+                  <h2 className="font-bold text-xl text-slate-800">{t('settings.template.title') || 'Certificate Customization'}</h2>
+                  <p className="text-sm text-slate-400 font-medium">Design and personalize your school's official documents</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-12">
+              {/* Main Preview Area */}
+              <div className="bg-slate-50 rounded-[32px] p-8 border border-slate-100">
+                <div className="mb-8 p-6 bg-white rounded-3xl border border-slate-200 shadow-sm">
+                  <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-4">
+                    <Users size={16} /> Student Data Integration
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Step 1: Select Academic Level</label>
+                      <select
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-qabas-purple/20 transition-all cursor-pointer"
+                        value={selectedLevel}
+                        onChange={(e) => {
+                          setSelectedLevel(e.target.value);
+                          setSelectedStudent(null);
+                        }}
+                      >
+                        <option value="">{t('students.searchPlaceholder') || 'Select Level'}</option>
+                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(num => (
+                          <option key={num} value={`level${num}`}>{t(`students.levels.level${num}`)}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Step 2: Select Student</label>
+                      <select
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-qabas-purple/20 transition-all cursor-pointer disabled:opacity-50"
+                        value={selectedStudent?.id || ''}
+                        disabled={!selectedLevel}
+                        onChange={(e) => {
+                          const student = allStudents.find(s => s.id === e.target.value);
+                          setSelectedStudent(student || null);
+                        }}
+                      >
+                        <option value="">Select Student</option>
+                        {allStudents
+                          .filter(s => s.classLevel === selectedLevel)
+                          .map(student => (
+                            <option key={student.id} value={student.id}>{student.fullName} ({student.studentId})</option>
+                          ))
+                        }
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                    <Layout size={16} /> Live Master Preview
+                  </h3>
+                  <div className="flex gap-2">
+                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: config.primaryColor }} />
+                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: config.secondaryColor }} />
+                  </div>
+                </div>
+
+                <div className="relative mx-auto bg-white shadow-2xl rounded-lg overflow-hidden border border-slate-200" style={{ width: '100%', maxWidth: '600px', aspectRatio: '1/1.414' }}>
+                  <div className="absolute top-0 left-0" style={{ transform: 'scale(0.2419)', transformOrigin: 'top left', width: '2480px', height: '3508px' }}>
+                    <CertificateTemplates
+                      student={selectedStudent || MOCK_STUDENT}
+                      config={config}
+                      getLevelLabel={(l) => t(`students.levels.${l}`) || l}
+                      getSubjectLabel={(s) => {
+                        // 1. Try to find in Dynamic Config by ID or Name
+                        if (config?.subjects) {
+                          const found = config.subjects.find(sub => sub.id === s || sub.nameAr === s || sub.nameEn === s);
+                          if (found) {
+                            if (i18n.language === 'ar') return found.nameAr;
+                            if (i18n.language === 'so') return found.nameSo;
+                            return found.nameEn;
+                          }
+                        }
+                        // 2. Fallback to existing translations (for Mock data 'tafsir' etc)
+                        return t(s.toLowerCase()) || s;
+                      }}
+                      useCustomColors={true}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid lg:grid-cols-3 gap-12">
+                {/* Color Customization - Circle Interface */}
+                <div className="lg:col-span-1 space-y-6">
+                  <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest block mb-4">
+                    {t('settings.template.brandPalette')}
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    {[
+                      { label: t('settings.template.primary') || 'Primary', field: 'primaryColor' as const, default: '#5b21b6' },
+                      { label: t('settings.template.secondary') || 'Secondary', field: 'secondaryColor' as const, default: '#ea580c' },
+                      { label: t('settings.template.accent') || 'Accent', field: 'accentColor' as const, default: '#d97706' },
+                      { label: t('settings.template.text') || 'Text', field: 'textColor' as const, default: '#0f172a' }
+                    ].map(color => (
+                      <div key={color.field} className="group flex flex-col items-center gap-3 p-4 rounded-3xl bg-slate-50 border border-transparent hover:border-slate-200 transition-all">
+                        <div className="relative w-16 h-16 rounded-full shadow-lg overflow-hidden border-4 border-white ring-2 ring-slate-100">
+                          <input
+                            type="color"
+                            value={config[color.field] || color.default}
+                            onChange={e => setConfig({ ...config, [color.field]: e.target.value })}
+                            className="absolute inset-0 w-[200%] h-[200%] -translate-x-1/4 -translate-y-1/4 cursor-pointer"
+                          />
+                        </div>
+                        <div className="text-center">
+                          <p className="text-[10px] font-black uppercase text-slate-400 mb-1">{color.label}</p>
+                          <input
+                            type="text"
+                            value={config[color.field] || color.default}
+                            onChange={e => setConfig({ ...config, [color.field]: e.target.value })}
+                            className="w-16 bg-transparent border-none outline-none font-mono text-[10px] uppercase text-slate-600 text-center font-bold"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Dedicated Logo Upload Space */}
+                  <div className="mt-8 p-6 bg-slate-900 rounded-[32px] text-white shadow-xl shadow-slate-200/50">
+                    <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-6 flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-qabas-purple animate-pulse" />
+                      {t('settings.template.schoolLogo')}
+                    </h3>
+                    <div className="flex items-center gap-6">
+                      <div className="w-28 h-28 bg-white/5 border-2 border-dashed border-white/20 rounded-3xl flex items-center justify-center overflow-hidden transition-all hover:border-white/40">
+                        {config.logoUrl ? (
+                          <img src={config.logoUrl} className="w-full h-full object-contain p-2" alt="L" />
+                        ) : (
+                          <Layout className="text-white/10" size={32} />
+                        )}
+                      </div>
+                      <div className="flex-1 space-y-3">
+                        <p className="text-xs text-white/50 leading-relaxed">
+                          {t('settings.template.logoDescription')}
+                        </p>
+                        <label className="inline-flex cursor-pointer bg-white text-slate-900 hover:bg-slate-50 px-5 py-2.5 rounded-2xl text-xs font-black uppercase tracking-widest transition-all active:scale-95 shadow-lg">
+                          {t('settings.media.upload') || 'Upload Logo'}
+                          <input type="file" accept="image/*" className="hidden" onChange={(e) => handleFileChange('logoUrl', e)} />
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Template Selection Grid */}
+                <div className="lg:col-span-2 space-y-6">
+                  <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest block mb-4">
+                    {t('settings.template.select') || 'Design Library'}
+                  </h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(num => (
+                      <button
+                        key={num}
+                        type="button"
+                        onClick={() => {
+                          const templateId = `template${num}` as keyof typeof TEMPLATE_DESIGNS;
+                          const design = TEMPLATE_DESIGNS[templateId];
+                          setConfig({
+                            ...config,
+                            templateId,
+                            primaryColor: design.primary,
+                            secondaryColor: design.secondary,
+                            textColor: design.text
+                          });
+                        }}
+                        className={`relative group h-[180px] overflow-hidden rounded-[24px] border-2 transition-all ${config.templateId === `template${num}` ? 'border-qabas-purple ring-4 ring-purple-50 shadow-xl' : 'border-slate-100 hover:border-slate-200 hover:shadow-lg'}`}
+                      >
+                        {/* Live Miniature Preview */}
+                        <div className="absolute inset-0 bg-white" style={{ transform: 'scale(0.0806)', transformOrigin: i18n.dir() === 'rtl' ? 'top right' : 'top left', width: '2480px', height: '3508px' }}>
+                          <CertificateTemplates
+                            student={MOCK_STUDENT}
+                            config={{ ...config, templateId: `template${num}` }}
+                            getLevelLabel={(l) => t(`students.levels.${l}`) || l}
+                            getSubjectLabel={(s) => t(s.toLowerCase()) || s}
+                            useCustomColors={false}
+                          />
+                        </div>
+
+                        <div className={`absolute inset-0 transition-opacity flex items-center justify-center ${config.templateId === `template${num}` ? 'bg-qabas-purple/10' : 'bg-black/0 group-hover:bg-black/5'}`}>
+                          {config.templateId === `template${num}` && (
+                            <div className="bg-qabas-purple text-white p-2 rounded-full shadow-2xl scale-110 animate-in zoom-in duration-200">
+                              <Check size={16} strokeWidth={4} />
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="absolute bottom-0 left-0 right-0 p-3 bg-white/90 backdrop-blur-sm border-t border-slate-50">
+                          <p className="text-[10px] font-black uppercase text-slate-600 tracking-wider">
+                            {t('settings.template.design')} {num}
+                          </p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
           {/* General Info */}
           <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
             <h2 className="font-bold text-lg text-slate-800 mb-4 pb-2 border-b border-slate-50">{t('settings.school.title')}</h2>
@@ -254,6 +518,135 @@ const AdminSettings = () => {
                 <label className="text-sm font-medium text-slate-700">{t('settings.school.nameEn')}</label>
                 <input required type="text" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-left" dir="ltr" value={config.schoolNameEn} onChange={e => setConfig({ ...config, schoolNameEn: e.target.value })} />
               </div>
+            </div>
+          </div>
+
+          {/* --- SUBJECTS MANAGEMENT SECTION --- */}
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+            <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-50">
+              <div className="flex items-center gap-2">
+                <BookOpen className="text-qabas-purple" />
+                <h2 className="font-bold text-lg text-slate-800">{t('settings.subjects.title') || 'School Subjects'}</h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  const newSubject = {
+                    id: `subj_${Date.now()}`,
+                    nameAr: 'مادة جديدة',
+                    nameEn: 'New Subject',
+                    nameSo: 'Cashar Cusub',
+                    maxMarks: 100,
+                    active: true
+                  };
+                  setConfig({ ...config, subjects: [...(config.subjects || []), newSubject] });
+                }}
+                className="text-sm bg-purple-50 text-qabas-purple hover:bg-purple-100 px-3 py-1.5 rounded-lg font-bold flex items-center gap-1 transition-colors"
+              >
+                <Plus size={16} /> {t('settings.subjects.add') || 'Add Subject'}
+              </button>
+            </div>
+
+            <p className="text-sm text-slate-500 mb-6">{t('settings.subjects.subtitle') || 'Manage the subjects taught at your school. These will appear in student forms and certificates.'}</p>
+
+            <div className="border rounded-xl overflow-hidden overflow-x-auto">
+              <table className="w-full text-right text-sm min-w-[700px]">
+                <thead className="bg-slate-50 font-bold text-slate-600">
+                  <tr>
+                    <th className="px-4 py-3 text-center w-12">#</th>
+                    <th className="px-4 py-3">{t('settings.subjects.nameAr') || 'Arabic Name'}</th>
+                    <th className="px-4 py-3">{t('settings.subjects.nameEn') || 'English Name'}</th>
+                    <th className="px-4 py-3">{t('settings.subjects.nameSo') || 'Somali Name'}</th>
+                    <th className="px-4 py-3 w-24 text-center">{t('settings.subjects.maxMarks') || 'Max'}</th>
+                    <th className="px-4 py-3 w-24 text-center">{t('settings.subjects.active') || 'Active'}</th>
+                    <th className="px-4 py-3 text-center w-20">{t('common.actions')}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {(config.subjects || []).map((subj, idx) => (
+                    <tr key={subj.id} className="hover:bg-slate-50/50">
+                      <td className="px-4 py-3 text-center font-mono text-slate-400">{idx + 1}</td>
+                      <td className="px-4 py-3">
+                        <input
+                          type="text"
+                          dir="rtl"
+                          className="w-full bg-transparent border-b border-transparent focus:border-qabas-purple outline-none py-1 font-medium text-slate-700"
+                          value={subj.nameAr}
+                          onChange={(e) => {
+                            const newSubjects = [...(config.subjects || [])];
+                            newSubjects[idx] = { ...newSubjects[idx], nameAr: e.target.value };
+                            setConfig({ ...config, subjects: newSubjects });
+                          }}
+                        />
+                      </td>
+                      <td className="px-4 py-3">
+                        <input
+                          type="text"
+                          dir="ltr"
+                          className="w-full bg-transparent border-b border-transparent focus:border-qabas-purple outline-none py-1 font-medium text-slate-700 text-left"
+                          value={subj.nameEn}
+                          onChange={(e) => {
+                            const newSubjects = [...(config.subjects || [])];
+                            newSubjects[idx] = { ...newSubjects[idx], nameEn: e.target.value };
+                            setConfig({ ...config, subjects: newSubjects });
+                          }}
+                        />
+                      </td>
+                      <td className="px-4 py-3">
+                        <input
+                          type="text"
+                          dir="ltr"
+                          className="w-full bg-transparent border-b border-transparent focus:border-qabas-purple outline-none py-1 font-medium text-slate-700 text-left"
+                          value={subj.nameSo}
+                          onChange={(e) => {
+                            const newSubjects = [...(config.subjects || [])];
+                            newSubjects[idx] = { ...newSubjects[idx], nameSo: e.target.value };
+                            setConfig({ ...config, subjects: newSubjects });
+                          }}
+                        />
+                      </td>
+                      <td className="px-4 py-3">
+                        <input
+                          type="number"
+                          className="w-full bg-transparent border-b border-transparent focus:border-qabas-purple outline-none py-1 font-mono text-center"
+                          value={subj.maxMarks}
+                          onChange={(e) => {
+                            const newSubjects = [...(config.subjects || [])];
+                            newSubjects[idx] = { ...newSubjects[idx], maxMarks: Number(e.target.value) };
+                            setConfig({ ...config, subjects: newSubjects });
+                          }}
+                        />
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newSubjects = [...(config.subjects || [])];
+                            newSubjects[idx] = { ...newSubjects[idx], active: !subj.active };
+                            setConfig({ ...config, subjects: newSubjects });
+                          }}
+                          className={`w-8 h-5 rounded-full p-1 transition-colors ${subj.active ? 'bg-green-100' : 'bg-slate-200'}`}
+                        >
+                          <div className={`w-3 h-3 rounded-full bg-white shadow-sm transition-transform ${subj.active ? 'translate-x-[2px] bg-green-500' : '-translate-x-[2px] bg-slate-400'}`} />
+                        </button>
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            // Simple delete for now
+                            const newSubjects = (config.subjects || []).filter((_, i) => i !== idx);
+                            setConfig({ ...config, subjects: newSubjects });
+                          }}
+                          className="text-red-400 hover:text-red-600 p-1 rounded-md transition-colors"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
 
@@ -288,7 +681,7 @@ const AdminSettings = () => {
                 <input
                   type="number"
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:border-qabas-orange"
-                  value={config.passThreshold || 100}
+                  value={config.passThreshold || 50}
                   onChange={e => setConfig({ ...config, passThreshold: Number(e.target.value) })}
                 />
                 <p className="text-[10px] text-slate-400">{t('settings.grading.thresholdDesc')}</p>
@@ -383,19 +776,6 @@ const AdminSettings = () => {
           <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
             <h2 className="font-bold text-lg text-slate-800 mb-4 pb-2 border-b border-slate-50">{t('settings.media.title')}</h2>
             <div className="grid md:grid-cols-3 gap-8">
-              {/* Logo Upload */}
-              <div className="space-y-3">
-                <label className="text-sm font-medium text-slate-700">{t('settings.media.logo')}</label>
-                <div className="flex flex-col items-center gap-3 border p-4 rounded-lg bg-slate-50">
-                  <div className="w-24 h-24 bg-white border border-slate-200 rounded-lg flex items-center justify-center overflow-hidden">
-                    {config.logoUrl ? <img src={config.logoUrl} className="w-full h-full object-contain" /> : <span className="text-xs text-slate-400">{t('settings.media.noImage')}</span>}
-                  </div>
-                  <label className="cursor-pointer bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2">
-                    <Upload size={16} /> {t('settings.media.upload')}
-                    <input type="file" accept="image/*" className="hidden" onChange={(e) => handleFileChange('logoUrl', e)} />
-                  </label>
-                </div>
-              </div>
 
               {/* Stamp Upload */}
               <div className="space-y-3">

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { getAnalytics, getSchoolBilling } from '../services/mockBackend';
+import { getAnalytics, getSchoolBilling } from '../services/api';
 import { Analytics, BillingDetails } from '../types';
 import { Users, GraduationCap, Activity, TrendingUp, AlertTriangle, MessageSquare, CreditCard, ArrowRight, Zap, Target } from 'lucide-react';
 import { useTranslation } from 'react-i18next';

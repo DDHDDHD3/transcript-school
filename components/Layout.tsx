@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Users, FileBadge, Settings, LogOut, LayoutDashboard, Home, Menu, X, Shield, Calendar } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { logout, getUserSession, trackActivity, getSystemSettings } from '../services/mockBackend';
+import { logout, getUserSession, trackActivity, getSystemSettings } from '../services/api';
 import LanguageSwitcher from './LanguageSwitcher';
 
 // --- LOGO COMPONENT ---

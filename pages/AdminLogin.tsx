@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { login, recoverPassword, getSystemSettings } from '../services/mockBackend';
+import { login, recoverPassword, getSystemSettings } from '../services/api';
 import { Loader2, Lock, Home, HelpCircle, Eye, EyeOff } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';

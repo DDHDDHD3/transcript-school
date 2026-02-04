@@ -34,7 +34,7 @@ import {
     getAttendanceReport,
     getMonthlyAttendance,
     getConfig
-} from '../services/mockBackend';
+} from '../services/api';
 
 const AdminAttendance = () => {
     const { t, i18n } = useTranslation();
@@ -115,7 +115,7 @@ const AdminAttendance = () => {
 
     const loadAttendance = async () => {
         setLoading(true);
-        // Note: mockBackend getAttendance needs to be updated or we handle filtering here
+        // Note: API getAttendance handles filtering by schoolId and date. Sorting is done in the component if needed.
         const data = await getAttendance(date, classFilter);
         const attendanceMap: Record<string, AttendanceRecord> = {};
         data.forEach(rec => {

@@ -8,26 +8,29 @@ declare global {
 }
 
 export const generateCertificatePDF = async (student: Student, elementId: string) => {
+  const element = document.getElementById(elementId);
+  if (!element) return;
+
   // 1. Ensure fonts are fully loaded to prevent text splitting
   await document.fonts.ready;
 
-  // 2. Wait a brief moment for any layout shifts
-  await new Promise(resolve => setTimeout(resolve, 500));
+  // 2. Wait for layout and images (especially the logo) to be fully ready
+  const images = element.querySelectorAll('img');
+  await Promise.all(Array.from(images).map(img => (img as HTMLImageElement).decode().catch(() => { })));
 
-  const element = document.getElementById(elementId);
-  if (!element) return;
+  // 3. Brief cooling period for browser layout engine
+  await new Promise(resolve => setTimeout(resolve, 1000));
 
   const { jsPDF } = window.jspdf;
   const html2canvas = window.html2canvas;
 
   try {
+    // CAPTURE PHASE: Forces a high-fidelity 300DPI snapshot
     const canvas = await html2canvas(element, {
-      scale: 2, // High quality scale
+      scale: 1, // Use explicit 1:1 scale for our fixed pixel dimensions
       useCORS: true,
       logging: false,
       backgroundColor: '#ffffff',
-
-      // CRITICAL: Dimensions match A4 300DPI exactly
       width: 2480,
       height: 3508,
       windowWidth: 2480,
@@ -36,88 +39,58 @@ export const generateCertificatePDF = async (student: Student, elementId: string
       scrollY: 0,
       allowTaint: true,
       onclone: (clonedDoc: Document) => {
-        // Get the original element's direction before cloning
         const originalDir = element.getAttribute('dir') || 'rtl';
-
-        // Reset document to neutral state for proper capture
-        clonedDoc.documentElement.style.overflow = 'hidden';
-        clonedDoc.documentElement.style.margin = '0';
-        clonedDoc.documentElement.style.padding = '0';
-        clonedDoc.body.style.margin = '0';
-        clonedDoc.body.style.padding = '0';
-        clonedDoc.body.style.overflow = 'hidden';
-        clonedDoc.body.style.width = '2480px';
-        clonedDoc.body.style.height = '3508px';
-        clonedDoc.body.style.position = 'relative';
-
-        // Locate the element in the clone
         const clonedElement = clonedDoc.getElementById(elementId);
 
         if (clonedElement) {
-          // Move it to the very top of body to avoid any parent constraints
-          clonedDoc.body.innerHTML = '';
-          clonedDoc.body.appendChild(clonedElement);
-
-          // Force styles for perfect A4 capture - KEEP ORIGINAL DIRECTION
-          clonedElement.style.position = 'absolute';
-          clonedElement.style.left = '0px';
-          clonedElement.style.top = '0px';
-          clonedElement.style.right = 'auto';
+          clonedElement.style.position = 'fixed';
+          clonedElement.style.top = '0';
+          clonedElement.style.left = '0';
           clonedElement.style.margin = '0';
           clonedElement.style.padding = '0';
-          clonedElement.style.boxSizing = 'border-box';
           clonedElement.style.transform = 'none';
           clonedElement.style.width = '2480px';
           clonedElement.style.height = '3508px';
-          clonedElement.style.maxHeight = '3508px';
-          clonedElement.style.zIndex = '9999';
           clonedElement.style.display = 'block';
           clonedElement.style.overflow = 'hidden';
-          clonedElement.style.background = '#ffffff';
-          // Preserve original direction for proper text rendering
+          clonedElement.style.zIndex = '999999';
           clonedElement.setAttribute('dir', originalDir);
-          clonedElement.style.direction = originalDir;
 
-          // --- FIX FOR DISCONNECTED ARABIC LETTERS ---
+          // --- FIX FOR DISCONNECTED ARABIC LETTERS & FONT STABILITY ---
           const allElements = clonedElement.querySelectorAll('*');
           allElements.forEach((el: any) => {
             el.style.letterSpacing = 'normal';
-
-            // Ensure correct font family for Arabic elements
+            el.style.textShadow = 'none';
+            el.style.lineHeight = '1.4';
             if (['H1', 'H2', 'P', 'SPAN', 'TD', 'TH', 'DIV'].includes(el.tagName)) {
-              const computed = window.getComputedStyle(el);
-              const fontFamily = computed.fontFamily;
-              // Only override if it's not explicitly set to one of our headers
-              if (!fontFamily.includes('Cairo') && !fontFamily.includes('Almarai') && !fontFamily.includes('Scheherazade')) {
-                el.style.fontFamily = '"Amiri", "Noto Naskh Arabic", serif';
-              }
+              el.style.fontFamily = '"Amiri", "Noto Naskh Arabic", serif';
             }
           });
+
+          void clonedElement.offsetHeight;
         }
       }
     });
 
-    const imgData = canvas.toDataURL('image/jpeg', 0.95);
+    // RENDER PHASE: Convert to high-quality image format
+    const imgData = canvas.toDataURL('image/png'); // Use PNG for better alignment/rotation compatibility
 
-    // A4 Portrait: 210mm x 297mm
+    // PDF ASSEMBLY: Strict Portrait A4
     const doc = new jsPDF({
-      orientation: 'portrait',
+      orientation: 'p', // Lock to 'Portrait'
       unit: 'mm',
       format: 'a4',
-      compress: true
+      putOnlyUsedFonts: true,
+      floatPrecision: 16 // Better precision for positioning
     });
 
     const pdfWidth = doc.internal.pageSize.getWidth();
     const pdfHeight = doc.internal.pageSize.getHeight();
 
-    doc.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+    // Fit to page perfectly
+    doc.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
 
-    // Safety check: Remove any extra pages if generated (Reverse loop is safer)
-    const totalPages = doc.internal.getNumberOfPages();
-    for (let i = totalPages; i > 1; i--) {
-      doc.deletePage(i);
-    }
-
+    // EXPORT: Save as file
     doc.save(`${student.studentId}_Certificate.pdf`);
 
   } catch (error) {

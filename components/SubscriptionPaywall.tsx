@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { CreditCard, CheckCircle2, AlertCircle, ArrowRight, ShieldCheck, Zap } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { paySchoolSubscription } from '../services/mockBackend';
+import { paySchoolSubscription } from '../services/api';
 
 interface SubscriptionPaywallProps {
     schoolId: string;

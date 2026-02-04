@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getSchoolSubscription, getUserSession, getSchoolBilling } from '../services/mockBackend';
+import { getSchoolSubscription, getUserSession, getSchoolBilling } from '../services/api';
 import { AlertCircle, CreditCard, Mail } from 'lucide-react';
 import SubscriptionPaywall from './SubscriptionPaywall';
 import { useTranslation } from 'react-i18next';

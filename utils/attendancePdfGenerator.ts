@@ -63,71 +63,70 @@ export const generateAttendancePDF = async (elementId: string, filename: string,
     const element = document.getElementById(elementId);
     if (!element) return;
 
+    // 1. Ensure fonts and images are ready
+    await document.fonts.ready;
+    const images = element.querySelectorAll('img');
+    await Promise.all(Array.from(images).map(img => (img as HTMLImageElement).decode().catch(() => { })));
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
     const { jsPDF } = window.jspdf;
     const html2canvas = window.html2canvas;
     const isRtl = lang === 'ar';
 
     try {
-        // Higher scale for crisp text on A4
         const canvas = await html2canvas(element, {
-            scale: 2.5,
+            scale: 1, // Fixed scale for predictable dimensions
             useCORS: true,
             logging: false,
             backgroundColor: '#ffffff',
+            width: 2480,
+            windowWidth: 2480,
             onclone: (clonedDoc: Document) => {
                 const clonedElement = clonedDoc.getElementById(elementId);
                 if (clonedElement) {
                     clonedElement.style.display = 'block';
+                    clonedElement.style.position = 'fixed';
+                    clonedElement.style.top = '0';
+                    clonedElement.style.left = '0';
                     clonedElement.style.width = '2480px';
+                    clonedElement.style.margin = '0';
+                    clonedElement.style.padding = '60px'; // Matching the A4 padding
                     clonedElement.style.direction = isRtl ? 'rtl' : 'ltr';
 
-                    const allElements = clonedElement.querySelectorAll('*');
-                    allElements.forEach((el: any) => {
-                        el.style.letterSpacing = 'normal';
-                        if (['H1', 'H2', 'P', 'SPAN', 'TD', 'TH', 'DIV'].includes(el.tagName)) {
-                            if (lang === 'ar') {
-                                el.style.fontFamily = '"Amiri", "Noto Naskh Arabic", serif';
-                            } else {
-                                el.style.fontFamily = '"Inter", "Roboto", sans-serif';
-                            }
-                        }
-                    });
+                    // Reset any transforms from the main view
+                    clonedElement.style.transform = 'none';
+                    clonedElement.style.zIndex = '999999';
                 }
             }
         });
 
-        const imgData = canvas.toDataURL('image/jpeg', 0.98);
+        const imgData = canvas.toDataURL('image/png');
         const doc = new jsPDF({
-            orientation: 'portrait',
+            orientation: 'p',
             unit: 'mm',
             format: 'a4',
-            compress: true
+            putOnlyUsedFonts: true
         });
 
         const pdfWidth = doc.internal.pageSize.getWidth();
         const pdfHeight = doc.internal.pageSize.getHeight();
 
-        const totalHeightInMm = (canvas.height * pdfWidth) / canvas.width;
+        // Calculate proportional height
+        const imgHeightInMm = (canvas.height * pdfWidth) / canvas.width;
 
-        // --- SMART FIT LOGIC ---
-        if (totalHeightInMm > pdfHeight && totalHeightInMm < pdfHeight * 1.1) {
-            doc.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
-        } else if (totalHeightInMm <= pdfHeight) {
-            doc.addImage(imgData, 'JPEG', 0, 0, pdfWidth, totalHeightInMm);
+        // Add to PDF
+        // If it fits on one page
+        if (imgHeightInMm <= pdfHeight) {
+            doc.addImage(imgData, 'PNG', 0, 0, pdfWidth, imgHeightInMm);
         } else {
-            // Multi-page logic for very long reports
-            let heightLeft = totalHeightInMm;
+            // Simple multi-page for longer attendance reports
+            let heightLeft = imgHeightInMm;
             let position = 0;
-            let pageCount = 0;
-
             while (heightLeft > 0) {
-                if (pageCount > 0) {
-                    doc.addPage();
-                }
-                doc.addImage(imgData, 'JPEG', 0, position, pdfWidth, totalHeightInMm);
+                doc.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeightInMm);
                 heightLeft -= pdfHeight;
                 position -= pdfHeight;
-                pageCount++;
+                if (heightLeft > 0) doc.addPage();
             }
         }
 

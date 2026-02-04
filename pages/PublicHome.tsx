@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2, Download, Search, XCircle } from 'lucide-react';
-import { getStudentByRegId, getConfig, getStudentAttendanceHistory } from '../services/mockBackend';
+import { getStudentByRegId, getConfig, getStudentAttendanceHistory } from '../services/api';
 import { Student, CertificateConfig, AttendanceRecord } from '../types';
 import { generateCertificatePDF } from '../utils/pdfGenerator';
 import { generateAttendancePDF } from '../utils/attendancePdfGenerator';
 import { useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import CertificateTemplates from '../components/CertificateTemplates';
 
 const PublicHome = () => {
   const { t, i18n } = useTranslation();
@@ -86,16 +87,34 @@ const PublicHome = () => {
   };
 
   const getSubjectLabel = (name: string) => {
+    // 1. Try to find in Dynamic Config by ID first (e.g. 'tafsir')
+    if (config?.subjects) {
+      const foundById = config.subjects.find(s => s.id === name);
+      if (foundById) {
+        if (i18n.language === 'ar') return foundById.nameAr;
+        if (i18n.language === 'so') return foundById.nameSo;
+        return foundById.nameEn;
+      }
+
+      // 2. Try to find by Arabic Name (legacy data might have "التفسير")
+      const foundByNameAr = config.subjects.find(s => s.nameAr === name);
+      if (foundByNameAr) {
+        if (i18n.language === 'ar') return foundByNameAr.nameAr;
+        if (i18n.language === 'so') return foundByNameAr.nameSo;
+        return foundByNameAr.nameEn;
+      }
+    }
+
     const mapping: Record<string, string> = {
-      'التفسير': 'common.subjects.tafsir',
-      'السيرة': 'common.subjects.sira',
-      'الحديث': 'common.subjects.hadith',
-      'القراءة والكتابة': 'common.subjects.reading',
-      'الفقه': 'common.subjects.fiqh',
-      'اللغة العربية': 'common.subjects.arabic',
-      'الأذكار': 'common.subjects.adhkar',
-      'الرياضيات': 'common.subjects.math',
-      'اللغة الصومالية': 'common.subjects.somali'
+      'التفسير': 'tafsir',
+      'السيرة': 'sira',
+      'الحديث': 'hadith',
+      'القراءة والكتابة': 'reading',
+      'الفقه': 'fiqh',
+      'اللغة العربية': 'arabic',
+      'الأذكار': 'adhkar',
+      'الرياضيات': 'math',
+      'اللغة الصومالية': 'somali'
     };
     const key = mapping[name] || mapping[name.trim()];
     return key ? t(key) : name;
@@ -216,6 +235,7 @@ const PublicHome = () => {
                   height: `${3508 * previewScale}px`,
                 }}
               >
+
                 <div
                   id="certificate-view"
                   ref={certificateRef}
@@ -231,114 +251,12 @@ const PublicHome = () => {
                     letterSpacing: 'normal'
                   }}
                 >
-                  <div className="absolute top-0 left-0 w-full h-[30px] bg-gradient-to-r from-qabas-orange via-qabas-purple to-qabas-orange" />
-                  <div className="absolute bottom-0 left-0 w-full h-[30px] bg-gradient-to-r from-qabas-orange via-qabas-purple to-qabas-orange" />
-                  <div className="absolute inset-[40px] border-[10px] border-qabas-purple/10 pointer-events-none rounded-[60px]" />
-                  <div className="absolute inset-[60px] border-[4px] border-qabas-orange/20 pointer-events-none rounded-[40px]" />
-
-                  <div className="w-full h-full p-[80px] pt-[60px] relative z-10 flex flex-col">
-                    <header className="flex flex-col items-center text-center mb-[50px]">
-                      <div className="mb-[30px]">
-                        {config.logoUrl && <img src={config.logoUrl} className="h-[320px] w-auto object-contain drop-shadow-xl" alt="Logo" />}
-                      </div>
-                      <div className="space-y-12 relative">
-                        <h1 className="text-[110px] text-qabas-purple leading-none tracking-normal drop-shadow-sm font-bold font-amiri pb-4">
-                          {config.schoolName}
-                        </h1>
-                        <h2 className="text-[45px] font-bold text-qabas-orange tracking-[0.2em] uppercase font-cairo">
-                          {config.schoolNameEn}
-                        </h2>
-                        <div className="flex items-center justify-center gap-4 mt-6 opacity-60">
-                          <div className="w-[300px] h-[4px] bg-qabas-purple rounded-full" />
-                          <div className="w-[20px] h-[20px] bg-qabas-orange rotate-45" />
-                          <div className="w-[300px] h-[4px] bg-qabas-purple rounded-full" />
-                        </div>
-                      </div>
-                    </header>
-
-                    <div className="bg-gradient-to-br from-purple-50 to-orange-50/30 border-[4px] border-qabas-purple/10 rounded-[50px] p-[50px] mb-[60px] shadow-sm relative overflow-hidden">
-                      <div className="absolute top-0 right-0 w-[200px] h-[200px] bg-qabas-purple/5 rounded-bl-full" />
-                      <div className="grid grid-cols-2 gap-x-[80px] gap-y-[50px] relative z-10">
-                        <div className="flex flex-col gap-2">
-                          <span className="text-[45px] font-bold text-qabas-purple font-amiri opacity-80">{t('pdf.studentName')} :</span>
-                          <span className="text-[55px] text-slate-900 font-bold border-b-[3px] border-slate-300/50 pb-2">{result.fullName}</span>
-                        </div>
-                        <div className="flex flex-col gap-2">
-                          <span className="text-[45px] font-bold text-qabas-purple font-amiri opacity-80">{t('pdf.studentId')} :</span>
-                          <span className="text-[55px] text-qabas-orange font-bold font-cairo tracking-wider border-b-[3px] border-slate-300/50 pb-2" dir="ltr">{result.studentId}</span>
-                        </div>
-                        <div className="flex flex-col gap-2">
-                          <span className="text-[45px] font-bold text-qabas-purple font-amiri opacity-80">{t('pdf.level')} :</span>
-                          <span className="text-[55px] text-slate-900 font-bold border-b-[3px] border-slate-300/50 pb-2">{getLevelLabel(result.classLevel)}</span>
-                        </div>
-                        <div className="flex flex-col gap-2">
-                          <span className="text-[45px] font-bold text-qabas-purple font-amiri opacity-80">{t('pdf.academicYear')} :</span>
-                          <span className="text-[55px] text-slate-900 font-bold font-cairo border-b-[3px] border-slate-300/50 pb-2" dir="ltr">{result.academicYear}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex-1 mb-[40px]">
-                      <table className="w-full border-collapse">
-                        <thead>
-                          <tr className="font-almarai">
-                            <th className={`bg-qabas-purple text-white py-[30px] text-[50px] font-bold border-b-[8px] border-qabas-orange w-[35%] ${i18n.dir() === 'rtl' ? 'rounded-tr-3xl' : 'rounded-tl-3xl'}`}>{t('pdf.subject')}</th>
-                            <th className="bg-qabas-purple/90 text-white py-[30px] text-[50px] font-bold border-b-[8px] border-qabas-orange w-[20%]">{t('pdf.fullMarks')}</th>
-                            <th className="bg-qabas-purple/90 text-white py-[30px] text-[50px] font-bold border-b-[8px] border-qabas-orange w-[20%]">{t('pdf.studentMarks')}</th>
-                            <th className={`bg-qabas-purple text-white py-[30px] text-[50px] font-bold border-b-[8px] border-qabas-orange w-[25%] ${i18n.dir() === 'rtl' ? 'rounded-tl-3xl' : 'rounded-tr-3xl'}`}>{t('pdf.result')}</th>
-                          </tr>
-                        </thead>
-                        <tbody className="font-naskh">
-                          {result.subjects.map((sub, idx) => (
-                            <tr key={idx} className="even:bg-purple-50/50">
-                              <td className={`border-b-[3px] border-slate-200 py-[22px] px-8 text-[50px] font-bold text-slate-800 ${i18n.dir() === 'rtl' ? 'text-right' : 'text-left'}`}>{getSubjectLabel(sub.name)}</td>
-                              <td className="border-b-[3px] border-slate-200 py-[22px] text-[45px] font-bold text-center text-slate-500 font-cairo">100</td>
-                              <td className="border-b-[3px] border-slate-200 py-[22px] text-[45px] font-bold text-center text-slate-900 font-cairo">{sub.studentMarks}</td>
-                              <td className={`border-b-[3px] border-slate-200 py-[22px] text-[45px] font-bold text-center ${sub.studentMarks < 50 ? 'text-red-600' : 'text-green-700'}`}>
-                                {sub.studentMarks < 50 ? t('students.status.fail') : t('students.status.pass')}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-
-                    <div className="flex justify-between items-start mb-[60px] px-[20px] font-cairo">
-                      <div className="w-[1100px] border-[4px] border-qabas-purple rounded-[40px] overflow-hidden flex shadow-lg">
-                        <div className={`flex-1 flex flex-col items-center justify-center bg-white py-6 ${i18n.dir() === 'rtl' ? 'border-l-[4px]' : 'border-r-[4px]'} border-qabas-purple`}>
-                          <div className="text-[45px] text-qabas-purple font-bold mb-2">{t('pdf.total')}</div>
-                          <div className="text-[55px] font-black text-slate-900">{result.total}</div>
-                        </div>
-                        <div className={`flex-1 flex flex-col items-center justify-center bg-white py-6 ${i18n.dir() === 'rtl' ? 'border-l-[4px]' : 'border-r-[4px]'} border-qabas-purple`}>
-                          <div className="text-[45px] text-qabas-purple font-bold mb-2">{t('pdf.percentage')}</div>
-                          <div className="text-[55px] font-black text-slate-900" dir="ltr">{result.percentage}%</div>
-                        </div>
-                        <div className="flex-1 flex flex-col items-center justify-center bg-qabas-purple text-white py-6">
-                          <div className="text-[45px] font-bold mb-2 opacity-90">{t('pdf.finalResult')}</div>
-                          <div className="text-[60px] font-black">
-                            {result.percentage}% ({result.finalResult === 'ناجح' || result.finalResult === 'pass' ? t('students.status.pass') : t('students.status.fail')})
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex justify-between items-end px-10">
-                      <div className="text-center">
-                        <div className="h-[200px] flex items-end justify-center mb-[20px]">
-                          {config.managerSignatureUrl && <img src={config.managerSignatureUrl} className="h-full object-contain" alt="Signature" />}
-                        </div>
-                        <p className="text-[50px] font-bold text-qabas-purple">{t('pdf.signature')}</p>
-                      </div>
-                      <div className="relative bottom-8">
-                        {config.stampUrl && <img src={config.stampUrl} className="w-[350px] h-[350px] object-contain opacity-90 drop-shadow-xl rotate-[-15deg]" alt="Stamp" />}
-                      </div>
-                      <div className="text-center">
-                        <div className="h-[200px] flex items-end justify-center mb-[20px]">
-                          <span className="text-[50px] font-bold text-slate-800 font-cairo">{new Date().toLocaleDateString(i18n.language === 'ar' ? 'ar-EG' : 'en-GB')}</span>
-                        </div>
-                        <p className="text-[50px] font-bold text-qabas-purple">{t('pdf.recordedDate')}</p>
-                      </div>
-                    </div>
-                  </div>
+                  <CertificateTemplates
+                    student={result}
+                    config={config}
+                    getLevelLabel={getLevelLabel}
+                    getSubjectLabel={getSubjectLabel}
+                  />
                 </div>
               </div>
             </div>

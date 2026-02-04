@@ -38,19 +38,19 @@ const resources = {
                 digitalCertificateSystem: "Aqooni Digital Management System",
                 edit: "Edit",
                 save: "Save",
-                cancel: "Cancel",
-                subjects: {
-                    tafsir: "Tafsir",
-                    sira: "Sira",
-                    hadith: "Hadith",
-                    reading: "Reading & Writing",
-                    fiqh: "Fiqh",
-                    arabic: "Arabic Language",
-                    adhkar: "Adhkar",
-                    math: "Mathematics",
-                    somali: "Somali Language"
-                }
+                cancel: "Cancel"
             },
+            tafsir: "Tafsir",
+            sira: "Sira",
+            hadith: "Hadith",
+            reading: "Reading & Writing",
+            fiqh: "Fiqh",
+            arabic: "Arabic Language",
+            adhkar: "Adhkar",
+            math: "Mathematics",
+            somali: "Somali Language",
+            subject: "Subject",
+            result: "Result",
             home: {
                 publicPortal: "Public Verification Portal",
                 title: "Certificate Authenticity Verification",
@@ -290,6 +290,19 @@ const resources = {
                     number: "Number",
                     text: "Text",
                     confirmDelete: "Are you sure you want to delete this column? Subject data for this column may be lost."
+                },
+                template: {
+                    title: "Certificate Customization",
+                    livePreview: "Live Master Preview",
+                    select: "Select Template Design",
+                    brandPalette: "Brand Palette",
+                    schoolLogo: "School Official Logo",
+                    logoDescription: "Reserved high-fidelity space is allocated for your logo in the document header.",
+                    design: "Design",
+                    primary: "Primary Color",
+                    secondary: "Secondary Color",
+                    accent: "Accent Color",
+                    text: "Text Color"
                 }
             },
             attendance: {
@@ -430,19 +443,19 @@ const resources = {
                 digitalCertificateSystem: "نظام إدارة أقوني ديجيتال",
                 edit: "تعديل",
                 save: "حفظ",
-                cancel: "إلغاء",
-                subjects: {
-                    tafsir: "التفسير",
-                    sira: "السيرة",
-                    hadith: "الحديث",
-                    reading: "القراءة والكتابة",
-                    fiqh: "الفقه",
-                    arabic: "الغة العربية",
-                    adhkar: "الأذكار",
-                    math: "الرياضيات",
-                    somali: "اللغة الصومالية"
-                }
+                cancel: "إلغاء"
             },
+            tafsir: "التفسير",
+            sira: "السيرة",
+            hadith: "الحديث",
+            reading: "القراءة والكتابة",
+            fiqh: "الفقه",
+            arabic: "الغة العربية",
+            adhkar: "الأذكار",
+            math: "الرياضيات",
+            somali: "اللغة الصومالية",
+            subject: "المادة",
+            result: "النتيجة",
             home: {
                 publicPortal: "بوابة التحقق العام",
                 title: "التحقق من صحة الشهادات",
@@ -682,6 +695,19 @@ const resources = {
                     number: "رقم",
                     text: "نص",
                     confirmDelete: "هل أنت متأكد من حذف هذا العمود؟ قد يتم فقدان بيانات المواد المرتبطة بهذا العمود."
+                },
+                template: {
+                    title: "تخصيص الشهادة",
+                    livePreview: "Live Master Preview",
+                    select: "اختر تصميم الشهادة",
+                    brandPalette: "لوحة الألوان",
+                    schoolLogo: "شعار المدرسة الرسمي",
+                    logoDescription: "يتم تخصيص مساحة عالية الدقة لشعارك في ترويسة المستند.",
+                    design: "تصميم",
+                    primary: "اللون الأساسي",
+                    secondary: "اللون الثانوي",
+                    accent: "لون التأكيد",
+                    text: "لون النص"
                 }
             },
             attendance: {
@@ -822,19 +848,19 @@ const resources = {
                 digitalCertificateSystem: "Nidaamka Shahaadada Digital-ka",
                 edit: "Wax ka beddel",
                 save: "Keydi",
-                cancel: "Ka noqo",
-                subjects: {
-                    tafsir: "Tafsiir",
-                    sira: "Siirada",
-                    hadith: "Xadiis",
-                    reading: "Akhris & Qoris",
-                    fiqh: "Fiqi",
-                    arabic: "Luuqadda Carabiga",
-                    adhkar: "Adkaar",
-                    math: "Xisaab",
-                    somali: "Luuqadda Soomaaliga"
-                }
+                cancel: "Ka noqo"
             },
+            tafsir: "Tafsiir",
+            sira: "Siirada",
+            hadith: "Xadiis",
+            reading: "Akhris & Qoris",
+            fiqh: "Fiqi",
+            arabic: "Luuqadda Carabiga",
+            adhkar: "Adkaar",
+            math: "Xisaab",
+            somali: "Luuqadda Soomaaliga",
+            subject: "Maaddada",
+            result: "Natiijada",
             home: {
                 publicPortal: "Albaabka Hubinta Shahaadada",
                 title: "Xaqiijinta Sugnaanta Shahaadada",
@@ -1078,6 +1104,19 @@ const resources = {
                     methodAvgDesc: "Natiijada waxaa lagu xisaabinayaa celceliska (boqolkiiba).",
                     thresholdTitle: "Heerka Gudbitaanka",
                     thresholdDesc: "Dhibcaha ugu yar ee lagu gudbi karo."
+                },
+                template: {
+                    title: "Habaynta Shahaadada",
+                    livePreview: "Live Master Preview",
+                    select: "Dooro Naqshada Shahaadada",
+                    brandPalette: "Midabada Astaanta",
+                    schoolLogo: "Sumadda Dugsiga ee Rasmiga ah",
+                    logoDescription: "Boos tayo sare leh ayaa loo qoondeeyay sumaddaada qaybta sare ee dukumeentiga.",
+                    design: "Naqshad",
+                    primary: "Midabka Koowaad",
+                    secondary: "Midabka Labaad",
+                    accent: "Midabka Saddexaad",
+                    text: "Midabka Qoraalka"
                 }
             },
             attendance: {

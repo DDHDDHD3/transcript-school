@@ -10,7 +10,7 @@ import SuperDashboard from './pages/SuperDashboard';
 import AdminAttendance from './pages/AdminAttendance';
 import SubscriptionGuard from './components/SubscriptionGuard';
 import PWAInstallPrompt from './components/PWAInstallPrompt';
-import { seedDatabase, isAuthenticated, getUserSession } from './services/mockBackend';
+import { seedDatabase, isAuthenticated, getUserSession } from './services/api';
 
 // Auth Guard
 const AdminGuard: React.FC<{ children: React.ReactNode, requireSuper?: boolean }> = ({ children, requireSuper }) => {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, Plus, Filter, Download, Edit2, Trash2, X, ChevronLeft, ChevronRight, CheckCircle2, AlertCircle, AlertTriangle, RefreshCw, Upload, PlusCircle, Save } from 'lucide-react';
-import { getStudents, saveStudent, deleteStudent, SUBJECT_LIST, generateUUID, getConfig, saveConfig } from '../services/mockBackend';
+import { getStudents, saveStudent, deleteStudent, SUBJECT_LIST, generateUUID, getConfig, saveConfig } from '../services/api';
 import { Student, Subject, CertificateConfig } from '../types';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -67,8 +67,9 @@ const AdminStudents = () => {
       // Assuming each subject is out of 100
       const subFinalScore = subObtained;
 
-      // Pass if subject score >= 50 (Consistent with simplified rule)
-      const isPass = subFinalScore >= 50;
+      // Pass if subject score >= passThreshold
+      const passThreshold = Number(config?.passThreshold) || 50;
+      const isPass = subFinalScore >= passThreshold;
 
       totalMarks += subFinalScore;
 
@@ -120,9 +121,10 @@ const AdminStudents = () => {
     finalPercentage = Math.floor((totalMarks / totalPossible) * 100);
 
     // Step 4: Rule
-    // 50 -> Pass
+    // 50 -> Pass (or custom threshold)
     // 49 -> Fail
-    const finalResult = finalPercentage >= 50 ? 'ناجح' : 'راسب';
+    const finalPassThreshold = Number(config?.passThreshold) || 50;
+    const finalResult = finalPercentage >= finalPassThreshold ? 'ناجح' : 'راسب';
 
     return {
       ...currentData,
@@ -140,15 +142,29 @@ const AdminStudents = () => {
       setFormData(JSON.parse(JSON.stringify(recalculated)));
     } else {
       setEditingStudent(null);
-      // Init subjects with default IDs and 0 scores
-      const initialSubjects: Subject[] = (SUBJECT_LIST || []).map(name => {
+      // Init subjects from Dynamic Config or Fallback
+      const subjectsSource = (config?.subjects && config.subjects.length > 0)
+        ? config.subjects.filter(s => s.active)
+        : (SUBJECT_LIST || []).map(name => ({ id: name, nameAr: name, maxMarks: 100 }));
+
+      const initialSubjects: Subject[] = subjectsSource.map(sub => {
         const assessments: Record<string, any> = {};
         config?.assessmentColumns?.forEach(col => {
           assessments[col.id] = col.type === 'number' ? 0 : '';
         });
+
+        // Use ID if available (new system), else use Name (legacy fallback)
+        // ideally we store the ID 'tafsir' in name field for reference? 
+        // Or store the display name?
+        // To allow translation we should store the ID if possible, but existing code expects name.
+        // Let's store the ID if it's a config subject, else the raw string.
+        // ACTUALLY: For backward compat, if we change 'name' to 'id', we might break things if specific logic relies on Arabic text.
+        // But getSubjectLabel will handle the display.
+        const subjectName = (sub as any).id || (sub as any).nameAr || sub;
+
         return {
-          name,
-          fullMarks: 100,
+          name: subjectName,
+          fullMarks: (sub as any).maxMarks || 100,
           studentMarks: 0,
           result: 'راسب',
           assessments
@@ -172,16 +188,35 @@ const AdminStudents = () => {
   };
 
   const getSubjectLabel = (name: string) => {
+    // 1. Try to find in Dynamic Config by ID first (e.g. 'tafsir')
+    if (config?.subjects) {
+      const foundById = config.subjects.find(s => s.id === name);
+      if (foundById) {
+        if (i18n.language === 'ar') return foundById.nameAr;
+        if (i18n.language === 'so') return foundById.nameSo;
+        return foundById.nameEn;
+      }
+
+      // 2. Try to find by Arabic Name (legacy data might have "التفسير")
+      const foundByNameAr = config.subjects.find(s => s.nameAr === name);
+      if (foundByNameAr) {
+        if (i18n.language === 'ar') return foundByNameAr.nameAr;
+        if (i18n.language === 'so') return foundByNameAr.nameSo;
+        return foundByNameAr.nameEn;
+      }
+    }
+
+    // 3. Fallback to hardcoded translations for older data not in config
     const translations: Record<string, string> = {
-      'التفسير': t('subjects.tafsir'),
-      'السيرة': t('subjects.seerah'),
-      'الحديث': t('subjects.hadith'),
-      'القراءة والكتابة': t('subjects.reading'),
-      'الفقه': t('subjects.fiqh'),
-      'اللغة العربية': t('subjects.arabic'),
-      'الأذكار': t('subjects.adhkar'),
-      'الرياضيات': t('subjects.math'),
-      'اللغة الصومالية': t('subjects.somali'),
+      'التفسير': t('tafsir'),
+      'السيرة': t('sira'),
+      'الحديث': t('hadith'),
+      'القراءة والكتابة': t('reading'),
+      'الفقه': t('fiqh'),
+      'اللغة العربية': t('arabic'),
+      'الأذكار': t('adhkar'),
+      'الرياضيات': t('math'),
+      'اللغة الصومالية': t('somali'),
     };
     return translations[name] || name;
   };
@@ -645,7 +680,7 @@ const AdminStudents = () => {
                             className={`w-full px-3 py-1.5 border border-transparent group-hover:border-slate-200 rounded ${i18n.dir() === 'rtl' ? 'text-right' : 'text-left'} focus:border-royal-400 focus:bg-white outline-none font-medium transition-all`}
                             value={getSubjectLabel(subject.name)}
                             onChange={(e) => handleSubjectNameChange(index, e.target.value)}
-                            readOnly={!!getSubjectLabel(subject.name) && subject.name !== getSubjectLabel(subject.name)}
+                            readOnly={false}
                           />
                         </td>
                         {config?.assessmentColumns?.map(col => (
