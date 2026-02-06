@@ -32,17 +32,23 @@ const StandardTableTemplate: React.FC<TemplateProps & { theme: any, variant?: 'd
 
     const getStatusColor = (resultStr: string, marks: number | string) => {
         // 1. TRUST THE RECORD (Respect Translation Color)
+        // Support all three languages: English, Arabic, Somali
         const lower = resultStr?.toLowerCase()?.trim() || '';
-        if (['pass', 'ناجح', 'gudbay', 'passed', 'gudbey'].includes(lower)) return 'text-emerald-600';
-        if (['fail', 'راسب', 'dhacay', 'failed'].includes(lower)) return 'text-red-500';
 
-        // 2. Fallback to Marks Calculation
+        // Pass keywords: English (pass/passed), Arabic (ناجح), Somali (gudbay/gudbey)
+        if (['pass', 'ناجح', 'gudbay', 'passed', 'gudbey'].includes(lower)) return 'text-emerald-600';
+
+        // Fail keywords: English (fail/failed), Arabic (راسب), Somali (dhacay/dhacday)
+        if (['fail', 'راسب', 'dhacay', 'failed', 'dhacday'].includes(lower)) return 'text-red-500';
+
+        // 2. Fallback to Marks Calculation if no recognized keyword
         const m = Number(marks);
         if (isNaN(m)) return 'text-slate-900'; // Neutral if unknown
 
         let passThreshold = Number(config.passThreshold);
         if (isNaN(passThreshold)) passThreshold = 50;
 
+        // Return green for pass (>= threshold), red for fail (< threshold)
         return m < passThreshold ? 'text-red-500' : 'text-emerald-600';
     };
 
@@ -57,9 +63,14 @@ const StandardTableTemplate: React.FC<TemplateProps & { theme: any, variant?: 'd
     const getTranslatedResult = (resultStr: string, marks: number | string) => {
         // 1. TRUST THE RECORD (Follow Student Grades)
         // Check if there is an explicit result string first
+        // Support all three languages: English, Arabic, Somali
         const lower = resultStr?.toLowerCase()?.trim() || '';
+
+        // Pass keywords: English (pass/passed), Arabic (ناجح), Somali (gudbay/gudbey)
         if (['pass', 'ناجح', 'gudbay', 'passed', 'gudbey'].includes(lower)) return t('students.status.pass');
-        if (['fail', 'راسب', 'dhacay', 'failed'].includes(lower)) return t('students.status.fail');
+
+        // Fail keywords: English (fail/failed), Arabic (راسب), Somali (dhacay/dhacday)
+        if (['fail', 'راسب', 'dhacay', 'failed', 'dhacday'].includes(lower)) return t('students.status.fail');
 
         // 2. Fallback: Calculate dynamically if no valid string found
         const m = Number(marks);

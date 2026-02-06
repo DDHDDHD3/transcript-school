@@ -34,10 +34,13 @@ const PublicHome = () => {
 
     const handleResize = () => {
       const width = window.innerWidth;
-      const availableWidth = width - 40;
+      // Adjust padding based on screen size for better mobile support
+      const padding = width < 768 ? 16 : 40;
+      const availableWidth = width - padding;
       let scale = availableWidth / 2480;
+      // Allow smaller scaling on mobile devices to ensure full visibility
       if (scale > 0.45) scale = 0.45;
-      if (scale < 0.13) scale = 0.13;
+      if (scale < 0.08) scale = 0.08;
       setPreviewScale(scale);
     };
 
@@ -114,7 +117,17 @@ const PublicHome = () => {
       'اللغة العربية': 'arabic',
       'الأذكار': 'adhkar',
       'الرياضيات': 'math',
-      'اللغة الصومالية': 'somali'
+      'اللغة الصومالية': 'somali',
+      // Somali mappings
+      'Tafsiir': 'tafsir',
+      'Siirada': 'sira',
+      'Xadiis': 'hadith',
+      'Akhris & Qoris': 'reading',
+      'Fiqi': 'fiqh',
+      'Luuqadda Carabiga': 'arabic',
+      'Adkaar': 'adhkar',
+      'Xisaab': 'math',
+      'Luuqadda Soomaaliga': 'somali'
     };
     const key = mapping[name] || mapping[name.trim()];
     return key ? t(key) : name;
@@ -164,7 +177,7 @@ const PublicHome = () => {
             <input
               type="text"
               placeholder={t('home.placeholder')}
-              className={`flex-1 px-4 md:px-6 py-3 md:py-4 outline-none text-slate-800 placeholder:text-slate-300 font-bold text-lg md:text-xl text-center ${i18n.dir() === 'rtl' ? 'md:text-right' : 'md:text-left'} font-cairo tracking-wide rounded-xl md:rounded-none`}
+              className={`flex-1 px-3 md:px-6 py-3 md:py-4 outline-none text-slate-800 placeholder:text-slate-300 font-bold text-base md:text-xl text-center ${i18n.dir() === 'rtl' ? 'md:text-right' : 'md:text-left'} font-cairo tracking-wide rounded-xl md:rounded-none`}
               value={searchId}
               onChange={(e) => setSearchId(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleVerify()}
@@ -172,9 +185,9 @@ const PublicHome = () => {
             <button
               onClick={() => handleVerify()}
               disabled={loading}
-              className="bg-gradient-to-r from-qabas-purple to-purple-800 text-white px-8 py-3 rounded-xl font-bold hover:shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-70 font-cairo w-full md:w-auto"
+              className="bg-gradient-to-r from-qabas-purple to-purple-800 text-white px-6 md:px-8 py-3 rounded-xl font-bold hover:shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-70 font-cairo w-full md:w-auto text-sm md:text-base"
             >
-              {loading ? <Loader2 className="animate-spin" /> : t('home.verifyBtn')}
+              {loading ? <Loader2 className="animate-spin" size={18} /> : t('home.verifyBtn')}
             </button>
           </div>
 
@@ -199,35 +212,35 @@ const PublicHome = () => {
             className="w-full flex flex-col items-center"
           >
             {/* Action Bar */}
-            <div className="sticky top-0 md:top-20 z-40 bg-white/95 backdrop-blur-md w-full border-b border-purple-100 p-4 shadow-sm flex flex-col md:flex-row justify-between items-center gap-4 px-4 md:px-12 rounded-b-2xl">
+            <div className="sticky top-0 md:top-20 z-40 bg-white/95 backdrop-blur-md w-full border-b border-purple-100 p-3 md:p-4 shadow-sm flex flex-col md:flex-row justify-between items-center gap-3 md:gap-4 px-3 md:px-12 rounded-b-2xl">
               <button
                 onClick={() => { setResult(null); setSearchId(''); }}
-                className="text-slate-500 hover:text-qabas-orange font-bold text-sm font-cairo transition-colors order-2 md:order-1"
+                className="text-slate-500 hover:text-qabas-orange font-bold text-xs md:text-sm font-cairo transition-colors order-2 md:order-1"
               >
                 {t('home.newSearch')}
               </button>
-              <div className="flex gap-2 order-1 md:order-2 w-full md:w-auto">
+              <div className="flex flex-col sm:flex-row gap-2 order-1 md:order-2 w-full md:w-auto">
                 <button
                   onClick={downloadPDF}
                   disabled={loading}
-                  className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-gradient-to-r from-qabas-orange to-orange-600 hover:to-orange-700 text-white px-8 py-3 rounded-full font-bold shadow-lg shadow-orange-200 transition-transform hover:scale-105 active:scale-[0.98] font-cairo"
+                  className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-gradient-to-r from-qabas-orange to-orange-600 hover:to-orange-700 text-white px-4 md:px-8 py-2.5 md:py-3 rounded-full font-bold shadow-lg shadow-orange-200 transition-transform hover:scale-105 active:scale-[0.98] font-cairo text-xs md:text-sm"
                 >
-                  {loading ? <Loader2 className="animate-spin" size={20} /> : <Download size={20} />}
-                  {t('home.downloadPDF')}
+                  {loading ? <Loader2 className="animate-spin" size={16} /> : <Download size={16} />}
+                  <span className="truncate">{t('home.downloadPDF')}</span>
                 </button>
                 <button
                   onClick={downloadAttendancePDF}
                   disabled={loading}
-                  className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-white text-qabas-purple border-2 border-qabas-purple px-8 py-3 rounded-full font-bold transition-transform hover:scale-105 active:scale-[0.98] font-cairo"
+                  className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-white text-qabas-purple border-2 border-qabas-purple px-4 md:px-8 py-2.5 md:py-3 rounded-full font-bold transition-transform hover:scale-105 active:scale-[0.98] font-cairo text-xs md:text-sm"
                 >
-                  {loading ? <Loader2 className="animate-spin" size={20} /> : <Download size={20} />}
-                  {t('nav.attendance')}
+                  {loading ? <Loader2 className="animate-spin" size={16} /> : <Download size={16} />}
+                  <span className="truncate">{t('nav.attendance')}</span>
                 </button>
               </div>
             </div>
 
             {/* Scrollable Preview Container */}
-            <div className="w-full overflow-x-auto bg-slate-200/50 p-6 md:p-12 flex justify-center items-start min-h-[600px]" dir="ltr">
+            <div className="w-full overflow-x-auto bg-slate-200/50 p-2 sm:p-6 md:p-12 flex justify-center items-start min-h-[400px] md:min-h-[600px]" dir="ltr">
               <div
                 className="bg-white shadow-[0_30px_60px_rgba(0,0,0,0.2)] relative transition-all duration-500 overflow-hidden"
                 style={{
@@ -262,39 +275,39 @@ const PublicHome = () => {
             </div>
 
             {/* Attendance Summary for Parents */}
-            <div className="w-full max-w-[2480px] bg-slate-50 py-12 px-4 md:px-20">
+            <div className="w-full max-w-[2480px] bg-slate-50 py-6 md:py-12 px-3 md:px-20">
               <div
-                className="max-w-4xl mx-auto bg-white rounded-[40px] p-8 md:p-12 shadow-xl border border-slate-100"
+                className="max-w-4xl mx-auto bg-white rounded-[24px] md:rounded-[40px] p-4 md:p-12 shadow-xl border border-slate-100"
                 style={{ direction: i18n.dir() }}
               >
-                <h3 className="text-3xl md:text-4xl font-black text-slate-900 mb-8 flex items-center gap-4">
-                  <div className="w-3 h-12 bg-qabas-purple rounded-full" />
-                  {t('nav.attendanceRecord')}
+                <h3 className="text-xl md:text-4xl font-black text-slate-900 mb-6 md:mb-8 flex items-center gap-2 md:gap-4">
+                  <div className="w-2 md:w-3 h-8 md:h-12 bg-qabas-purple rounded-full" />
+                  <span className="text-sm md:text-3xl">{t('nav.attendanceRecord')}</span>
                 </h3>
 
-                <div className="flex flex-col md:flex-row items-start md:items-center gap-6 mb-10 bg-slate-50 p-6 rounded-[30px] border border-slate-100">
-                  <div className="flex flex-col gap-1">
-                    <label className="text-xs font-black text-slate-400 uppercase tracking-widest px-1">{t('nav.selectMonth')}</label>
+                <div className="flex flex-col gap-4 mb-6 md:mb-10 bg-slate-50 p-4 md:p-6 rounded-[20px] md:rounded-[30px] border border-slate-100">
+                  <div className="flex flex-col gap-1 w-full">
+                    <label className="text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-widest px-1">{t('nav.selectMonth')}</label>
                     <input
                       type="month"
                       value={perceivedMonth}
                       onChange={(e) => setPerceivedMonth(e.target.value)}
-                      className="bg-white border-2 border-slate-200 rounded-2xl px-6 py-3 font-bold text-slate-800 outline-none focus:border-qabas-purple transition-all shadow-sm"
+                      className="bg-white border-2 border-slate-200 rounded-xl md:rounded-2xl px-4 md:px-6 py-2 md:py-3 font-bold text-sm md:text-base text-slate-800 outline-none focus:border-qabas-purple transition-all shadow-sm w-full"
                     />
                   </div>
 
-                  <div className="flex gap-4 flex-1 w-full">
-                    <div className="flex-1 bg-green-100/50 p-4 rounded-2xl border border-green-100 text-center">
-                      <div className="text-2xl font-black text-green-700">
+                  <div className="flex gap-3 md:gap-4 w-full">
+                    <div className="flex-1 bg-green-100/50 p-3 md:p-4 rounded-xl md:rounded-2xl border border-green-100 text-center">
+                      <div className="text-xl md:text-2xl font-black text-green-700">
                         {attendanceHistory.filter(r => r.status === 'present' && r.date.startsWith(perceivedMonth)).length}
                       </div>
-                      <div className="text-[10px] font-bold text-green-600 uppercase tracking-tighter">{t('nav.presentDays')}</div>
+                      <div className="text-[9px] md:text-[10px] font-bold text-green-600 uppercase tracking-tighter">{t('nav.presentDays')}</div>
                     </div>
-                    <div className="flex-1 bg-red-100/50 p-4 rounded-2xl border border-red-100 text-center">
-                      <div className="text-2xl font-black text-red-700">
+                    <div className="flex-1 bg-red-100/50 p-3 md:p-4 rounded-xl md:rounded-2xl border border-red-100 text-center">
+                      <div className="text-xl md:text-2xl font-black text-red-700">
                         {attendanceHistory.filter(r => r.status === 'absent' && r.date.startsWith(perceivedMonth)).length}
                       </div>
-                      <div className="text-[10px] font-bold text-red-600 uppercase tracking-tighter">{t('nav.absentDays')}</div>
+                      <div className="text-[9px] md:text-[10px] font-bold text-red-600 uppercase tracking-tighter">{t('nav.absentDays')}</div>
                     </div>
                   </div>
                 </div>

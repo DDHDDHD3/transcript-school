@@ -52,10 +52,36 @@ const AdminSettings = () => {
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [studentsLoading, setStudentsLoading] = useState(false);
 
+  // Preview Scale State for responsive preview
+  const [previewScale, setPreviewScale] = useState(0.2419);
+  const previewContainerRef = React.useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     getConfig().then(setConfig);
     getSchoolBilling().then(setBilling);
     loadAllStudents();
+
+    // Handle preview scaling on resize
+    const handlePreviewResize = () => {
+      if (previewContainerRef.current) {
+        // Get the parent container width (the scrollable container)
+        const parentElement = previewContainerRef.current.parentElement;
+        if (parentElement) {
+          const containerWidth = parentElement.offsetWidth;
+          // Certificate is 2480px wide, calculate scale to fit
+          let scale = containerWidth / 2480;
+          // Limit scale to reasonable bounds
+          if (scale > 0.3) scale = 0.3;
+          if (scale < 0.1) scale = 0.1;
+          setPreviewScale(scale);
+        }
+      }
+    };
+
+    // Small delay to ensure DOM is ready
+    setTimeout(handlePreviewResize, 100);
+    window.addEventListener('resize', handlePreviewResize);
+    return () => window.removeEventListener('resize', handlePreviewResize);
   }, []);
 
   const loadAllStudents = async () => {
@@ -309,10 +335,10 @@ const AdminSettings = () => {
 
             <div className="space-y-12">
               {/* Main Preview Area */}
-              <div className="bg-slate-50 rounded-[32px] p-8 border border-slate-100">
-                <div className="mb-8 p-6 bg-white rounded-3xl border border-slate-200 shadow-sm">
-                  <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-4">
-                    <Users size={16} /> Student Data Integration
+              <div className="bg-slate-50 rounded-[32px] p-4 sm:p-6 md:p-8 border border-slate-100">
+                <div className="mb-6 md:mb-8 p-3 sm:p-4 md:p-6 bg-white rounded-2xl md:rounded-3xl border border-slate-200 shadow-sm">
+                  <h3 className="text-xs md:text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-3 md:mb-4">
+                    <Users size={14} className="md:w-4 md:h-4" /> <span className="text-[10px] md:text-xs">Student Data Integration</span>
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
@@ -355,37 +381,56 @@ const AdminSettings = () => {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                    <Layout size={16} /> Live Master Preview
+                <div className="flex items-center justify-between mb-4 md:mb-6">
+                  <h3 className="text-xs md:text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                    <Layout size={14} className="md:w-4 md:h-4" /> <span className="text-[10px] md:text-xs">Live Master Preview</span>
                   </h3>
                   <div className="flex gap-2">
-                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: config.primaryColor }} />
-                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: config.secondaryColor }} />
+                    <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full" style={{ backgroundColor: config.primaryColor }} />
+                    <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full" style={{ backgroundColor: config.secondaryColor }} />
                   </div>
                 </div>
 
-                <div className="relative mx-auto bg-white shadow-2xl rounded-lg overflow-hidden border border-slate-200" style={{ width: '100%', maxWidth: '600px', aspectRatio: '1/1.414' }}>
-                  <div className="absolute top-0 left-0" style={{ transform: 'scale(0.2419)', transformOrigin: 'top left', width: '2480px', height: '3508px' }}>
-                    <CertificateTemplates
-                      student={selectedStudent || MOCK_STUDENT}
-                      config={config}
-                      getLevelLabel={(l) => t(`students.levels.${l}`) || l}
-                      getSubjectLabel={(s) => {
-                        // 1. Try to find in Dynamic Config by ID or Name
-                        if (config?.subjects) {
-                          const found = config.subjects.find(sub => sub.id === s || sub.nameAr === s || sub.nameEn === s);
-                          if (found) {
-                            if (i18n.language === 'ar') return found.nameAr;
-                            if (i18n.language === 'so') return found.nameSo;
-                            return found.nameEn;
-                          }
-                        }
-                        // 2. Fallback to existing translations (for Mock data 'tafsir' etc)
-                        return t(s.toLowerCase()) || s;
+                {/* Responsive scrollable container that adapts to all screen sizes */}
+                <div className="w-full overflow-x-auto bg-slate-100 rounded-lg">
+                  <div
+                    ref={previewContainerRef}
+                    className="mx-auto bg-white shadow-2xl rounded-lg border border-slate-200 overflow-hidden"
+                    style={{
+                      width: `${2480 * previewScale}px`,
+                      height: `${3508 * previewScale}px`,
+                      minWidth: '100%'
+                    }}
+                  >
+                    <div
+                      className="origin-top-left pointer-events-none"
+                      style={{
+                        transform: `scale(${previewScale})`,
+                        transformOrigin: 'top left',
+                        width: '2480px',
+                        height: '3508px'
                       }}
-                      useCustomColors={true}
-                    />
+                    >
+                      <CertificateTemplates
+                        student={selectedStudent || MOCK_STUDENT}
+                        config={config}
+                        getLevelLabel={(l) => t(`students.levels.${l}`) || l}
+                        getSubjectLabel={(s) => {
+                          // 1. Try to find in Dynamic Config by ID or Name
+                          if (config?.subjects) {
+                            const found = config.subjects.find(sub => sub.id === s || sub.nameAr === s || sub.nameEn === s);
+                            if (found) {
+                              if (i18n.language === 'ar') return found.nameAr;
+                              if (i18n.language === 'so') return found.nameSo;
+                              return found.nameEn;
+                            }
+                          }
+                          // 2. Fallback to existing translations (for Mock data 'tafsir' etc)
+                          return t(s.toLowerCase()) || s;
+                        }}
+                        useCustomColors={true}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>

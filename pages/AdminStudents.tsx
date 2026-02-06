@@ -217,6 +217,16 @@ const AdminStudents = () => {
       'الأذكار': t('adhkar'),
       'الرياضيات': t('math'),
       'اللغة الصومالية': t('somali'),
+      // Somali mappings
+      'Tafsiir': t('tafsir'),
+      'Siirada': t('sira'),
+      'Xadiis': t('hadith'),
+      'Akh ris & Qoris': t('reading'),
+      'Fiqi': t('fiqh'),
+      'Luuqadda Carabiga': t('arabic'),
+      'Adkaar': t('adhkar'),
+      'Xisaab': t('math'),
+      'Luuqadda Soomaaliga': t('somali'),
     };
     return translations[name] || name;
   };
@@ -563,8 +573,15 @@ const AdminStudents = () => {
                     <td className="px-6 py-4 font-mono text-slate-600">{student.studentId}</td>
                     <td className="px-6 py-4 text-slate-600">{student.classLevel}</td>
                     <td className="px-6 py-4">
-                      <span className={`text-xs font-bold px-3 py-1 rounded-full ${student.finalResult === 'ناجح' || student.finalResult === 'pass' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                        {student.finalResult === 'ناجح' || student.finalResult === 'pass' ? t('students.status.pass') : t('students.status.fail')}
+                      <span className={`text-xs font-bold px-3 py-1 rounded-full ${
+                        // Support all three languages for pass/fail
+                        ['ناجح', 'pass', 'gudbay', 'passed', 'gudbey'].includes(student.finalResult?.toLowerCase()?.trim() || '')
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-red-100 text-red-700'
+                        }`}>
+                        {['ناجح', 'pass', 'gudbay', 'passed', 'gudbey'].includes(student.finalResult?.toLowerCase()?.trim() || '')
+                          ? t('students.status.pass')
+                          : t('students.status.fail')}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-left">
@@ -703,8 +720,15 @@ const AdminStudents = () => {
                           {(subject as any).displayScore !== undefined ? (subject as any).displayScore : subject.studentMarks}
                         </td>
                         <td className="px-4 py-2 text-center">
-                          <span className={`px-2 py-1 rounded text-[9px] font-black uppercase tracking-wider ${subject.result === 'ناجح' || subject.result === 'pass' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                            {subject.result === 'ناجح' || subject.result === 'pass' ? t('students.status.pass') : t('students.status.fail')}
+                          <span className={`px-2 py-1 rounded text-[9px] font-black uppercase tracking-wider ${
+                            // Support all three languages for pass/fail
+                            ['ناجح', 'pass', 'gudbay', 'passed', 'gudbey'].includes(subject.result?.toLowerCase()?.trim() || '')
+                              ? 'bg-green-100 text-green-700'
+                              : 'bg-red-100 text-red-700'
+                            }`}>
+                            {['ناجح', 'pass', 'gudbay', 'passed', 'gudbey'].includes(subject.result?.toLowerCase()?.trim() || '')
+                              ? t('students.status.pass')
+                              : t('students.status.fail')}
                           </span>
                         </td>
                         <td className="px-4 py-2 text-center">
@@ -720,7 +744,16 @@ const AdminStudents = () => {
                       <td className="px-4 py-4 text-center" colSpan={2}>
                         <div className="flex flex-col items-center">
                           <span className="text-xl font-black text-royal-600">{formData.percentage}%</span>
-                          <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${formData.finalResult === 'ناجح' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`}>{formData.finalResult === 'ناجح' ? t('students.status.pass') : t('students.status.fail')}</span>
+                          <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
+                            // Support all three languages for pass/fail
+                            ['ناجح', 'pass', 'gudbay', 'passed', 'gudbey'].includes(formData.finalResult?.toLowerCase()?.trim() || '')
+                              ? 'bg-green-500 text-white'
+                              : 'bg-red-500 text-white'
+                            }`}>
+                            {['ناجح', 'pass', 'gudbay', 'passed', 'gudbey'].includes(formData.finalResult?.toLowerCase()?.trim() || '')
+                              ? t('students.status.pass')
+                              : t('students.status.fail')}
+                          </span>
                         </div>
                       </td>
                     </tr>
