@@ -59,7 +59,12 @@ export const generateStudentAttendancePDF = async (
  * Instead of raw jsPDF drawing, we'll follow the pattern that worked for certificates:
  * Capture a perfectly styled HTML element.
  */
-export const generateAttendancePDF = async (elementId: string, filename: string, lang: string = 'ar') => {
+export const generateAttendancePDF = async (
+    elementId: string, 
+    filename: string, 
+    lang: string = 'ar',
+    orientation: 'portrait' | 'landscape' = 'portrait'
+) => {
     const element = document.getElementById(elementId);
     if (!element) return;
 
@@ -72,15 +77,16 @@ export const generateAttendancePDF = async (elementId: string, filename: string,
     const { jsPDF } = window.jspdf;
     const html2canvas = window.html2canvas;
     const isRtl = lang === 'ar';
+    const isLandscape = orientation === 'landscape';
 
     try {
         const canvas = await html2canvas(element, {
-            scale: 1, // Fixed scale for predictable dimensions
+            scale: 2,
             useCORS: true,
             logging: false,
             backgroundColor: '#ffffff',
-            width: 2480,
-            windowWidth: 2480,
+            width: isLandscape ? 3508 : 2480,
+            height: isLandscape ? 2480 : 3508,
             onclone: (clonedDoc: Document) => {
                 const clonedElement = clonedDoc.getElementById(elementId);
                 if (clonedElement) {
@@ -88,47 +94,30 @@ export const generateAttendancePDF = async (elementId: string, filename: string,
                     clonedElement.style.position = 'fixed';
                     clonedElement.style.top = '0';
                     clonedElement.style.left = '0';
-                    clonedElement.style.width = '2480px';
+                    clonedElement.style.width = isLandscape ? '3508px' : '2480px';
+                    clonedElement.style.height = isLandscape ? '2480px' : '3508px';
                     clonedElement.style.margin = '0';
-                    clonedElement.style.padding = '60px'; // Matching the A4 padding
+                    clonedElement.style.padding = '0';
                     clonedElement.style.direction = isRtl ? 'rtl' : 'ltr';
-
-                    // Reset any transforms from the main view
                     clonedElement.style.transform = 'none';
                     clonedElement.style.zIndex = '999999';
                 }
             }
         });
 
-        const imgData = canvas.toDataURL('image/png');
+        const imgData = canvas.toDataURL('image/png', 1.0);
         const doc = new jsPDF({
-            orientation: 'p',
+            orientation: isLandscape ? 'l' : 'p',
             unit: 'mm',
             format: 'a4',
-            putOnlyUsedFonts: true
+            compress: true
         });
 
         const pdfWidth = doc.internal.pageSize.getWidth();
         const pdfHeight = doc.internal.pageSize.getHeight();
 
-        // Calculate proportional height
-        const imgHeightInMm = (canvas.height * pdfWidth) / canvas.width;
-
-        // Add to PDF
-        // If it fits on one page
-        if (imgHeightInMm <= pdfHeight) {
-            doc.addImage(imgData, 'PNG', 0, 0, pdfWidth, imgHeightInMm);
-        } else {
-            // Simple multi-page for longer attendance reports
-            let heightLeft = imgHeightInMm;
-            let position = 0;
-            while (heightLeft > 0) {
-                doc.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeightInMm);
-                heightLeft -= pdfHeight;
-                position -= pdfHeight;
-                if (heightLeft > 0) doc.addPage();
-            }
-        }
+        // Add to PDF - FORCE SINGLE PAGE by fitting to page bounds
+        doc.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
 
         doc.save(`${filename}.pdf`);
         return true;

@@ -1,5 +1,5 @@
 {
-  "name": "certi-qabas-al-huda",
+  "name": "aqooni-digital",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@clerk/clerk-react": "^5.60.0",
     "@neondatabase/serverless": "0.9.0",
     "framer-motion": "^12.23.24",
     "i18next": "^25.8.0",
@@ -23,6 +24,8 @@
     "@types/node": "^22.14.0",
     "@vitejs/plugin-react": "^5.0.0",
     "typescript": "~5.8.2",
-    "vite": "^6.2.0"
+    "vite": "^6.2.0",
+    "vite-plugin-mkcert": "^1.17.10",
+    "vite-plugin-pwa": "^1.2.0"
   }
 }

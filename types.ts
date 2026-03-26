@@ -38,7 +38,22 @@ export interface Student {
   finalResult: string; // النتيجة النهائية
 
   // Meta
+  schoolId?: string;
   createdAt: string;
+}
+
+export interface ClassLevel {
+  id: string;
+  nameAr: string;
+  nameEn: string;
+  nameSo: string;
+}
+
+export interface AttendanceSession {
+  id: string;
+  nameAr: string;
+  nameEn: string;
+  nameSo: string;
 }
 
 export interface CertificateConfig {
@@ -53,9 +68,13 @@ export interface CertificateConfig {
   subjects?: SubjectConfig[];
   gradingMethod: 'sum' | 'average';
   passThreshold: number; // e.g., 50 (for 50%) or 100 (for total sum >= 100)
+  studentPrefix?: string;
+  classLevels?: ClassLevel[];
+  attendanceSessions?: AttendanceSession[];
 
   // New Template Features
   templateId: string;
+  attendanceTemplateId?: string;
   primaryColor: string;
   secondaryColor: string;
   accentColor: string;
@@ -83,6 +102,7 @@ export interface AttendanceRecord {
   date: string;          // YYYY-MM-DD
   status: 'present' | 'absent' | 'late' | 'excused';
   session?: string;      // Optional: morning/afternoon
+  teacherId?: string;    // Added for teacher connection
   notes?: string;
   recordedBy: string;
   createdAt: string;
@@ -98,12 +118,25 @@ export interface AttendanceReport {
   lateDays: number;
   excusedDays: number;
   attendanceRate: number;
+  teacherName?: string; // Added for report display
+}
+
+export interface Teacher {
+  id: string;
+  fullName: string;
+  fullNameAr?: string;
+  email?: string;
+  phoneNumber?: string;
+  subjects?: string[];
+  assignedClasses?: string[];
+  schoolId: string;
+  createdAt: string;
 }
 
 export interface School {
   id: string;
   name: string;
-  subStatus: 'active' | 'expired';
+  subStatus: 'active' | 'expired' | 'pending';
   subExpiry: string;
   credits: number;
   studentCount: number;
@@ -112,6 +145,10 @@ export interface School {
   billingMessage?: string;
   planType: 'monthly' | 'yearly';
   totalPaid: number;
+  location?: string;
+  licenseNumber?: string;
+  phoneNumber?: string;
+  status?: string; // e.g., 'active', 'suspended', 'pending_onboarding'
   createdAt: string;
 }
 
@@ -123,4 +160,27 @@ export interface BillingDetails {
   subStatus: 'active' | 'expired';
   credits: number;
   studentCount: number;
+}
+
+export interface CreditRequest {
+  id: string;
+  school_id: string; // Using snake_case to match DB
+  schoolName?: string;
+  amount: number;
+  status: 'pending' | 'approved' | 'rejected';
+  notes?: string;
+  createdAt: string;
+  processedAt?: string;
+}
+
+export interface ContactInquiry {
+  id: string;
+  fullName: string;
+  schoolName: string;
+  location: string;
+  email: string;
+  phone: string;
+  message: string;
+  status: 'pending' | 'read' | 'replied' | 'archived';
+  createdAt: string;
 }

@@ -1,471 +1,560 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Loader2, Download, Search, XCircle } from 'lucide-react';
-import { getStudentByRegId, getConfig, getStudentAttendanceHistory } from '../services/api';
-import { Student, CertificateConfig, AttendanceRecord } from '../types';
-import { generateCertificatePDF } from '../utils/pdfGenerator';
-import { generateAttendancePDF } from '../utils/attendancePdfGenerator';
-import { useLocation } from 'react-router-dom';
+import {
+  Loader2, Search, Shield, Cloud, Database, Users,
+  Headphones, CheckCircle2, Star, Zap, ChevronDown, Download
+} from 'lucide-react';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import CertificateTemplates from '../components/CertificateTemplates';
+import AIChatHelper from '../components/AIChatHelper';
+import ContactForm from '../components/ContactForm';
+
+const TypewriterText = ({ text }: { text: string }) => {
+  const [displayText, setDisplayText] = useState('');
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    if (index < text.length) {
+      const timeout = setTimeout(() => {
+        setDisplayText((prev) => prev + text[index]);
+        setIndex((prev) => prev + 1);
+      }, 100);
+      return () => clearTimeout(timeout);
+    } else {
+      const resetTimeout = setTimeout(() => {
+        setDisplayText('');
+        setIndex(0);
+      }, 3000);
+      return () => clearTimeout(resetTimeout);
+    }
+  }, [index, text]);
+
+  return (
+    <span className="text-[var(--text-main)] font-black tracking-widest uppercase text-sm md:text-base inline-flex items-center">
+      {displayText}
+      <motion.span
+        animate={{ opacity: [0, 1, 0] }}
+        transition={{ duration: 0.8, repeat: Infinity }}
+        className="ml-1 w-1 h-4 md:h-5 bg-amber-400"
+      />
+    </span>
+  );
+};
 
 const PublicHome = () => {
   const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
   const [searchId, setSearchId] = useState('');
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<Student | null>(null);
-  const [error, setError] = useState('');
-  const [config, setConfig] = useState<CertificateConfig | null>(null);
-  const [attendanceHistory, setAttendanceHistory] = useState<AttendanceRecord[]>([]);
-  const [perceivedMonth, setPerceivedMonth] = useState(new Date().toISOString().slice(0, 7));
-  const [previewScale, setPreviewScale] = useState(0.25);
+  const [activeFeature, setActiveFeature] = useState(0);
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
 
-  const certificateRef = useRef<HTMLDivElement>(null);
-  const location = useLocation();
+  const features = [
+    { icon: <Shield className="text-amber-400" />, label: t('Secure100Percent'), desc: t('SecureDescription') },
+    { icon: <Cloud className="text-amber-400" />, label: t('CloudBased'), desc: t('CloudDescription') },
+    { icon: <Database className="text-amber-400" />, label: t('BackupSystem'), desc: t('BackupDescription') },
+    { icon: <Headphones className="text-amber-400" />, label: t('Support247'), desc: t('SupportDescription') },
+    { icon: <Shield className="text-amber-400" />, label: t('MultiSchoolManagement'), desc: t('MultiSchoolDescription') },
+    { icon: <Zap className="text-amber-400" />, label: t('RoleBasedDashboards'), desc: t('RoleBasedDescription') },
+    { icon: <Download className="text-amber-400" />, label: t('CertificateGeneration'), desc: t('CertificateDescription') },
+    { icon: <CheckCircle2 className="text-amber-400" />, label: t('AttendanceMonitoring'), desc: t('AttendanceDescription') }
+  ];
 
   useEffect(() => {
-    getConfig().then(setConfig);
-    const params = new URLSearchParams(location.search);
-    const idParam = params.get('id');
-    if (idParam) {
-      setSearchId(idParam);
-      handleVerify(idParam);
+    const interval = setInterval(() => {
+      setActiveFeature((prev) => (prev + 1) % features.length);
+    }, 4500);
+    return () => clearInterval(interval);
+  }, [features.length]);
+
+  const location = useLocation();
+  useEffect(() => {
+    if (location.hash) {
+      const id = location.hash.substring(1);
+      const el = document.getElementById(id);
+      if (el) {
+        setTimeout(() => {
+          const offset = 100;
+          const top = el.getBoundingClientRect().top + window.scrollY - offset;
+          window.scrollTo({ top, behavior: 'smooth' });
+        }, 100);
+      }
     }
+  }, [location]);
 
-    const handleResize = () => {
-      const width = window.innerWidth;
-      // Adjust padding based on screen size for better mobile support
-      const padding = width < 768 ? 16 : 40;
-      const availableWidth = width - padding;
-      let scale = availableWidth / 2480;
-      // Allow smaller scaling on mobile devices to ensure full visibility
-      if (scale > 0.45) scale = 0.45;
-      if (scale < 0.08) scale = 0.08;
-      setPreviewScale(scale);
-    };
-
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [location.search]);
-
-  const handleVerify = async (idToVerify = searchId) => {
-    if (!idToVerify.trim()) return;
-
+  const handleVerify = () => {
+    if (!searchId.trim()) return;
     setLoading(true);
-    setResult(null);
-    setAttendanceHistory([]);
-    setError('');
-
-    try {
-      const student = await getStudentByRegId(idToVerify);
-      if (student) {
-        setResult(student);
-        const history = await getStudentAttendanceHistory(student.studentId);
-        setAttendanceHistory(history);
-      } else {
-        setError(t('home.errorNotFound'));
-      }
-    } catch (err) {
-      setError(t('home.errorSystem'));
-    } finally {
+    // Add a slight delay for "fast-loading" feel with feedback
+    setTimeout(() => {
+      navigate(`/v/${searchId.trim()}`);
       setLoading(false);
-    }
-  };
-
-  const getLevelLabel = (level: string) => {
-    if (level.startsWith('level')) {
-      return t(`students.levels.${level}`);
-    }
-    // Handle cases where the level name might be stored in a specific language
-    const arabicLevels: Record<string, string> = {
-      'المستوى الأول': 'level1', 'المستوى الثاني': 'level2', 'المستوى الثالث': 'level3',
-      'المستوى الرابع': 'level4', 'المستوى الخامس': 'level5', 'المستوى السادس': 'level6',
-      'المستوى السابع': 'level7', 'المستوى الثامن': 'level8', 'المستوى التاسع': 'level9',
-      'المستوى العاشر': 'level10', 'المستوى الحادي عشر': 'level11', 'المستوى الثاني عشر': 'level12'
-    };
-    const key = arabicLevels[level];
-    if (key) return t(`students.levels.${key}`);
-    return level;
-  };
-
-  const getSubjectLabel = (name: string) => {
-    // 1. Try to find in Dynamic Config by ID first (e.g. 'tafsir')
-    if (config?.subjects) {
-      const foundById = config.subjects.find(s => s.id === name);
-      if (foundById) {
-        if (i18n.language === 'ar') return foundById.nameAr;
-        if (i18n.language === 'so') return foundById.nameSo;
-        return foundById.nameEn;
-      }
-
-      // 2. Try to find by Arabic Name (legacy data might have "التفسير")
-      const foundByNameAr = config.subjects.find(s => s.nameAr === name);
-      if (foundByNameAr) {
-        if (i18n.language === 'ar') return foundByNameAr.nameAr;
-        if (i18n.language === 'so') return foundByNameAr.nameSo;
-        return foundByNameAr.nameEn;
-      }
-    }
-
-    const mapping: Record<string, string> = {
-      'التفسير': 'tafsir',
-      'السيرة': 'sira',
-      'الحديث': 'hadith',
-      'القراءة والكتابة': 'reading',
-      'الفقه': 'fiqh',
-      'اللغة العربية': 'arabic',
-      'الأذكار': 'adhkar',
-      'الرياضيات': 'math',
-      'اللغة الصومالية': 'somali',
-      // Somali mappings
-      'Tafsiir': 'tafsir',
-      'Siirada': 'sira',
-      'Xadiis': 'hadith',
-      'Akhris & Qoris': 'reading',
-      'Fiqi': 'fiqh',
-      'Luuqadda Carabiga': 'arabic',
-      'Adkaar': 'adhkar',
-      'Xisaab': 'math',
-      'Luuqadda Soomaaliga': 'somali'
-    };
-    const key = mapping[name] || mapping[name.trim()];
-    return key ? t(key) : name;
-  };
-
-  const downloadPDF = async () => {
-    if (result && config) {
-      setLoading(true);
-      await new Promise(r => setTimeout(r, 100));
-      await generateCertificatePDF(result, 'certificate-view');
-      setLoading(false);
-    }
-  };
-
-  const downloadAttendancePDF = async () => {
-    if (result && config) {
-      setLoading(true);
-      const filename = `Attendance_${result.studentId}_${perceivedMonth}`;
-      await generateAttendancePDF('public-attendance-report', filename, i18n.language);
-      setLoading(false);
-    }
+    }, 400);
   };
 
   return (
-    <div dir={i18n.dir()} className="flex flex-col items-center min-h-[calc(100vh-64px)] bg-slate-50 font-sans overflow-x-hidden relative">
-
-      {/* Search Section */}
-      {!result && (
+    <div dir={i18n.dir()} className="flex flex-col items-center bg-[var(--bg-main)] text-[var(--text-main)] font-sans overflow-x-hidden relative transition-colors duration-300">
+      {/* Ambient Background Elements */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
         <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          className="w-full max-w-lg mt-10 md:mt-20 px-4 mb-10"
-        >
-          <div className="text-center mb-10">
-            <div className="inline-block px-4 py-1.5 bg-purple-100 text-purple-700 rounded-full text-xs font-bold uppercase tracking-widest mb-4 animate-pulse">
-              {t('home.publicPortal')}
+          animate={{
+            x: [0, 100, 0],
+            y: [0, 50, 0],
+            scale: [1, 1.2, 1],
+          }}
+          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+          className="absolute -top-[10%] -left-[10%] w-[50%] h-[50%] bg-amber-400/10 blur-[120px] rounded-full"
+        />
+        <motion.div
+          animate={{
+            x: [0, -80, 0],
+            y: [0, 100, 0],
+            scale: [1.2, 1, 1.2],
+          }}
+          transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
+          className="absolute top-[20%] -right-[5%] w-[40%] h-[40%] bg-purple-500/10 blur-[100px] rounded-full"
+        />
+        <motion.div
+          animate={{
+            x: [0, 50, 0],
+            y: [0, -50, 0],
+          }}
+          transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
+          className="absolute bottom-[10%] left-[20%] w-[30%] h-[30%] bg-blue-500/10 blur-[110px] rounded-full"
+        />
+      </div>
+
+      {/* Hero Section */}
+      <section id="home" className="w-full relative py-12 md:py-20 lg:py-32 px-4 overflow-hidden hero-gradient wave-bg bg-slate-950">
+        <div className="max-w-7xl mx-auto relative z-10">
+          <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
+            <div className="flex-1 text-center lg:text-left">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-amber-400 text-xs font-bold uppercase tracking-widest mb-8 backdrop-blur-sm"
+              >
+                <Star size={14} className="fill-amber-400" />
+                {t('VerificationTitle') || 'Official Academic Portal'}
+              </motion.div>
+
+                <motion.h1
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="text-3xl md:text-6xl lg:text-7xl font-black text-white mb-6 font-cairo leading-tight"
+              >
+                Aqooni Digital <br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-amber-400 to-amber-600">
+                  School Management
+                </span>
+              </motion.h1>
+
+              <motion.p
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="text-slate-300 font-almarai text-lg md:text-xl max-w-2xl lg:mx-0 mx-auto leading-relaxed mb-10"
+              >
+                {t('LandingHeroSubtitle')}
+              </motion.p>
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3, duration: 0.8 }}
+                className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto"
+              >
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Link to="/admin/login" className="px-10 py-4 bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 font-black rounded-xl shadow-lg shadow-amber-400/20 hover:shadow-amber-400/40 transition-all flex items-center justify-center gap-2 text-lg no-underline uppercase tracking-widest w-full sm:w-auto">
+                    {t('nav.getStarted')}
+                  </Link>
+                </motion.div>
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <a href="#verify" className="px-10 py-4 bg-white/5 border border-white/10 text-white font-black rounded-xl hover:bg-white/10 transition-all backdrop-blur-sm text-lg no-underline flex items-center justify-center uppercase tracking-widest w-full sm:w-auto">
+                    {t('VerifyNow')}
+                  </a>
+                </motion.div>
+              </motion.div>
             </div>
-            <h1 className="text-4xl md:text-6xl font-black text-qabas-purple mb-4 font-cairo leading-tight">
-              {t('home.title')}
-            </h1>
-            <p className="text-slate-500 font-almarai text-lg max-w-md mx-auto leading-relaxed">
-              {t('home.subtitle')}
+
+            <motion.div
+              initial={{ opacity: 0, x: 50, rotateY: -10 }}
+              animate={{ opacity: 1, x: 0, rotateY: 0 }}
+              whileHover={{ rotateY: 5, rotateX: -5 }}
+              transition={{ delay: 0.4, duration: 1, type: "spring", stiffness: 100 }}
+              className="flex-1 relative w-full perspective-1000"
+            >
+              <motion.div
+                animate={{
+                  y: [0, -20, 0],
+                  rotate: [0, 1, -1, 0]
+                }}
+                transition={{
+                  duration: 6,
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+                className="relative rounded-[2.5rem] overflow-hidden border border-white/20 shadow-2xl bg-white/5 backdrop-blur-sm"
+              >
+                <img src="/image.png" alt="Preview" className="w-full h-auto brightness-110" />
+              </motion.div>
+
+              {/* Decorative Floating Blobs around image */}
+              <motion.div
+                animate={{ y: [0, 15, 0] }}
+                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                className="absolute -top-6 -right-6 w-12 h-12 bg-amber-400 rounded-2xl blur-xl opacity-30"
+              />
+              <motion.div
+                animate={{ y: [0, -15, 0] }}
+                transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+                className="absolute -bottom-8 -left-8 w-16 h-16 bg-purple-500 rounded-full blur-xl opacity-20"
+              />
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* Features Grid */}
+      <motion.section
+        id="features"
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-100px" }}
+        transition={{ duration: 0.8 }}
+        className="w-full py-16 md:py-24 px-4 bg-[var(--bg-main)] relative z-10"
+      >
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-5xl font-black text-[var(--text-main)] mb-4 font-cairo uppercase">
+              {t('features')}
+            </h2>
+            <div className="w-24 h-1.5 bg-amber-400 mx-auto rounded-full" />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {features.map((f, idx) => (
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                whileHover={{
+                  y: -10,
+                  scale: 1.02,
+                  boxShadow: "0 20px 40px rgba(0,0,0,0.1)"
+                }}
+                transition={{ delay: idx * 0.1 }}
+                className={`p-8 rounded-[2.5rem] border transition-all duration-500 bg-[var(--bg-card)] border-[var(--border-color)] group cursor-pointer ${activeFeature === idx
+                  ? 'border-amber-400/80 shadow-[0_0_25px_rgba(251,191,36,0.15)] scale-[1.03] z-10'
+                  : 'hover:border-amber-400/50'
+                  }`}
+              >
+                <motion.div
+                  animate={activeFeature === idx ? { scale: [1, 1.1, 1], rotate: [0, 5, -5, 0] } : {}}
+                  transition={{ duration: 0.5 }}
+                  className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-6 transition-colors duration-500 ${activeFeature === idx ? 'bg-amber-400 text-slate-950' : 'bg-amber-400/10 text-amber-400'
+                    }`}
+                >
+                  {React.cloneElement(f.icon as React.ReactElement, { size: 32 })}
+                </motion.div>
+                <h3 className={`text-xl font-black uppercase tracking-widest font-cairo mb-2 transition-colors duration-500 ${activeFeature === idx ? 'text-amber-500' : 'text-[var(--text-main)]'
+                  }`}>
+                  {f.label}
+                </h3>
+                <p className="text-sm text-[var(--text-muted)] font-bold">
+                  {f.desc}
+                </p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </motion.section>
+
+      {/* Modules Section */}
+      <motion.section
+        id="modules"
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-100px" }}
+        transition={{ duration: 0.8 }}
+        className="w-full py-16 md:py-24 px-4 bg-[var(--bg-secondary)] relative z-10"
+      >
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-7xl font-black text-[var(--text-main)] mb-6 font-cairo uppercase tracking-tight">
+              {t('modules')}
+            </h2>
+            <div className="w-24 h-1.5 bg-amber-400 mx-auto rounded-full" />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[
+              { id: 'Student', icon: <Users className="text-amber-400" /> },
+              { id: 'Teacher', icon: <Users className="text-amber-400" /> },
+              { id: 'Admin', icon: <Shield className="text-amber-400" /> },
+              { id: 'Certificate', icon: <Download className="text-amber-400" /> },
+              { id: 'Attendance', icon: <CheckCircle2 className="text-amber-400" /> }
+            ].map((m, idx) => (
+              <motion.div
+                key={m.id}
+                initial={{ opacity: 0, scale: 0.9, y: 30 }}
+                whileInView={{ opacity: 1, scale: 1, y: 0 }}
+                viewport={{ once: true }}
+                whileHover={{ y: -10, scale: 1.02 }}
+                transition={{
+                  duration: 0.5,
+                  delay: idx * 0.1,
+                  type: 'spring',
+                  stiffness: 100
+                }}
+                className="p-8 rounded-[3rem] bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-amber-400/40 transition-all hover:shadow-[0_20px_40px_rgba(251,191,36,0.1)] group relative overflow-hidden"
+              >
+                <div className="absolute top-0 right-0 w-32 h-32 bg-amber-400/5 rounded-full -mr-16 -mt-16 blur-3xl group-hover:bg-amber-400/10 transition-colors" />
+
+                <div className="flex flex-col gap-6 mb-8 relative z-10 items-start">
+                  <motion.div
+                    whileHover={{ scale: 1.1, rotate: 10 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                    className="w-16 h-16 bg-amber-400/10 text-amber-400 rounded-3xl flex items-center justify-center group-hover:bg-amber-400 group-hover:text-slate-950 transition-all duration-500 shadow-xl shadow-amber-400/0 group-hover:shadow-amber-400/20"
+                  >
+                    {React.cloneElement(m.icon as React.ReactElement, { size: 32 })}
+                  </motion.div>
+                  <motion.span
+                    initial={{ y: 10, opacity: 0 }}
+                    whileInView={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.3 + idx * 0.1 }}
+                    className="text-[13px] bg-amber-400 text-slate-950 font-black px-5 py-2.5 rounded-2xl uppercase tracking-[1.5px] shadow-2xl shadow-amber-400/20 border-2 border-amber-500/10"
+                  >
+                    {t(`${m.id}ModulePurpose`)}
+                  </motion.span>
+                </div>
+                <h3 className="text-2xl font-black text-[var(--text-main)] font-cairo mb-3 relative z-10 group-hover:text-amber-500 transition-colors">
+                  {t(`${m.id}Module`)}
+                </h3>
+                <p className="text-[var(--text-muted)] text-sm font-bold leading-relaxed mb-6 relative z-10">
+                  {t(`${m.id}ModuleCapabilities`)}
+                </p>
+                <div className="pt-6 border-t border-[var(--border-color)] flex items-center gap-2 text-amber-500 text-xs font-black uppercase tracking-widest relative z-10">
+                  <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                  {t('Online')}
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </motion.section>
+
+      {/* Pricing Section */}
+      <motion.section
+        id="pricing"
+        initial={{ opacity: 0, y: 50 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-100px" }}
+        transition={{ duration: 0.8 }}
+        className="w-full py-16 md:py-24 px-4 bg-[var(--bg-main)] relative z-10"
+      >
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-5xl font-black text-[var(--text-main)] mb-4 font-cairo uppercase">
+              {t('pricing')}
+            </h2>
+            <div className="w-24 h-1.5 bg-amber-400 mx-auto rounded-full" />
+            <p className="mt-8 text-[var(--text-muted)] font-bold text-lg max-w-2xl mx-auto">
+              {t('BillingCycleDescription')}
             </p>
           </div>
 
-          <div className="flex flex-col md:flex-row shadow-2xl shadow-purple-200/50 rounded-2xl bg-white overflow-hidden p-2 border border-purple-100 gap-2">
-            <input
-              type="text"
-              placeholder={t('home.placeholder')}
-              className={`flex-1 px-3 md:px-6 py-3 md:py-4 outline-none text-slate-800 placeholder:text-slate-300 font-bold text-base md:text-xl text-center ${i18n.dir() === 'rtl' ? 'md:text-right' : 'md:text-left'} font-cairo tracking-wide rounded-xl md:rounded-none`}
-              value={searchId}
-              onChange={(e) => setSearchId(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleVerify()}
-            />
-            <button
-              onClick={() => handleVerify()}
-              disabled={loading}
-              className="bg-gradient-to-r from-qabas-purple to-purple-800 text-white px-6 md:px-8 py-3 rounded-xl font-bold hover:shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-70 font-cairo w-full md:w-auto text-sm md:text-base"
-            >
-              {loading ? <Loader2 className="animate-spin" size={18} /> : t('home.verifyBtn')}
-            </button>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+            {[
+              { id: 'Monthly', icon: <Zap className="text-amber-400" />, popular: false },
+              { id: 'Yearly', icon: <Star className="text-amber-400" />, popular: true }
+            ].map((p, idx) => (
+              <motion.div
+                key={p.id}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                whileHover={{ y: -10, scale: 1.01 }}
+                transition={{ delay: idx * 0.1 }}
+                className={`relative p-10 rounded-[3.5rem] bg-[var(--bg-card)] border-2 transition-all duration-500 ${p.popular ? 'border-amber-400 scale-105 shadow-2xl shadow-amber-400/20' : 'border-[var(--border-color)] hover:border-amber-400/30'} flex flex-col group`}
+              >
+                {p.popular && (
+                  <span className="absolute -top-4 left-1/2 -translate-x-1/2 px-6 py-2 bg-amber-400 text-slate-950 text-xs font-black rounded-full uppercase tracking-widest shadow-xl">
+                    {t('nav.mostPopular') || 'Most Popular'}
+                  </span>
+                )}
+                <div className="w-16 h-16 bg-amber-400/10 text-amber-400 rounded-3xl flex items-center justify-center mb-8">
+                  {React.cloneElement(p.icon as React.ReactElement, { size: 32 })}
+                </div>
+                <h3 className="text-3xl font-black text-[var(--text-main)] font-cairo mb-4 uppercase">
+                  {t(`${p.id}Plan`)}
+                </h3>
+                <p className="text-[var(--text-muted)] font-bold mb-8 flex-1">
+                  {t(`${p.id}Description`)}
+                </p>
+                <Link to="/admin/login" className={`w-full py-5 rounded-2xl font-black text-center transition-all uppercase tracking-widest ${p.popular ? 'bg-amber-400 text-slate-950 hover:bg-amber-500 shadow-xl' : 'bg-slate-800 text-white hover:bg-slate-700'}`}>
+                  {t('ActivatePlan')}
+                </Link>
+              </motion.div>
+            ))}
           </div>
 
-          {error && (
-            <motion.div
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-              className="mt-6 p-4 bg-red-50 text-red-700 rounded-xl flex items-center justify-center gap-2 border border-red-100 font-bold font-almarai"
+          <div className="mt-20 p-8 rounded-[3rem] bg-amber-400/5 border border-amber-400/20 max-w-4xl mx-auto text-center">
+            <h4 className="text-xl font-black text-amber-500 uppercase tracking-widest mb-2 font-cairo">
+              {t('EducationalValueTitle')}
+            </h4>
+            <p className="text-[var(--text-muted)] font-bold italic">
+              " {t('EducationalValueDescription')} "
+            </p>
+          </div>
+        </div>
+      </motion.section>
+
+      {/* Search / Verification Section */}
+      <motion.section
+        id="verify"
+        initial={{ opacity: 0, scale: 0.95 }}
+        whileInView={{ opacity: 1, scale: 1 }}
+        viewport={{ once: true, margin: "-100px" }}
+        transition={{ duration: 0.8 }}
+        className="w-full py-16 md:py-32 px-4 bg-[var(--bg-secondary)] relative z-10"
+      >
+        <div className="max-w-xl mx-auto text-center">
+          <h2 className="text-3xl md:text-5xl font-black text-[var(--text-main)] mb-6 font-cairo">
+            {t('VerificationTitle')}
+          </h2>
+          <p className="text-[var(--text-muted)] text-lg mb-12 font-bold">
+            {t('VerificationSubtitle')}
+          </p>
+
+          <div className="flex flex-col md:flex-row shadow-2xl shadow-amber-400/10 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] p-2 gap-2">
+            <div className="flex-1 relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={20} />
+              <input
+                type="text"
+                placeholder={t('VerificationPlaceholder')}
+                className={`w-full pl-12 pr-6 py-4 bg-transparent outline-none text-[var(--text-main)] font-black text-lg font-cairo`}
+                value={searchId}
+                onChange={(e) => setSearchId(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleVerify()}
+              />
+            </div>
+            <motion.button
+              onClick={handleVerify}
+              disabled={loading}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 px-8 py-4 rounded-xl font-black hover:shadow-lg hover:shadow-amber-400/30 transition-all flex items-center justify-center gap-2 disabled:opacity-70 font-cairo z-10"
             >
-              <XCircle size={20} /> {error}
-            </motion.div>
-          )}
-        </motion.div>
-      )}
+              {loading ? <Loader2 className="animate-spin" size={22} /> : t('VerifyNow')}
+            </motion.button>
+          </div>
+        </div>
+      </motion.section>
 
-      {/* Result View */}
-      <AnimatePresence>
-        {result && config && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="w-full flex flex-col items-center"
-          >
-            {/* Action Bar */}
-            <div className="sticky top-0 md:top-20 z-40 bg-white/95 backdrop-blur-md w-full border-b border-purple-100 p-3 md:p-4 shadow-sm flex flex-col md:flex-row justify-between items-center gap-3 md:gap-4 px-3 md:px-12 rounded-b-2xl">
-              <button
-                onClick={() => { setResult(null); setSearchId(''); }}
-                className="text-slate-500 hover:text-qabas-orange font-bold text-xs md:text-sm font-cairo transition-colors order-2 md:order-1"
-              >
-                {t('home.newSearch')}
-              </button>
-              <div className="flex flex-col sm:flex-row gap-2 order-1 md:order-2 w-full md:w-auto">
+      {/* FAQ Section */}
+      <motion.section
+        id="faqs"
+        initial={{ opacity: 0, y: 50 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-100px" }}
+        transition={{ duration: 0.8 }}
+        className="w-full py-16 md:py-24 px-4 bg-[var(--bg-main)] relative z-10"
+      >
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-5xl font-black text-[var(--text-main)] mb-4 font-cairo uppercase">
+              {t('FAQsTitle')}
+            </h2>
+            <div className="w-24 h-1.5 bg-amber-400 mx-auto rounded-full" />
+          </div>
+
+          <div className="space-y-4">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="rounded-[2rem] border border-[var(--border-color)] bg-[var(--bg-card)] overflow-hidden">
                 <button
-                  onClick={downloadPDF}
-                  disabled={loading}
-                  className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-gradient-to-r from-qabas-orange to-orange-600 hover:to-orange-700 text-white px-4 md:px-8 py-2.5 md:py-3 rounded-full font-bold shadow-lg shadow-orange-200 transition-transform hover:scale-105 active:scale-[0.98] font-cairo text-xs md:text-sm"
+                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                  className="w-full p-6 text-left flex items-center justify-between"
                 >
-                  {loading ? <Loader2 className="animate-spin" size={16} /> : <Download size={16} />}
-                  <span className="truncate">{t('home.downloadPDF')}</span>
+                  <span className="text-lg font-black text-[var(--text-main)] font-cairo">
+                    {t(`FAQ${i}_Question`)}
+                  </span>
+                  <ChevronDown className={`text-amber-500 transition-transform ${openFaq === i ? 'rotate-180' : ''}`} />
                 </button>
-                <button
-                  onClick={downloadAttendancePDF}
-                  disabled={loading}
-                  className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-white text-qabas-purple border-2 border-qabas-purple px-4 md:px-8 py-2.5 md:py-3 rounded-full font-bold transition-transform hover:scale-105 active:scale-[0.98] font-cairo text-xs md:text-sm"
-                >
-                  {loading ? <Loader2 className="animate-spin" size={16} /> : <Download size={16} />}
-                  <span className="truncate">{t('nav.attendance')}</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Scrollable Preview Container */}
-            <div className="w-full overflow-x-auto bg-slate-200/50 p-2 sm:p-6 md:p-12 flex justify-center items-start min-h-[400px] md:min-h-[600px]" dir="ltr">
-              <div
-                className="bg-white shadow-[0_30px_60px_rgba(0,0,0,0.2)] relative transition-all duration-500 overflow-hidden"
-                style={{
-                  width: `${2480 * previewScale}px`,
-                  height: `${3508 * previewScale}px`,
-                }}
-              >
-
-                <div
-                  id="certificate-view"
-                  ref={certificateRef}
-                  className="bg-white absolute top-0 left-0 overflow-hidden text-slate-900 leading-relaxed font-amiri"
-                  dir={i18n.dir()}
-                  lang={i18n.language}
-                  style={{
-                    width: '2480px',
-                    height: '3508px',
-                    transform: `scale(${previewScale})`,
-                    transformOrigin: 'top left',
-                    textRendering: 'geometricPrecision',
-                    letterSpacing: 'normal'
-                  }}
-                >
-                  <CertificateTemplates
-                    student={result}
-                    config={config}
-                    getLevelLabel={getLevelLabel}
-                    getSubjectLabel={getSubjectLabel}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Attendance Summary for Parents */}
-            <div className="w-full max-w-[2480px] bg-slate-50 py-6 md:py-12 px-3 md:px-20">
-              <div
-                className="max-w-4xl mx-auto bg-white rounded-[24px] md:rounded-[40px] p-4 md:p-12 shadow-xl border border-slate-100"
-                style={{ direction: i18n.dir() }}
-              >
-                <h3 className="text-xl md:text-4xl font-black text-slate-900 mb-6 md:mb-8 flex items-center gap-2 md:gap-4">
-                  <div className="w-2 md:w-3 h-8 md:h-12 bg-qabas-purple rounded-full" />
-                  <span className="text-sm md:text-3xl">{t('nav.attendanceRecord')}</span>
-                </h3>
-
-                <div className="flex flex-col gap-4 mb-6 md:mb-10 bg-slate-50 p-4 md:p-6 rounded-[20px] md:rounded-[30px] border border-slate-100">
-                  <div className="flex flex-col gap-1 w-full">
-                    <label className="text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-widest px-1">{t('nav.selectMonth')}</label>
-                    <input
-                      type="month"
-                      value={perceivedMonth}
-                      onChange={(e) => setPerceivedMonth(e.target.value)}
-                      className="bg-white border-2 border-slate-200 rounded-xl md:rounded-2xl px-4 md:px-6 py-2 md:py-3 font-bold text-sm md:text-base text-slate-800 outline-none focus:border-qabas-purple transition-all shadow-sm w-full"
-                    />
-                  </div>
-
-                  <div className="flex gap-3 md:gap-4 w-full">
-                    <div className="flex-1 bg-green-100/50 p-3 md:p-4 rounded-xl md:rounded-2xl border border-green-100 text-center">
-                      <div className="text-xl md:text-2xl font-black text-green-700">
-                        {attendanceHistory.filter(r => r.status === 'present' && r.date.startsWith(perceivedMonth)).length}
+                <AnimatePresence>
+                  {openFaq === i && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                    >
+                      <div className="p-6 border-t border-[var(--border-color)] text-[var(--text-muted)] font-bold">
+                        {t(`FAQ${i}_Answer`)}
                       </div>
-                      <div className="text-[9px] md:text-[10px] font-bold text-green-600 uppercase tracking-tighter">{t('nav.presentDays')}</div>
-                    </div>
-                    <div className="flex-1 bg-red-100/50 p-3 md:p-4 rounded-xl md:rounded-2xl border border-red-100 text-center">
-                      <div className="text-xl md:text-2xl font-black text-red-700">
-                        {attendanceHistory.filter(r => r.status === 'absent' && r.date.startsWith(perceivedMonth)).length}
-                      </div>
-                      <div className="text-[9px] md:text-[10px] font-bold text-red-600 uppercase tracking-tighter">{t('nav.absentDays')}</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  {attendanceHistory.filter(r => r.date.startsWith(perceivedMonth)).length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {attendanceHistory
-                        .filter(r => r.date.startsWith(perceivedMonth))
-                        .sort((a, b) => b.date.localeCompare(a.date))
-                        .map((rec) => (
-                          <div key={rec.id} className="flex items-center justify-between p-5 bg-white rounded-3xl border border-slate-100 hover:shadow-lg hover:border-purple-100 transition-all group">
-                            <div className="flex items-center gap-4">
-                              <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center group-hover:bg-purple-50 transition-colors shadow-inner text-slate-400 font-black font-mono text-lg">
-                                {rec.date.split('-')[2]}
-                              </div>
-                              <div>
-                                <div className="font-black text-slate-800 text-lg">{rec.date}</div>
-                                <div className="text-xs text-slate-400 font-bold uppercase tracking-wider">{rec.session === 'morning' ? t('nav.sessions.morning') : t('nav.sessions.afternoon')}</div>
-                              </div>
-                            </div>
-                            <div className={`px-5 py-2 rounded-2xl text-xs font-black uppercase tracking-widest ${rec.status === 'present' ? 'bg-green-600 text-white shadow-lg shadow-green-100' : 'bg-red-600 text-white shadow-lg shadow-red-100'}`}>
-                              {rec.status === 'present' ? t('nav.status.present') : t('nav.status.absent')}
-                            </div>
-                          </div>
-                        ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-20 bg-slate-50 rounded-[40px] border-4 border-dashed border-slate-200">
-                      <p className="text-slate-400 font-black italic text-xl">{t('nav.noAttendance', { month: perceivedMonth })}</p>
-                    </div>
+                    </motion.div>
                   )}
-                </div>
+                </AnimatePresence>
+              </div>
+            ))}
+          </div>
+        </div>
+      </motion.section>
+
+      {/* Contact Section */}
+      <motion.section
+        id="contact"
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        viewport={{ once: true }}
+        transition={{ duration: 1 }}
+        className="w-full py-32 px-4 bg-slate-950 relative overflow-hidden z-10"
+      >
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-transparent to-amber-900/20 opacity-50" />
+
+        <div className="max-w-7xl mx-auto relative z-10">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="bg-white dark:bg-slate-900 border-4 border-slate-100 dark:border-slate-800 p-12 md:p-20 rounded-[4rem] text-center shadow-[0_32px_120px_rgba(0,0,0,0.4)]"
+          >
+            <h2 className="text-4xl md:text-6xl font-black text-slate-900 dark:text-white mb-6 font-cairo uppercase">
+              {t('ContactTitle')}
+            </h2>
+            <p className="text-slate-500 dark:text-slate-400 text-xl mb-16 font-bold max-w-2xl mx-auto leading-relaxed">
+              {t('ContactSubtitle')}
+            </p>
+
+            <div className="mt-12">
+              <ContactForm />
+            </div>
+
+            <div className="mt-16 pt-16 border-t border-slate-100 dark:border-slate-800 flex flex-wrap justify-center gap-10">
+              <div className="flex items-center gap-3 text-slate-600 dark:text-slate-300 font-bold font-cairo">
+                <CheckCircle2 className="text-amber-500" size={20} />
+                <span>Mogadishu, Somalia</span>
+              </div>
+              <div className="flex items-center gap-3 text-slate-600 dark:text-slate-300 font-bold font-cairo">
+                <CheckCircle2 className="text-amber-500" size={20} />
+                <span>Enterprise SLA</span>
+              </div>
+              <div className="flex items-center gap-3 text-slate-600 dark:text-slate-300 font-bold font-cairo">
+                <CheckCircle2 className="text-amber-500" size={20} />
+                <span>Secure Infrastructure</span>
               </div>
             </div>
           </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Hidden PDF Template for Parent Attendance Report - Positioned off-screen */}
-      {
-        result && config && (
-          <div
-            id="public-attendance-report"
-            className="bg-white p-[60px] w-[2480px]"
-            style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}
-            dir={i18n.dir()}
-            lang={i18n.language}
-          >
-            <div className="flex flex-col gap-10">
-              {/* Header Branded Section - Large & Clear */}
-              <div className={`flex ${i18n.dir() === 'rtl' ? 'flex-row' : 'flex-row-reverse'} justify-between items-center border-b-[8px] border-qabas-purple pb-10`}>
-                <div className={i18n.dir() === 'rtl' ? 'text-right' : 'text-left'}>
-                  <h1 className="text-[85px] font-black text-slate-900 leading-none">{config.schoolName}</h1>
-                  <p className="text-[45px] text-slate-600 font-bold uppercase tracking-wider">{config.schoolNameEn}</p>
-                </div>
-                {config.logoUrl && <img src={config.logoUrl} className="h-[280px] w-auto object-contain drop-shadow-xl" alt="Logo" />}
-              </div>
-
-              {/* Report Title Section - Prominent */}
-              <div className="text-center space-y-4 mt-6">
-                <h2 className="text-[80px] font-black text-qabas-purple uppercase tracking-widest font-amiri underline decoration-qabas-orange decoration-[6px] underline-offset-[15px]">
-                  {t('pdf.attendanceTitle')}
-                </h2>
-                <div className="flex items-center justify-center gap-20 mt-10 bg-slate-50 py-8 rounded-[40px] border-[2px] border-slate-200 px-20">
-                  <p className="text-[65px] font-black text-slate-900 font-amiri">{result.fullName}</p>
-                  <div className="flex items-center gap-8">
-                    <span className="text-[45px] font-bold text-slate-500 uppercase tracking-widest">{t('pdf.studentId')}:</span>
-                    <span className="text-[60px] font-black text-qabas-orange font-mono tracking-widest">{result.studentId}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Stats Summary - Large Impact Cards */}
-              <div className="grid grid-cols-2 gap-12 mt-6">
-                <div className="bg-green-50/50 p-10 rounded-[40px] border-[4px] border-green-100 flex items-center justify-between px-16 shadow-sm">
-                  <div className="text-[45px] font-bold text-green-700 uppercase tracking-widest">
-                    {t('pdf.presentDays')} {t('pdf.monthSelect')} {perceivedMonth}
-                  </div>
-                  <div className="text-[110px] font-black text-green-600 leading-none">
-                    {attendanceHistory.filter(r => r.status === 'present' && r.date.startsWith(perceivedMonth)).length}
-                  </div>
-                </div>
-                <div className="bg-red-50/50 p-10 rounded-[40px] border-[4px] border-red-100 flex items-center justify-between px-16 shadow-sm">
-                  <div className="text-[45px] font-bold text-red-700 uppercase tracking-widest">
-                    {t('pdf.absentDays')} {t('pdf.monthSelect')} {perceivedMonth}
-                  </div>
-                  <div className="text-[110px] font-black text-red-600 leading-none">
-                    {attendanceHistory.filter(r => r.status === 'absent' && r.date.startsWith(perceivedMonth)).length}
-                  </div>
-                </div>
-              </div>
-
-              {/* Attendance Table - High Scaled Density */}
-              <div className="mt-6">
-                <table className="w-full border-collapse">
-                  <thead>
-                    <tr className="bg-slate-900">
-                      <th className={`p-6 text-center text-[45px] font-black text-white border border-slate-800 ${i18n.dir() === 'rtl' ? 'rounded-tr-[30px]' : 'rounded-tl-[30px]'}`}>
-                        {t('pdf.date')}
-                      </th>
-                      <th className="p-6 text-center text-[45px] font-black text-white border border-slate-800">
-                        {t('attendance.table.status')}
-                      </th>
-                      <th className={`p-6 text-center text-[45px] font-black text-white border border-slate-800 ${i18n.dir() === 'rtl' ? 'rounded-tl-[30px]' : 'rounded-tr-[30px]'}`}>
-                        {t('attendance.table.notes')}
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {attendanceHistory
-                      .filter(r => r.date.startsWith(perceivedMonth))
-                      .sort((a, b) => b.date.localeCompare(a.date))
-                      .map((rec, idx) => (
-                        <tr key={rec.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}>
-                          <td className="p-5 border border-slate-100 font-bold font-mono text-center text-[45px] text-slate-700">{rec.date}</td>
-                          <td className="p-5 border border-slate-100 text-center font-black text-[50px]">
-                            <span className={rec.status === 'present' ? 'text-green-600' : 'text-red-600'}>
-                              {rec.status === 'present' ? t('pdf.present') : t('pdf.absent')}
-                            </span>
-                          </td>
-                          <td className={`p-5 border border-slate-100 ${i18n.dir() === 'rtl' ? 'text-right' : 'text-left'} text-[35px] text-slate-400 font-medium px-10`}>
-                            {rec.notes || t('pdf.noNotes')}
-                          </td>
-                        </tr>
-                      ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Footer / Signature Section - Balanced */}
-              <div className="mt-12 flex justify-between items-end border-t-4 border-slate-100 pt-12 px-12 pb-10">
-                <div className="text-center space-y-4">
-                  <p className="text-[45px] font-black text-slate-800 font-amiri">{t('pdf.recordedDate')}</p>
-                  <p className="text-[40px] font-mono font-bold text-slate-500 bg-slate-50 py-4 px-12 rounded-[30px] border border-slate-200">
-                    {new Date().toLocaleDateString(i18n.language === 'ar' ? 'ar-EG' : 'en-GB')}
-                  </p>
-                </div>
-
-                <div className="relative -mb-10">
-                  {config.stampUrl && <img src={config.stampUrl} className="h-[320px] w-auto object-contain opacity-90 rotate-[-12deg] drop-shadow-2xl" alt="Stamp" />}
-                </div>
-
-                <div className="text-center space-y-4">
-                  <p className="text-[45px] font-black text-slate-800 font-amiri">{t('pdf.signature')}</p>
-                  <div className="h-[180px] flex items-end justify-center min-w-[350px]">
-                    {config.managerSignatureUrl && <img src={config.managerSignatureUrl} className="h-full object-contain" alt="Signature" />}
-                  </div>
-                  <p className="text-[40px] font-black text-slate-600 border-t-[4px] border-slate-200 pt-5 mt-4">
-                    {config.managerName || t('pdf.signature')}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )
-      }
-    </div >
+        </div>
+      </motion.section>
+      <AIChatHelper context="public" />
+    </div>
   );
 };
 

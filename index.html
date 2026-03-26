@@ -5,7 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Aqooni Digital - Management Portal</title>
-  <link rel="icon" type="image/png" href="/logo.png" />
+  <link rel="icon" type="image/jpeg" href="/logo.jpg" />
 
   <!-- PWA Meta Tags -->
   <meta name="theme-color" content="#5b21b6" />
@@ -13,13 +13,28 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Aqooni Digital" />
-  <link rel="manifest" href="/manifest.json" />
-  <link rel="apple-touch-icon" href="/icons/icon-192x192.jpeg" />
+  <link rel="apple-touch-icon" href="/icons/icon-192.png" />
 
   <script src="https://cdn.tailwindcss.com"></script>
   <link
     href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&family=Amiri:wght@400;700&family=Cairo:wght@300;400;500;600;700;800;900&family=Noto+Naskh+Arabic:wght@400;500;600;700&family=Scheherazade+New:wght@400;500;700&display=swap"
     rel="stylesheet">
+  <script>
+    // Capture PWA install prompt globally before React loads
+    window.deferredPrompt = null;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      window.deferredPrompt = e;
+    });
+
+    // Immediate theme script to prevent flash
+    (function () {
+      const savedTheme = localStorage.getItem('theme');
+      if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+      }
+    })();
+  </script>
   <!-- Load jsPDF and html2canvas for client-side generation -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -28,6 +43,7 @@
   <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
   <script>
     tailwind.config = {
+      darkMode: 'class',
       theme: {
         extend: {
           colors: {
@@ -107,24 +123,9 @@
   <link rel="stylesheet" href="/index.css">
 </head>
 
-<body class="bg-slate-50 text-slate-900 antialiased selection:bg-qabas-purple-light selection:text-white font-sans">
+<body class="antialiased selection:bg-qabas-purple-light selection:text-white font-sans transition-colors duration-300">
   <div id="root"></div>
   <script type="module" src="/index.tsx"></script>
-  <script>
-    // Register Service Worker for PWA
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-          .then((registration) => {
-            console.log('SW registered:', registration.scope);
-          })
-          .catch((error) => {
-            // Silently fail in unsupported contexts (like webviews)
-            console.log('SW registration skipped:', error.message);
-          });
-      });
-    }
-  </script>
 </body>
 
 </html>

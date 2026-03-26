@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Plus, Filter, Download, Edit2, Trash2, X, ChevronLeft, ChevronRight, CheckCircle2, AlertCircle, AlertTriangle, RefreshCw, Upload, PlusCircle, Save } from 'lucide-react';
+import { Search, Plus, Filter, Download, Edit2, Trash2, X, ChevronLeft, ChevronRight, CheckCircle2, AlertCircle, AlertTriangle, RefreshCw, Upload, PlusCircle, Save, Calendar } from 'lucide-react';
 import { getStudents, saveStudent, deleteStudent, SUBJECT_LIST, generateUUID, getConfig, saveConfig } from '../services/api';
 import { Student, Subject, CertificateConfig } from '../types';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { normalizeArabic } from '../utils/stringUtils';
+import { useNavigate } from 'react-router-dom';
 
 declare global {
   interface Window {
@@ -14,6 +15,7 @@ declare global {
 
 const AdminStudents = () => {
   const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
   const [students, setStudents] = useState<Student[]>([]);
   const [filter, setFilter] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -48,8 +50,7 @@ const AdminStudents = () => {
     if (!currentData.subjects) return currentData;
 
     let totalMarks = 0; // Obtained
-    // STRICT RULE: Pass threshold is always 50%
-    const threshold = 50;
+    const gradingMethod = config?.gradingMethod || 'sum';
 
     const updatedSubjects = currentData.subjects.map((sub: Subject) => {
       let subObtained = 0;
@@ -63,11 +64,7 @@ const AdminStudents = () => {
         });
       }
 
-      // Individual Subject Logic:
-      // Assuming each subject is out of 100
       const subFinalScore = subObtained;
-
-      // Pass if subject score >= passThreshold
       const passThreshold = Number(config?.passThreshold) || 50;
       const isPass = subFinalScore >= passThreshold;
 
@@ -76,60 +73,31 @@ const AdminStudents = () => {
       return {
         ...sub,
         studentMarks: subFinalScore,
-        fullMarks: 100, // Fixed as per rule: Each subject = 100 marks
+        fullMarks: 100,
         displayScore: subFinalScore,
         result: isPass ? 'ناجح' : 'راسب'
       };
     });
 
-    // --- UNIVERSAL PERCENTAGE FORMULA ---
-    // Step 1: Total Possible = 100 * N (Number of subjects)
     const numberOfSubjects = updatedSubjects.length;
     const totalPossible = numberOfSubjects * 100;
 
-    // Step 2: Marks Obtained = Sum(Total of each subject) -> already in totalMarks
-
-    // Step 3: Percentage = (Marks Obtained / Total Possible) * 100
     let finalPercentage = 0;
     if (totalPossible > 0) {
-      finalPercentage = (totalMarks / totalPossible) * 100;
+      if (gradingMethod === 'average') {
+        finalPercentage = Math.floor(totalMarks / numberOfSubjects);
+      } else {
+        finalPercentage = Math.floor((totalMarks / totalPossible) * 100);
+      }
     }
 
-    // Round to 2 decimal places for accuracy, then check rule? 
-    // User examples showed integers mostly, but "49.86% approx 49%" -> let's use Math.floor or Math.round?
-    // User Example 1: 49.86 -> 49 (Fail). This implies Math.floor for safety or strict comparison?
-    // "49.86% approx 49%" suggests casting to int or floor. 
-    // However, usually 49.9 is rounded up. 
-    // Let's stick to standard Math.round() but allow decimals in storage if needed.
-    // User prompt: "49.86% approx 49%" -> RESULT FAIL. 
-    // This implies we should be careful. 
-    // If I use Math.round(49.86) -> 50 -> PASS. 
-    // User said "49.86% approx 49% -> FAIL". This is truncation/floor!
-    // Wait, Example 1: 349/700 = 0.49857... * 100 = 49.857...
-    // User says "49.86% approx 49%". This is NOT Math.round. This is Math.floor.
-    // I will use Math.floor to be safe and match the "strict" Fail condition for 49.86.
-
-    // Actually, let's look at the example again. 
-    // 349/700 * 100 = 49.85714... 
-    // User says it is 49% and FAIL.
-    // If I used Math.round, it would be 50% -> PASS.
-    // SO I MUST USE Math.floor OR raw comparison < 50.
-
-    // Let's keep one decimal for display but use raw for check?
-    // Or just use Math.floor as per the strong hint.
-
-    finalPercentage = Math.floor((totalMarks / totalPossible) * 100);
-
-    // Step 4: Rule
-    // 50 -> Pass (or custom threshold)
-    // 49 -> Fail
     const finalPassThreshold = Number(config?.passThreshold) || 50;
     const finalResult = finalPercentage >= finalPassThreshold ? 'ناجح' : 'راسب';
 
     return {
       ...currentData,
       subjects: updatedSubjects,
-      total: totalMarks, // The raw sum obtained
+      total: totalMarks,
       percentage: finalPercentage,
       finalResult
     };
@@ -172,10 +140,10 @@ const AdminStudents = () => {
       });
 
       const initialData = {
-        studentId: '', // Manual Entry
+        studentId: `${config?.studentPrefix || ''}${Math.floor(1000 + Math.random() * 9000)}`,
         fullName: '',
         academicYear: new Date().getFullYear().toString(),
-        classLevel: 'level1',
+        classLevel: config?.classLevels?.[0]?.id || 'level1',
         subjects: initialSubjects
       };
       setFormData(calculateResults(initialData));
@@ -184,7 +152,9 @@ const AdminStudents = () => {
   };
 
   const generateRandomId = () => {
-    return Math.floor(100000000000 + Math.random() * 900000000000).toString();
+    const prefix = config?.studentPrefix || '';
+    const random = Math.floor(100000 + Math.random() * 900000).toString();
+    return `${prefix}${random}`;
   };
 
   const getSubjectLabel = (name: string) => {
@@ -518,76 +488,87 @@ const AdminStudents = () => {
   return (
     <div dir={i18n.dir()}>
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-800">{t('students.title')}</h1>
-          <p className="text-slate-500">{t('students.subtitle')}</p>
+        <div id="tour-students-header">
+          <h1 className="text-2xl font-bold text-[var(--text-main)]">{t('students.title')}</h1>
+          <p className="text-[var(--text-muted)]">{t('students.subtitle')}</p>
         </div>
 
         <div className="flex flex-wrap gap-3 w-full md:w-auto">
-          <button onClick={handleExportExcel} className="flex-1 md:flex-none bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center justify-center gap-2 transition-colors shadow-sm text-sm font-bold">
+          <button onClick={handleExportExcel} className="flex-1 md:flex-none bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl flex items-center justify-center gap-2 transition-all shadow-sm text-sm font-bold">
             <Download size={18} /> {t('students.exportExcel')}
           </button>
-          <label className="flex-1 md:flex-none bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg flex items-center justify-center gap-2 transition-colors shadow-sm cursor-pointer text-sm font-bold">
+          <label className="flex-1 md:flex-none bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-xl flex items-center justify-center gap-2 transition-all shadow-sm cursor-pointer text-sm font-bold">
             {isImporting ? <RefreshCw className="animate-spin" size={18} /> : <Upload size={18} />}
             <span>{isImporting ? t('students.importing') : t('students.importExcel')}</span>
             <input type="file" accept=".xlsx, .xls" className="hidden" ref={fileInputRef} onChange={handleImportExcel} disabled={isImporting} />
           </label>
-          <button onClick={() => handleOpenModal()} className="flex-1 md:flex-none bg-royal-900 hover:bg-royal-800 text-white px-4 py-2 rounded-lg flex items-center justify-center gap-2 transition-colors shadow-lg text-sm font-bold">
+          <button onClick={() => handleOpenModal()} className="flex-1 md:flex-none bg-[var(--qabas-purple)] hover:bg-purple-700 text-white px-4 py-2 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg text-sm font-bold">
             <Plus size={18} /> {t('students.addStudent')}
           </button>
         </div>
       </div>
 
-      <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 mb-6 flex items-center gap-4">
-        <Search className="text-slate-400" size={20} />
+      <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-2xl shadow-sm mb-6 flex items-center gap-4 px-4 py-2 transition-all">
+        <Search className="text-[var(--text-muted)]" size={20} />
         <input
           type="text"
           placeholder={t('students.searchPlaceholder')}
-          className={`flex-1 outline-none text-slate-700 ${i18n.dir() === 'rtl' ? 'text-right' : 'text-left'}`}
+          className={`flex-1 outline-none bg-transparent text-[var(--text-main)] ${i18n.dir() === 'rtl' ? 'text-right' : 'text-left'}`}
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
         />
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+      <div id="tour-students-table" className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-2xl shadow-sm overflow-hidden transition-all">
         <div className="overflow-x-auto min-h-[400px]">
           <table className="w-full text-right border-collapse min-w-[800px]">
-            <thead className="bg-slate-50 text-slate-500 text-xs uppercase font-semibold">
+            <thead className="bg-[var(--bg-secondary)] text-[var(--text-muted)] text-[10px] uppercase font-bold tracking-tighter">
               <tr>
-                <th className="px-6 py-4">{t('students.table.name')}</th>
-                <th className="px-6 py-4">{t('students.table.id')}</th>
-                <th className="px-6 py-4">{t('students.table.level')}</th>
-                <th className="px-6 py-4">{t('students.table.result')}</th>
-                <th className="px-6 py-4 text-center">{t('students.table.actions')}</th>
+                <th className="px-3 py-3">{t('students.table.name')}</th>
+                <th className="px-3 py-3">{t('students.table.id')}</th>
+                <th className="px-3 py-3">{t('students.table.level')}</th>
+                <th className="px-3 py-3">{t('students.table.result')}</th>
+                <th className="px-3 py-3 text-center">{t('nav.attendance') || 'Attendance'}</th>
+                <th className="px-3 py-3 text-center">{t('students.table.actions')}</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-[var(--border-color)]">
               {loading ? (
                 <tr><td colSpan={5} className="px-6 py-8 text-center text-slate-500">{t('common.loading')}</td></tr>
               ) : filteredStudents.length === 0 ? (
                 <tr><td colSpan={5} className="px-6 py-8 text-center text-slate-500">{t('students.messages.noRecords')}</td></tr>
               ) : (
                 filteredStudents.map((student) => (
-                  <tr key={student.id} className="hover:bg-slate-50 transition-colors group">
-                    <td className="px-6 py-4 font-bold text-slate-800">{student.fullName}</td>
-                    <td className="px-6 py-4 font-mono text-slate-600">{student.studentId}</td>
-                    <td className="px-6 py-4 text-slate-600">{student.classLevel}</td>
+                  <tr key={student.id} className="hover:bg-[var(--bg-secondary)] transition-colors group border-b border-[var(--border-color)] text-xs">
+                    <td className="px-3 py-2 font-bold text-[var(--text-main)]">{student.fullName}</td>
+                    <td className="px-3 py-2 font-mono text-[var(--text-secondary)]">{student.studentId}</td>
+                    <td className="px-3 py-2 text-[var(--text-secondary)]">{student.classLevel}</td>
                     <td className="px-6 py-4">
-                      <span className={`text-xs font-bold px-3 py-1 rounded-full ${
+                      <span className={`text-[10px] font-black uppercase px-3 py-1 rounded-full ${
                         // Support all three languages for pass/fail
                         ['ناجح', 'pass', 'gudbay', 'passed', 'gudbey'].includes(student.finalResult?.toLowerCase()?.trim() || '')
-                          ? 'bg-green-100 text-green-700'
-                          : 'bg-red-100 text-red-700'
+                          ? 'bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-500/20'
+                          : 'bg-red-100 dark:bg-red-500/10 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-500/20'
                         }`}>
                         {['ناجح', 'pass', 'gudbay', 'passed', 'gudbey'].includes(student.finalResult?.toLowerCase()?.trim() || '')
                           ? t('students.status.pass')
                           : t('students.status.fail')}
                       </span>
                     </td>
+                    <td className="px-3 py-2 text-center">
+                      <button
+                        title="View Attendance"
+                        onClick={() => navigate('/admin/attendance', { state: { studentId: student.studentId, studentName: student.fullName } })}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-purple-50 hover:bg-purple-100 dark:bg-purple-500/10 dark:hover:bg-purple-500/20 text-purple-600 dark:text-purple-400 rounded-xl text-xs font-bold transition-all"
+                      >
+                        <Calendar size={14} />
+                        <span>{t('nav.attendance') || 'Attendance'}</span>
+                      </button>
+                    </td>
                     <td className="px-6 py-4 text-left">
                       <div className="flex justify-end gap-3">
-                        <button onClick={() => handleOpenModal(student)} className="text-blue-600 hover:bg-blue-100 p-2 rounded-full transition-colors cursor-pointer"><Edit2 size={18} /></button>
-                        <button onClick={(e) => handleDeleteClick(e, student.id)} className="text-red-500 hover:bg-red-100 p-2 rounded-full transition-colors cursor-pointer"><Trash2 size={18} /></button>
+                        <button onClick={() => handleOpenModal(student)} className="text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-500/10 p-2 rounded-xl transition-all cursor-pointer"><Edit2 size={18} /></button>
+                        <button onClick={(e) => handleDeleteClick(e, student.id)} className="text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 p-2 rounded-xl transition-all cursor-pointer"><Trash2 size={18} /></button>
                       </div>
                     </td>
                   </tr>
@@ -599,22 +580,22 @@ const AdminStudents = () => {
       </div>
 
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 overflow-y-auto">
-          <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl my-4 md:my-8 overflow-hidden flex flex-col max-h-[95vh]">
-            <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100 bg-slate-50">
-              <h3 className="font-bold text-lg text-slate-800">{editingStudent ? t('students.modal.editTitle') : t('students.modal.addTitle')}</h3>
-              <button onClick={() => setIsModalOpen(false)}><X className="text-slate-400 hover:text-slate-700" /></button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 dark:bg-black/70 backdrop-blur-sm p-4 overflow-y-auto">
+          <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-[var(--bg-card)] rounded-[2rem] shadow-2xl w-full max-w-5xl my-4 md:my-8 overflow-hidden flex flex-col max-h-[95vh] border border-[var(--border-color)]">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-[var(--border-color)] bg-[var(--bg-secondary)]">
+              <h3 className="font-bold text-lg text-[var(--text-main)]">{editingStudent ? t('students.modal.editTitle') : t('students.modal.addTitle')}</h3>
+              <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-[var(--bg-card)] rounded-full transition-colors"><X className="text-[var(--text-muted)] hover:text-[var(--text-main)]" /></button>
             </div>
 
             <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 md:p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-500 uppercase">{t('students.table.id')}</label>
+                  <label className="text-xs font-bold text-[var(--text-muted)] uppercase">{t('students.table.id')}</label>
                   <div className="flex gap-2">
                     <input
                       required
                       type="text"
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-royal-500 text-sm font-mono placeholder:text-slate-300"
+                      className="w-full px-3 py-2 border border-[var(--border-color)] bg-[var(--bg-secondary)] rounded-xl focus:ring-2 focus:ring-[var(--qabas-purple)] outline-none text-sm font-mono placeholder:text-[var(--text-muted)] text-[var(--text-main)] transition-all"
                       placeholder="e.g. ID-FIRST-LAST"
                       value={formData.studentId || ''}
                       onChange={e => setFormData({ ...formData, studentId: e.target.value })}
@@ -622,52 +603,56 @@ const AdminStudents = () => {
                   </div>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-500 uppercase">{t('students.modal.studentName')}</label>
-                  <input required type="text" className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-royal-500 text-sm" value={formData.fullName || ''} onChange={e => setFormData({ ...formData, fullName: e.target.value })} />
+                  <label className="text-xs font-bold text-[var(--text-muted)] uppercase">{t('students.modal.studentName')}</label>
+                  <input required type="text" className="w-full px-3 py-2 border border-[var(--border-color)] bg-[var(--bg-secondary)] rounded-xl focus:ring-2 focus:ring-[var(--qabas-purple)] outline-none text-sm text-[var(--text-main)] transition-all" value={formData.fullName || ''} onChange={e => setFormData({ ...formData, fullName: e.target.value })} />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-500 uppercase">{t('students.modal.level')}</label>
-                  <select className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-royal-500 text-sm" value={formData.classLevel || 'level1'} onChange={e => setFormData({ ...formData, classLevel: e.target.value })}>
-                    <option value="level1">{t('students.levels.level1')}</option>
-                    <option value="level2">{t('students.levels.level2')}</option>
-                    <option value="level3">{t('students.levels.level3')}</option>
-                    <option value="level4">{t('students.levels.level4')}</option>
-                    <option value="level5">{t('students.levels.level5')}</option>
-                    <option value="level6">{t('students.levels.level6')}</option>
-                    <option value="level7">{t('students.levels.level7')}</option>
-                    <option value="level8">{t('students.levels.level8')}</option>
-                    <option value="level9">{t('students.levels.level9')}</option>
-                    <option value="level10">{t('students.levels.level10')}</option>
-                    <option value="level11">{t('students.levels.level11')}</option>
-                    <option value="level12">{t('students.levels.level12')}</option>
+                  <label className="text-xs font-bold text-[var(--text-muted)] uppercase">{t('students.modal.level')}</label>
+                  <select className="w-full px-3 py-2 border border-[var(--border-color)] bg-[var(--bg-secondary)] rounded-xl focus:ring-2 focus:ring-[var(--qabas-purple)] outline-none text-sm text-[var(--text-main)] transition-all" value={formData.classLevel || (config?.classLevels?.[0]?.id || 'level1')} onChange={e => setFormData({ ...formData, classLevel: e.target.value })}>
+                    {config?.classLevels && config.classLevels.length > 0 ? (
+                      config.classLevels.map(level => (
+                        <option key={level.id} value={level.id}>
+                          {i18n.language === 'ar' ? level.nameAr : (i18n.language === 'so' ? level.nameSo : level.nameEn)}
+                        </option>
+                      ))
+                    ) : (
+                      <>
+                        <option value="level1">{t('students.levels.level1')}</option>
+                        <option value="level2">{t('students.levels.level2')}</option>
+                        <option value="level3">{t('students.levels.level3')}</option>
+                        <option value="level4">{t('students.levels.level4')}</option>
+                        <option value="level5">{t('students.levels.level5')}</option>
+                        <option value="level6">{t('students.levels.level6')}</option>
+                      </>
+                    )}
                   </select>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-500 uppercase">{t('students.modal.academicYear')}</label>
-                  <input required type="text" className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-royal-500 text-sm" value={formData.academicYear || ''} onChange={e => setFormData({ ...formData, academicYear: e.target.value })} />
+                  <label className="text-xs font-bold text-[var(--text-muted)] uppercase">{t('students.modal.academicYear')}</label>
+                  <input required type="text" className="w-full px-3 py-2 border border-[var(--border-color)] bg-[var(--bg-secondary)] rounded-xl focus:ring-2 focus:ring-[var(--qabas-purple)] outline-none text-sm text-[var(--text-main)] transition-all" value={formData.academicYear || ''} onChange={e => setFormData({ ...formData, academicYear: e.target.value })} />
                 </div>
               </div>
 
-              <div className="flex justify-between items-center mb-4 pb-2 border-b">
+              <div className="flex justify-between items-center mb-4 pb-2 border-b border-[var(--border-color)]">
                 <div className="flex items-center gap-4">
-                  <h4 className="font-bold text-slate-800">{t('students.modal.subjectsTitle')}</h4>
-                  <button type="button" onClick={handleAddAssessmentColumn} className="text-[10px] bg-orange-50 text-orange-600 hover:bg-orange-100 px-3 py-1 rounded-full font-black uppercase tracking-widest flex items-center gap-1 transition-all">
+                  <h4 className="font-bold text-[var(--text-main)]">{t('students.modal.subjectsTitle')}</h4>
+                  <button type="button" onClick={handleAddAssessmentColumn} className="text-[10px] bg-[var(--bg-secondary)] text-orange-600 dark:text-orange-400 hover:bg-[var(--bg-card)] border border-[var(--border-color)] px-3 py-1 rounded-full font-black uppercase tracking-widest flex items-center gap-1 transition-all">
                     <Plus size={12} /> {t('settings.grading.addColumn')}
                   </button>
                 </div>
-                <button type="button" onClick={handleAddSubject} className="text-xs text-royal-600 hover:text-royal-800 flex items-center gap-1 font-bold bg-royal-50 px-3 py-1.5 rounded-lg transition-all active:scale-[0.98]"><PlusCircle size={14} /> {t('students.modal.addSubject')}</button>
+                <button type="button" onClick={handleAddSubject} className="text-xs text-[var(--qabas-purple)] hover:text-purple-700 flex items-center gap-1 font-bold bg-[var(--bg-secondary)] px-3 py-1.5 rounded-xl transition-all active:scale-[0.98] border border-[var(--border-color)]"><PlusCircle size={14} /> {t('students.modal.addSubject')}</button>
               </div>
 
-              <div className="border rounded-xl overflow-hidden mb-6 overflow-x-auto shadow-sm">
+              <div className="border border-[var(--border-color)] rounded-xl overflow-hidden mb-6 overflow-x-auto shadow-sm bg-[var(--bg-card)]">
                 <table className="w-full text-right text-xs min-w-[700px]">
-                  <thead className="bg-slate-50 font-bold text-slate-600 border-b">
+                  <thead className="bg-[var(--bg-secondary)] font-bold text-[var(--text-muted)] border-b border-[var(--border-color)] uppercase tracking-wider">
                     <tr>
                       <th className="px-4 py-3 min-w-[150px]">{t('students.modal.table.subject')}</th>
                       {config?.assessmentColumns?.map(col => (
-                        <th key={col.id} className="px-4 py-3 text-center bg-slate-50/50 group/col relative">
+                        <th key={col.id} className="px-4 py-3 text-center group/col relative">
                           <div className="flex items-center justify-center gap-1">
                             <span>{col.name}</span>
-                            <span className="text-[10px] text-slate-400">({col.maxMarks})</span>
+                            <span className="text-[10px] text-[var(--text-muted)]">({col.maxMarks})</span>
                             <button
                               type="button"
                               onClick={() => handleColDeleteClick(col.id)}
@@ -683,18 +668,18 @@ const AdminStudents = () => {
                             <th className="px-4 py-3 text-center">{t('students.modal.table.studentMarks')}</th>
                           </>
                         )}
-                      <th className="px-4 py-3 text-center w-24 bg-royal-50/30 text-royal-600">Total</th>
+                      <th className="px-4 py-3 text-center w-24 bg-[var(--bg-secondary)] text-[var(--qabas-purple)] font-black">{t('students.modal.table.total')}</th>
                       <th className="px-4 py-3 text-center w-24">{t('students.modal.table.result')}</th>
                       <th className="px-4 py-3 text-center w-16">{t('students.modal.table.delete')}</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-[var(--border-color)]">
                     {formData.subjects?.map((subject, index) => (
-                      <tr key={index} className="hover:bg-slate-50 group">
+                      <tr key={index} className="hover:bg-[var(--bg-secondary)] group">
                         <td className="px-4 py-2">
                           <input
                             type="text"
-                            className={`w-full px-3 py-1.5 border border-transparent group-hover:border-slate-200 rounded ${i18n.dir() === 'rtl' ? 'text-right' : 'text-left'} focus:border-royal-400 focus:bg-white outline-none font-medium transition-all`}
+                            className={`w-full px-3 py-1.5 border border-transparent group-hover:border-[var(--border-color)] bg-transparent rounded-lg ${i18n.dir() === 'rtl' ? 'text-right' : 'text-left'} focus:ring-2 focus:ring-[var(--qabas-purple)] focus:bg-[var(--bg-card)] outline-none font-bold transition-all text-[var(--text-main)]`}
                             value={getSubjectLabel(subject.name)}
                             onChange={(e) => handleSubjectNameChange(index, e.target.value)}
                             readOnly={false}
@@ -704,18 +689,18 @@ const AdminStudents = () => {
                           <td key={col.id} className="px-4 py-2">
                             <input
                               type={col.type === 'number' ? 'number' : 'text'}
-                              className="w-full px-2 py-1.5 border border-slate-100 rounded text-center focus:border-royal-400 focus:ring-2 ring-royal-50 outline-none transition-all font-mono"
+                              className="w-full px-2 py-1.5 border border-[var(--border-color)] bg-[var(--bg-secondary)] rounded-lg text-center focus:ring-2 focus:ring-[var(--qabas-purple)] outline-none transition-all font-mono text-[var(--text-main)]"
                               value={subject.assessments?.[col.id] || ''}
                               onChange={(e) => handleAssessmentChange(index, col.id, e.target.value)}
                             />
                           </td>
                         )) || (
                             <>
-                              <td className="px-4 py-2"><input type="number" className="w-16 px-2 py-1 border rounded text-center" value={subject.fullMarks} readOnly /></td>
-                              <td className="px-4 py-2"><input type="number" className="w-16 px-2 py-1 border rounded text-center" value={subject.studentMarks} readOnly /></td>
+                              <td className="px-4 py-2"><input type="number" className="w-16 px-2 py-1 border border-[var(--border-color)] rounded text-center bg-[var(--bg-secondary)] text-[var(--text-main)]" value={subject.fullMarks} readOnly /></td>
+                              <td className="px-4 py-2"><input type="number" className="w-16 px-2 py-1 border border-[var(--border-color)] rounded text-center bg-[var(--bg-secondary)] text-[var(--text-main)]" value={subject.studentMarks} readOnly /></td>
                             </>
                           )}
-                        <td className="px-4 py-2 text-center font-black text-slate-800 bg-royal-50/10">
+                        <td className="px-4 py-2 text-center font-black text-[var(--text-main)] bg-[var(--bg-secondary)]">
                           {/* Use calculation result derived 'displayScore' if available, else raw marks */}
                           {(subject as any).displayScore !== undefined ? (subject as any).displayScore : subject.studentMarks}
                         </td>
@@ -723,8 +708,8 @@ const AdminStudents = () => {
                           <span className={`px-2 py-1 rounded text-[9px] font-black uppercase tracking-wider ${
                             // Support all three languages for pass/fail
                             ['ناجح', 'pass', 'gudbay', 'passed', 'gudbey'].includes(subject.result?.toLowerCase()?.trim() || '')
-                              ? 'bg-green-100 text-green-700'
-                              : 'bg-red-100 text-red-700'
+                              ? 'bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400'
+                              : 'bg-red-100 dark:bg-red-500/10 text-red-700 dark:text-red-400'
                             }`}>
                             {['ناجح', 'pass', 'gudbay', 'passed', 'gudbey'].includes(subject.result?.toLowerCase()?.trim() || '')
                               ? t('students.status.pass')
@@ -732,18 +717,18 @@ const AdminStudents = () => {
                           </span>
                         </td>
                         <td className="px-4 py-2 text-center">
-                          <button type="button" onClick={() => handleDeleteSubject(index)} className="text-slate-300 hover:text-red-500 p-1.5 transition-colors"><Trash2 size={14} /></button>
+                          <button type="button" onClick={() => handleDeleteSubject(index)} className="text-[var(--text-muted)] hover:text-red-500 transition-colors p-2 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl"><Trash2 size={14} /></button>
                         </td>
                       </tr>
                     ))}
                   </tbody>
-                  <tfoot className="bg-slate-50/80 font-bold border-t-2 border-slate-100">
+                  <tfoot className="bg-[var(--bg-secondary)] font-bold border-t-2 border-[var(--border-color)]">
                     <tr>
-                      <td className="px-4 py-4 text-slate-500 uppercase tracking-wider" colSpan={(config?.assessmentColumns?.length || 2) + 1}>{t('students.modal.footer.total')}</td>
-                      <td className="px-4 py-4 text-center text-lg font-black text-slate-900 border-x border-slate-100">{formData.total}</td>
+                      <td className="px-4 py-4 text-[var(--text-muted)] uppercase tracking-wider" colSpan={(config?.assessmentColumns?.length || 2) + 1}>{t('students.modal.footer.total')}</td>
+                      <td className="px-4 py-4 text-center text-lg font-black text-[var(--text-main)] border-x border-[var(--border-color)]">{formData.total}</td>
                       <td className="px-4 py-4 text-center" colSpan={2}>
                         <div className="flex flex-col items-center">
-                          <span className="text-xl font-black text-royal-600">{formData.percentage}%</span>
+                          <span className="text-xl font-black text-[var(--qabas-purple)]">{formData.percentage}%</span>
                           <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
                             // Support all three languages for pass/fail
                             ['ناجح', 'pass', 'gudbay', 'passed', 'gudbey'].includes(formData.finalResult?.toLowerCase()?.trim() || '')
@@ -762,15 +747,16 @@ const AdminStudents = () => {
               </div>
             </form>
 
-            <div className="px-6 py-4 border-t bg-slate-50 flex justify-end gap-3 items-center">
-              <button onClick={() => setIsModalOpen(false)} className="px-5 py-2 text-slate-600 hover:text-slate-800 font-bold text-sm transition-colors">{t('students.modal.footer.cancel')}</button>
-              <button onClick={handleSubmit} className="px-8 py-2.5 bg-royal-900 hover:bg-slate-900 text-white rounded-xl font-black shadow-xl shadow-royal-900/20 flex items-center gap-2 transition-all active:scale-[0.98] text-sm uppercase tracking-wide">
+            <div className="px-6 py-4 border-t border-[var(--border-color)] bg-[var(--bg-secondary)] flex justify-end gap-3 items-center">
+              <button onClick={() => setIsModalOpen(false)} className="px-5 py-2 text-[var(--text-secondary)] hover:text-[var(--text-main)] font-bold text-sm transition-colors">{t('students.modal.footer.cancel')}</button>
+              <button onClick={handleSubmit} className="px-8 py-2.5 bg-[var(--qabas-purple)] hover:bg-purple-700 text-white rounded-xl font-black shadow-xl shadow-purple-900/20 flex items-center gap-2 transition-all active:scale-[0.98] text-sm uppercase tracking-wide border border-white/10">
                 <Save size={18} /> {t('students.modal.footer.save')}
               </button>
             </div>
           </motion.div>
         </div>
-      )}
+      )
+      }
 
       {/* Column Delete Confirmation Modal */}
       <AnimatePresence>
@@ -787,27 +773,27 @@ const AdminStudents = () => {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden relative z-10 p-6 text-center"
+              className="bg-[var(--bg-card)] border border-[var(--border-color)] w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden relative z-10 p-8 text-center"
             >
-              <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4 text-red-500">
-                <AlertTriangle size={32} />
+              <div className="w-20 h-20 bg-red-50 dark:bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6 text-red-500">
+                <AlertTriangle size={40} />
               </div>
-              <h3 className="text-xl font-bold text-slate-800 mb-2">{t('settings.grading.confirmDelete')}</h3>
-              <p className="text-slate-500 mb-8 text-sm leading-relaxed">
+              <h3 className="text-2xl font-black text-[var(--text-main)] mb-3">{t('settings.grading.confirmDelete')}</h3>
+              <p className="text-[var(--text-muted)] mb-8 text-sm leading-relaxed font-medium">
                 Are you sure you want to delete this column? Subject data for this column may be lost.
               </p>
               <div className="flex gap-3 justify-center">
                 <button
                   onClick={() => setConfirmColDeleteModal({ show: false, colId: null })}
-                  className="px-6 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold hover:bg-slate-50 transition-colors"
+                  className="px-8 py-3 rounded-xl border border-[var(--border-color)] text-[var(--text-secondary)] font-bold hover:bg-[var(--bg-secondary)] transition-all"
                 >
                   {t('common.cancel')}
                 </button>
                 <button
                   onClick={confirmDeleteColumn}
-                  className="px-6 py-2.5 rounded-xl bg-red-500 text-white font-bold hover:bg-red-600 shadow-lg shadow-red-500/30 transition-all hover:scale-105"
+                  className="px-8 py-3 rounded-xl bg-red-600 text-white font-black hover:bg-red-700 shadow-xl shadow-red-500/30 transition-all hover:scale-105 active:scale-95"
                 >
-                  Delete Column
+                  {t('common.delete') || 'Delete Column'}
                 </button>
               </div>
             </motion.div>
@@ -829,25 +815,25 @@ const AdminStudents = () => {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden relative z-10 p-6 text-center"
+              className="bg-[var(--bg-card)] border border-[var(--border-color)] w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden relative z-10 p-8 text-center"
             >
-              <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4 text-red-500">
-                <AlertTriangle size={32} />
+              <div className="w-20 h-20 bg-red-50 dark:bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6 text-red-500">
+                <AlertTriangle size={40} />
               </div>
-              <h3 className="text-xl font-bold text-slate-800 mb-2">{t('students.messages.confirmDelete')}</h3>
-              <p className="text-slate-500 mb-8 text-sm leading-relaxed">
+              <h3 className="text-2xl font-black text-[var(--text-main)] mb-3">{t('students.messages.confirmDelete')}</h3>
+              <p className="text-[var(--text-muted)] mb-8 text-sm leading-relaxed font-medium">
                 This will permanently remove the student and all their academic records. This action cannot be undone.
               </p>
               <div className="flex gap-3 justify-center">
                 <button
                   onClick={() => setConfirmDeleteModal({ show: false, id: null })}
-                  className="px-6 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold hover:bg-slate-50 transition-colors"
+                  className="px-8 py-3 rounded-xl border border-[var(--border-color)] text-[var(--text-secondary)] font-bold hover:bg-[var(--bg-secondary)] transition-all"
                 >
                   {t('common.cancel')}
                 </button>
                 <button
                   onClick={confirmDeleteStudent}
-                  className="px-6 py-2.5 rounded-xl bg-red-500 text-white font-bold hover:bg-red-600 shadow-lg shadow-red-500/30 transition-all hover:scale-105"
+                  className="px-8 py-3 rounded-xl bg-red-600 text-white font-black hover:bg-red-700 shadow-xl shadow-red-500/30 transition-all hover:scale-105 active:scale-95"
                 >
                   {t('students.modal.table.delete')}
                 </button>
@@ -856,7 +842,7 @@ const AdminStudents = () => {
           </div>
         )}
       </AnimatePresence>
-    </div>
+    </div >
   );
 };
 

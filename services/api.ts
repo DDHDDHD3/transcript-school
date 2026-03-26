@@ -1,4 +1,4 @@
-import { Student, CertificateConfig, Analytics, Subject, AttendanceRecord, AttendanceReport } from '../types';
+import { Student, CertificateConfig, Analytics, Subject, AttendanceRecord, AttendanceReport, CreditRequest, Teacher, ContactInquiry } from '../types';
 import sql from '../db';
 
 // Keys for LocalStorage
@@ -23,15 +23,28 @@ export const SUBJECT_LIST = [
 
 // Default Configuration (Fallback only)
 const DEFAULT_CONFIG: CertificateConfig = {
-  schoolName: 'معهد قبس الهدى للدراسات الشرعية واللغوية',
-  schoolNameEn: 'QABAS AL-HUDA INSTITUTE FOR SHARIA AND LINGUISTIC STUDIES',
-  logoUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MDAgNTAwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImdyYWQxIiB4MT0iMCUiIHkxPSIwJSIgeDI9IjEwMCUiIHkyPSIxMDAlIj48c3RvcCBvZmZzZXQ9IjAlIiBzdHlsZT0ic3RvcC1jb2xvcjojZWE1ODBjO3N0b3Atb3BhY2l0eToxIiAvPjxzdG9wIG9mZnNldD0iMTAwJSIgc3R5bGU9InN0b3AtY29sb3I6I2M5NDAwYztzdG9wLW9wYWNpdHk6MSIgLz48L2xpbmVhckdyYWRpZW50PjxsaW5lYXJHcmFkaWVudCBpZD0iZ3JhZDIiIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPjxzdG9wIG9mZnNldD0iMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiM3YzNhZWQ7c3RvcC1vcGFjaXR5OjEiIC8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdHlsZT0ic3RvcC1jb2xvcjojNWIyMWI2O3N0b3Atb3BhY2l0eToxIiAvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjwhLS0gT3V0ZXIgRGlhbW9uZCBTaGFwZSAoT3JhbmdlKSAtLT48cGF0aCBkPSJNMjUwIDUwIEw1MCAyNTAgTDI1MCA0NTAgTDIwMCA0ODAgTDAgMjUwIEwyMDAgMjAgWiIgZmlsbD0idXJsKCNncmFkMSkiIC8+PHBhdGggZD0iTTI1MCA1MCBMNDUwIDI1MCBMMjUwIDQwMCBMMzAwIDQ4MCBMNTAwIDI1MCBMMzAwIDIwIFoiIGZpbGw9InVybCgjZ3JhZDIpIiAvPjwhLS0gSW5uZXIgV2hpdGUgQmFja2dyb3VuZCAtLT48cGF0aCBkPSJNMjUwIDEwMCBMMzkwIDI1MCBMMjUwIDQwMCBMMTEwIDI1MCBaIiBmaWxsPSIjZmZmZmZmIiAvPjwhLS0gQXJhYmljIENhbGxpZ3JhcGh5IChTdHlsaXplZCkgLS0+PHBhdGggZD0iTTI1MCAxNzAgQzIyMCAxNzAgMjAwIDE5MCAyMDAgMjIwIEMyMDAgMjUwIDIyMCAyNzAgMjUwIDI3MCBDMjgwIDI3MCAzMDAgMjUwIDMwMCAyMjAgQzMwMCAxOTAgMjgwIDE3MCAyNTAgMTcwIFogTTI1MCAxOTAgQzI2NSAxOTAgMjc1IDIwNSAyNzUgMjIwIEMyNzUgMjM1IDI2NSAyNTAgMjUwIDI1MCBDMjM1IDI1MCAyMjUgMjM1IDIyNSAyMjAgQzIyNSAyMDUgMjM1IDE5MCAyNTAgMTkwIFoiIGZpbGw9IiM1YjIxYjYiIC8+PCEtLSBCb29rIFNoYXBlIChQdXJwbGUvT3JhbmdlKSAtLT48cGF0aCBkPSJNMTMwIDMzMCBRMjUwIDM4MCAzNzAgMzMwIEwzNzAgMzYwIFEyNTAgNDEwIDEzMCAzNjAgWiIgZmlsbD0iIzViMjFiNiIgLz48cGF0aCBkPSJNMTMwIDM2MCBRMjUwIDQxMCAzNzAgMzYwIEwzNzAgMzg1IFEyNTAgNDM1IDEzMCAzODUgWiIgZmlsbD0iI2VhNTgwYyIgLz48IS0tIFFBSEkgVGV4dCAtLT48dGV4dCB4PSIyNTAiIHk9IjMwNSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjI0IiBmb250LXdlaWdodD0ibm9ybWFsIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjNWIyMWI2Ij5RQUhJPC90ZXh0Pjwvc3ZnPg==',
+  schoolName: 'New School Name',
+  schoolNameEn: 'New School Name English',
+  logoUrl: '/logo.jpg',
   stampUrl: '', // Gold stamp
   managerName: '',
   managerSignatureUrl: '',
   themeColor: '#5b21b6',
   gradingMethod: 'sum',
   passThreshold: 50, // Strict rule: 50 is Pass
+  studentPrefix: 'AQ-',
+  classLevels: [
+    { id: 'level1', nameAr: 'المستوى الأول', nameEn: 'Level 1', nameSo: 'Heerka 1' },
+    { id: 'level2', nameAr: 'المستوى الثاني', nameEn: 'Level 2', nameSo: 'Heerka 2' },
+    { id: 'level3', nameAr: 'المستوى الثالث', nameEn: 'Level 3', nameSo: 'Heerka 3' },
+    { id: 'level4', nameAr: 'المستوى الرابع', nameEn: 'Level 4', nameSo: 'Heerka 4' },
+    { id: 'level5', nameAr: 'المستوى الخامس', nameEn: 'Level 5', nameSo: 'Heerka 5' },
+    { id: 'level6', nameAr: 'المستوى السادس', nameEn: 'Level 6', nameSo: 'Heerka 6' },
+  ],
+  attendanceSessions: [
+    { id: 'morning', nameAr: 'الصباح', nameEn: 'Morning', nameSo: 'Subax' },
+    { id: 'afternoon', nameAr: 'المساء', nameEn: 'Afternoon', nameSo: 'Galab' }
+  ],
   assessmentColumns: [
     { id: 'monthly1', name: 'Monthly Exam 1', maxMarks: 100, type: 'number' },
     { id: 'midterm', name: 'Midterm Exam', maxMarks: 100, type: 'number' },
@@ -137,9 +150,40 @@ export const seedDatabase = async () => {
         // Online status migrations
         await sql`ALTER TABLE admins ADD COLUMN IF NOT EXISTS is_online BOOLEAN DEFAULT FALSE`;
         await sql`ALTER TABLE admins ADD COLUMN IF NOT EXISTS last_active_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP`;
+        await sql`ALTER TABLE admins ADD COLUMN IF NOT EXISTS has_onboarded BOOLEAN DEFAULT FALSE`;
         // Credit system migrations
         await sql`ALTER TABLE schools ADD COLUMN IF NOT EXISTS credits INTEGER DEFAULT 10`;
         await sql`ALTER TABLE schools ADD COLUMN IF NOT EXISTS student_count INTEGER DEFAULT 0`;
+        // Onboarding fields
+        await sql`ALTER TABLE schools ADD COLUMN IF NOT EXISTS location TEXT`;
+        await sql`ALTER TABLE schools ADD COLUMN IF NOT EXISTS license_number TEXT`;
+        await sql`ALTER TABLE schools ADD COLUMN IF NOT EXISTS phone_number TEXT`;
+        await sql`ALTER TABLE schools ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'active'`;
+
+        // Activity Table
+        await sql`
+          CREATE TABLE IF NOT EXISTS school_activity (
+            id TEXT PRIMARY KEY,
+            school_id TEXT REFERENCES schools(id),
+            type TEXT,
+            action TEXT,
+            timestamp TIMESTAMP,
+            user_email TEXT
+          )
+        `;
+
+        // Credit Requests Table
+        await sql`
+          CREATE TABLE IF NOT EXISTS credit_requests (
+            id TEXT PRIMARY KEY,
+            school_id TEXT REFERENCES schools(id),
+            amount INTEGER NOT NULL,
+            status TEXT DEFAULT 'pending',
+            notes TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            processed_at TIMESTAMP
+          )
+        `;
       } catch (migrationError) {
         console.warn("Migration warning (columns might already exist):", migrationError);
       }
@@ -153,8 +197,23 @@ export const seedDatabase = async () => {
           date TEXT NOT NULL,
           status TEXT NOT NULL,
           session TEXT,
+          teacher_id TEXT,
           notes TEXT,
           recorded_by TEXT,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `;
+
+      await sql`
+        CREATE TABLE IF NOT EXISTS teachers (
+          id TEXT PRIMARY KEY,
+          school_id TEXT NOT NULL,
+          full_name TEXT NOT NULL,
+          full_name_ar TEXT,
+          email TEXT,
+          phone_number TEXT,
+          subjects JSONB,
+          assigned_classes JSONB,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
       `;
@@ -171,14 +230,30 @@ export const seedDatabase = async () => {
         )
       `;
 
-      await sql`
-        CREATE TABLE IF NOT EXISTS system_settings (
-          id TEXT PRIMARY KEY,
-          name TEXT DEFAULT 'Aqooni Digital',
-          logo TEXT,
-          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-      `;
+        await sql`
+          CREATE TABLE IF NOT EXISTS system_settings (
+            id TEXT PRIMARY KEY,
+            name TEXT DEFAULT 'Aqooni Digital',
+            logo TEXT,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+          )
+        `;
+        
+        await sql`
+          CREATE TABLE IF NOT EXISTS contact_inquiries (
+            id TEXT PRIMARY KEY,
+            full_name TEXT NOT NULL,
+            school_name TEXT,
+            location TEXT,
+            email TEXT NOT NULL,
+            phone TEXT,
+            message TEXT NOT NULL,
+            status TEXT DEFAULT 'pending',
+            reply_message TEXT,
+            replied_at TIMESTAMP,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+          )
+        `;
 
       // Seed default system settings
       const settingsCount = await sql`SELECT count(*) FROM system_settings WHERE id = 'main'`;
@@ -193,12 +268,12 @@ export const seedDatabase = async () => {
 
       const superAdminCount = await sql`SELECT count(*) FROM admins WHERE email = 'super@control.com'`;
       if (parseInt(superAdminCount[0].count as string) === 0) {
-        await sql`INSERT INTO admins (email, password, role) VALUES ('super@control.com', 'SuperControl2025!', 'super_admin')`;
+        await sql`INSERT INTO admins (email, password, role) VALUES ('super@control.com', 'SuperControl2025!', 'super_admin') ON CONFLICT (email) DO NOTHING`;
       }
 
       const qabasAdminCount = await sql`SELECT count(*) FROM admins WHERE email = 'admin@aqoonidigital.edu'`;
       if (parseInt(qabasAdminCount[0].count as string) === 0) {
-        await sql`INSERT INTO admins (email, password, school_id, role) VALUES ('admin@aqoonidigital.edu', 'QabasAL-huda2025@!', 'aqd-default', 'school_admin')`;
+        await sql`INSERT INTO admins (email, password, school_id, role) VALUES ('admin@aqoonidigital.edu', 'QabasAL-huda2025@!', 'aqd-default', 'school_admin') ON CONFLICT (email) DO NOTHING`;
       }
 
       try {
@@ -228,6 +303,99 @@ const enforceCredits = async (sid: string) => {
 
 // --- Auth Services ---
 
+export const syncClerkUser = async (clerkUser: any) => {
+  if (!clerkUser) return null;
+
+  const email = clerkUser.primaryEmailAddress?.emailAddress;
+  if (!email) return null;
+
+  try {
+    await seedDatabase();
+
+    const users = await sql`
+      SELECT a.*, s.status as school_status 
+      FROM admins a 
+      LEFT JOIN schools s ON a.school_id = s.id 
+      WHERE a.email = ${email}
+    `;
+
+    if (users.length > 0) {
+      let user = users[0];
+
+      // Fix for users who were created without a school_id (prevents onboarding stuck)
+      if (!user.school_id) {
+        console.log('User found but missing school_id, assigning one...');
+        const recoverySchoolId = generateUUID();
+        await sql`INSERT INTO schools (id, name, sub_status, credits, location, phone_number) VALUES (${recoverySchoolId}, '(Pending Onboarding)', 'active', 10, 'Not Set', 'Not Set') ON CONFLICT (id) DO NOTHING`;
+        await sql`UPDATE admins SET school_id = ${recoverySchoolId} WHERE email = ${email}`;
+
+        // Re-fetch to get updated state
+        const updatedUsers = await sql`SELECT * FROM admins WHERE email = ${email}`;
+        user = updatedUsers[0];
+      }
+
+      // Bridge Clerk session with our legacy session keys for compatibility
+      localStorage.setItem(STORAGE_KEYS.ADMIN_AUTH, 'true');
+      localStorage.setItem(STORAGE_KEYS.ADMIN_ROLE, user.role);
+      localStorage.setItem(STORAGE_KEYS.SCHOOL_ID, user.school_id || '');
+      localStorage.setItem('cv_user_email', user.email);
+      localStorage.setItem('cv_has_onboarded', user.has_onboarded ? 'true' : 'false');
+      localStorage.setItem('cv_school_status', user.school_status || 'active');
+
+      // Update online status
+      await sql`UPDATE admins SET is_online = TRUE, last_active_at = CURRENT_TIMESTAMP WHERE email = ${email}`;
+
+      return {
+        success: true,
+        role: user.role,
+        schoolId: user.school_id,
+        email: user.email,
+        hasOnboarded: user.has_onboarded,
+        schoolStatus: user.school_status
+      };
+    } else {
+      // New user from Clerk? Assign to a new school immediately
+      const newSchoolId = generateUUID();
+      // Create potential new school with 'pending' status
+      await sql`INSERT INTO schools (id, name, sub_status, status, credits, location, phone_number) VALUES (${newSchoolId}, '(Pending Onboarding)', 'active', 'pending', 5, 'Not Set', 'Not Set')`;
+
+      // Try to insert admin, but if exists (race condition), do nothing
+      await sql`
+        INSERT INTO admins (email, role, school_id, has_onboarded)
+        VALUES (${email}, 'school_admin', ${newSchoolId}, FALSE)
+        ON CONFLICT (email) DO NOTHING
+      `;
+
+      // CRITICAL: Re-fetch the user to get the AUTHORITATIVE school_id and role.
+      // If we hit a race condition, the user might have been created by another request with a DIFFERENT school_id.
+      // We must return the DB's truth, not our local 'newSchoolId' variable if it wasn't used.
+      const finalUserResult = await sql`SELECT * FROM admins WHERE email = ${email}`;
+      const finalUser = finalUserResult[0];
+
+      localStorage.setItem(STORAGE_KEYS.ADMIN_AUTH, 'true');
+      localStorage.setItem(STORAGE_KEYS.ADMIN_ROLE, finalUser.role);
+      localStorage.setItem(STORAGE_KEYS.SCHOOL_ID, finalUser.school_id);
+      localStorage.setItem('cv_user_email', finalUser.email);
+      localStorage.setItem('cv_has_onboarded', finalUser.has_onboarded ? 'true' : 'false');
+
+      await logAction(finalUser.school_id, 'Login', `Admin signed in via Clerk`, email);
+
+      return {
+        success: true,
+        role: finalUser.role,
+        schoolId: finalUser.school_id,
+        email: finalUser.email,
+        hasOnboarded: finalUser.has_onboarded,
+        schoolStatus: 'pending' // New users are always pending
+      };
+
+    }
+  } catch (e) {
+    console.error("Clerk Sync Error:", e);
+    return null;
+  }
+};
+
 export const isAuthenticated = () => {
   return !!localStorage.getItem(STORAGE_KEYS.ADMIN_AUTH);
 };
@@ -240,16 +408,19 @@ export const login = async (emailRaw: string, passRaw: string) => {
     console.log(`Login attempt for: ${email}`);
     await seedDatabase();
 
-    const users = await sql`SELECT * FROM admins WHERE email = ${email} AND password = ${pass}`;
+    const users = await sql`
+      SELECT a.*, s.status as school_status 
+      FROM admins a 
+      LEFT JOIN schools s ON a.school_id = s.id 
+      WHERE a.email = ${email} AND a.password = ${pass}
+    `;
 
     if (users.length > 0) {
       const user = users[0];
       localStorage.setItem(STORAGE_KEYS.ADMIN_AUTH, 'true');
       localStorage.setItem(STORAGE_KEYS.ADMIN_ROLE, user.role);
-      if (user.school_id) {
-        localStorage.setItem(STORAGE_KEYS.SCHOOL_ID, user.school_id);
-      }
       localStorage.setItem('cv_user_email', user.email);
+      localStorage.setItem('cv_school_status', user.school_status || 'active');
 
       // Update online status
       await sql`UPDATE admins SET is_online = TRUE, last_active_at = CURRENT_TIMESTAMP WHERE email = ${user.email}`;
@@ -258,7 +429,9 @@ export const login = async (emailRaw: string, passRaw: string) => {
         success: true,
         role: user.role,
         schoolId: user.school_id,
-        email: user.email
+        email: user.email,
+        hasOnboarded: user.has_onboarded,
+        schoolStatus: user.school_status
       };
     } else {
       // Check if user exists at all
@@ -285,27 +458,33 @@ export const logout = async () => {
   localStorage.removeItem(STORAGE_KEYS.ADMIN_ROLE);
   localStorage.removeItem(STORAGE_KEYS.SCHOOL_ID);
   localStorage.removeItem('cv_user_email');
+  localStorage.removeItem('cv_has_onboarded');
 };
 
 export const getUserSession = () => {
   return {
     isAuthenticated: !!localStorage.getItem(STORAGE_KEYS.ADMIN_AUTH),
     role: localStorage.getItem(STORAGE_KEYS.ADMIN_ROLE),
-    schoolId: localStorage.getItem(STORAGE_KEYS.SCHOOL_ID)
+    schoolId: localStorage.getItem(STORAGE_KEYS.SCHOOL_ID),
+    email: localStorage.getItem('cv_user_email'),
+    hasOnboarded: localStorage.getItem('cv_has_onboarded') === 'true',
+    schoolStatus: localStorage.getItem('cv_school_status') || 'active'
   };
 };
 
 export const changeAdminPassword = async (newPassword: string, email?: string) => {
   try {
     await seedDatabase();
-    const targetEmail = email || 'admin@aqoonidigital.edu';
-    await sql`UPDATE admins SET password = ${newPassword} WHERE email = ${targetEmail}`;
+    const userEmail = email || localStorage.getItem('cv_user_email');
+    if (!userEmail) return false;
+    await sql`UPDATE admins SET password = ${newPassword} WHERE email = ${userEmail}`;
     return true;
   } catch (e) {
     console.error("Failed to change password:", e);
     return false;
   }
 };
+
 
 export const recoverPassword = async () => {
   try {
@@ -342,6 +521,7 @@ export const getStudents = async (schoolId?: string): Promise<Student[]> => {
       total: row.total,
       percentage: row.percentage,
       finalResult: row.final_result,
+      schoolId: row.school_id,
       createdAt: row.created_at
     }));
   } catch (error) {
@@ -353,8 +533,16 @@ export const getStudents = async (schoolId?: string): Promise<Student[]> => {
 export const getStudentByRegId = async (regId: string, schoolId?: string): Promise<Student | null> => {
   try {
     await seedDatabase();
-    const sid = schoolId || localStorage.getItem(STORAGE_KEYS.SCHOOL_ID) || 'aqd-default';
-    const rows = await sql`SELECT * FROM students WHERE student_id = ${regId} AND school_id = ${sid}`;
+    const sid = schoolId || localStorage.getItem(STORAGE_KEYS.SCHOOL_ID);
+
+    let rows;
+    if (sid) {
+      rows = await sql`SELECT * FROM students WHERE (student_id = ${regId} OR id = ${regId}) AND school_id = ${sid}`;
+    } else {
+      // Global search for public verification - returns first match
+      rows = await sql`SELECT * FROM students WHERE (student_id = ${regId} OR id = ${regId}) LIMIT 1`;
+    }
+
     if (rows.length === 0) return null;
     const row = rows[0];
     return {
@@ -367,6 +555,7 @@ export const getStudentByRegId = async (regId: string, schoolId?: string): Promi
       total: row.total,
       percentage: row.percentage,
       finalResult: row.final_result,
+      schoolId: row.school_id,
       createdAt: row.created_at
     };
   } catch (error) {
@@ -450,6 +639,7 @@ export const saveStudent = async (student: Student) => {
         }
         await sql`UPDATE schools SET student_count = ${newCount}, credits = ${newCredits} WHERE id = ${sid}`;
       }
+      await logAction(sid, 'Student', `Registered new student: ${student.fullName}`);
     }
   } catch (error) {
     console.error("Failed to save student:", error);
@@ -469,8 +659,100 @@ export const deleteStudent = async (id: string) => {
   }
 };
 
+// --- Teacher Services ---
+
+export const getTeachers = async (schoolId?: string): Promise<Teacher[]> => {
+  try {
+    await seedDatabase();
+    const sid = schoolId || localStorage.getItem(STORAGE_KEYS.SCHOOL_ID);
+    if (!sid && localStorage.getItem(STORAGE_KEYS.ADMIN_ROLE) !== 'super_admin') return [];
+
+    let rows;
+    if (sid) {
+      rows = await sql`SELECT * FROM teachers WHERE school_id = ${sid} ORDER BY created_at DESC`;
+    } else {
+      rows = await sql`SELECT * FROM teachers ORDER BY created_at DESC`;
+    }
+
+    return rows.map(row => ({
+      id: row.id,
+      fullName: row.full_name,
+      fullNameAr: row.full_name_ar,
+      email: row.email,
+      phoneNumber: row.phone_number,
+      subjects: row.subjects as string[],
+      assignedClasses: row.assigned_classes as string[],
+      schoolId: row.school_id,
+      createdAt: row.created_at
+    }));
+  } catch (error) {
+    console.error("Failed to fetch teachers:", error);
+    return [];
+  }
+};
+
+export const saveTeacher = async (teacher: Teacher) => {
+  try {
+    await seedDatabase();
+    const sid = teacher.schoolId || localStorage.getItem(STORAGE_KEYS.SCHOOL_ID) || 'aqd-default';
+
+    const existing = await sql`SELECT id FROM teachers WHERE id = ${teacher.id} AND school_id = ${sid}`;
+
+    if (existing.length > 0) {
+      await sql`
+        UPDATE teachers SET 
+          full_name = ${teacher.fullName},
+          full_name_ar = ${teacher.fullNameAr || ''},
+          email = ${teacher.email || ''},
+          phone_number = ${teacher.phoneNumber || ''},
+          subjects = ${JSON.stringify(teacher.subjects || [])},
+          assigned_classes = ${JSON.stringify(teacher.assignedClasses || [])}
+        WHERE id = ${teacher.id} AND school_id = ${sid}
+      `;
+    } else {
+      await sql`
+        INSERT INTO teachers (id, school_id, full_name, full_name_ar, email, phone_number, subjects, assigned_classes, created_at)
+        VALUES (
+          ${teacher.id || generateUUID()}, 
+          ${sid},
+          ${teacher.fullName}, 
+          ${teacher.fullNameAr || ''},
+          ${teacher.email || ''},
+          ${teacher.phoneNumber || ''},
+          ${JSON.stringify(teacher.subjects || [])}, 
+          ${JSON.stringify(teacher.assignedClasses || [])},
+          ${new Date().toISOString()}
+        )
+      `;
+    }
+    return true;
+  } catch (error) {
+    console.error("Failed to save teacher:", error);
+    throw error;
+  }
+};
+
+export const deleteTeacher = async (id: string) => {
+  try {
+    await seedDatabase();
+    await sql`DELETE FROM teachers WHERE id = ${id}`;
+    return true;
+  } catch (error) {
+    console.error("Failed to delete teacher:", error);
+    throw error;
+  }
+};
+
 // --- Config Services ---
 
+// ===================================================================
+// SCHOOL CONFIG (SCHOOL ADMIN SPECIFIC)
+// These settings include school-specific certificate branding:
+// - logoUrl: School logo for certificates
+// - managerSignatureUrl: Manager signature for certificates  
+// - stampUrl: Optional stamp for certificates
+// This is separate from the system logo managed by Super Admin
+// ===================================================================
 export const getConfig = async (schoolId?: string): Promise<CertificateConfig> => {
   const sid = schoolId || localStorage.getItem(STORAGE_KEYS.SCHOOL_ID) || 'aqd-default';
 
@@ -521,8 +803,14 @@ export const saveConfig = async (config: CertificateConfig, schoolId?: string) =
   } catch (error) {
     console.error("Failed to save config to DB (saved locally):", error);
   }
+  await logAction(sid, 'Settings', `Updated school certificate configuration`);
 };
 
+// ===================================================================
+// SYSTEM SETTINGS (SUPER ADMIN ONLY)
+// These settings control the platform-wide branding (favicon, system name)
+// This is separate from school-specific logos managed in the config table
+// ===================================================================
 export const getSystemSettings = async () => {
   try {
     await seedDatabase();
@@ -561,6 +849,136 @@ export const saveSystemSettings = async (settings: { name: string, logo: string 
   }
 };
 
+// --- Contact Inquiry Services ---
+
+export const saveContactInquiry = async (inquiry: Omit<ContactInquiry, 'id' | 'status' | 'createdAt'>) => {
+  try {
+    await seedDatabase();
+    const id = generateUUID();
+    await sql`
+      INSERT INTO contact_inquiries (id, full_name, school_name, location, email, phone, message, status, created_at)
+      VALUES (
+        ${id},
+        ${inquiry.fullName},
+        ${inquiry.schoolName},
+        ${inquiry.location},
+        ${inquiry.email},
+        ${inquiry.phone},
+        ${inquiry.message},
+        'pending',
+        ${new Date().toISOString()}
+      )
+    `;
+    return { success: true, id };
+  } catch (error) {
+    console.error("Failed to save contact inquiry:", error);
+    return { success: false, error };
+  }
+};
+
+export const getContactInquiries = async (): Promise<ContactInquiry[]> => {
+  try {
+    await seedDatabase();
+    const rows = await sql`SELECT * FROM contact_inquiries ORDER BY created_at DESC`;
+    return rows.map(row => ({
+      id: row.id,
+      fullName: row.full_name,
+      schoolName: row.school_name,
+      location: row.location,
+      email: row.email,
+      phone: row.phone,
+      message: row.message,
+      status: row.status as any,
+      createdAt: row.created_at
+    }));
+  } catch (error) {
+    console.error("Failed to fetch contact inquiries:", error);
+    return [];
+  }
+};
+
+export const updateContactInquiryStatus = async (id: string, status: ContactInquiry['status']) => {
+  try {
+    await seedDatabase();
+    await sql`UPDATE contact_inquiries SET status = ${status} WHERE id = ${id}`;
+    return true;
+  } catch (error) {
+    console.error("Failed to update contact inquiry status:", error);
+    return false;
+  }
+};
+
+export const deleteContactInquiry = async (id: string) => {
+  try {
+    await seedDatabase();
+    await sql`DELETE FROM contact_inquiries WHERE id = ${id}`;
+    return true;
+  } catch (error) {
+    console.error("Failed to delete contact inquiry:", error);
+    return false;
+  }
+};
+
+// Resend Email Integration
+const RESEND_API_KEY = '[REDACTED_RESEND_KEY]';
+
+export const sendReplyEmail = async (inquiryId: string, replyMessage: string) => {
+  try {
+    await seedDatabase();
+    
+    // 1. Get inquiry details
+    const inquiryData = await sql`SELECT email, full_name, school_name, message FROM contact_inquiries WHERE id = ${inquiryId}`;
+    if (inquiryData.length === 0) throw new Error('Inquiry not found');
+    const inquiry = inquiryData[0];
+
+    // 2. Send email via Resend
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${RESEND_API_KEY}`
+      },
+      body: JSON.stringify({
+        from: 'Aqooni Digital <onboarding@resend.dev>',
+        to: [inquiry.email],
+        subject: `Response to your inquiry - Aqooni Digital`,
+        html: `
+          <div style="font-family: sans-serif; padding: 20px; color: #333;">
+            <h2 style="color: #6366f1;">Hello ${inquiry.full_name},</h2>
+            <p>Thank you for contacting us regarding <strong>${inquiry.school_name || 'your inquiry'}</strong>.</p>
+            <div style="background: #f9fafb; padding: 15px; border-radius: 8px; margin: 20px 0;">
+              <p style="margin: 0; color: #6b7280; font-style: italic;">" ${inquiry.message} "</p>
+            </div>
+            <p style="white-space: pre-wrap;">${replyMessage}</p>
+            <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 30px 0;" />
+            <p style="font-size: 12px; color: #9ca3af;">Aqooni Digital Team<br />Support: +2520614163362</p>
+          </div>
+        `
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to send email');
+    }
+
+    // 3. Update database
+    await sql`
+      UPDATE contact_inquiries 
+      SET 
+        status = 'replied', 
+        reply_message = ${replyMessage}, 
+        replied_at = CURRENT_TIMESTAMP 
+      WHERE id = ${inquiryId}
+    `;
+
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to send reply email:", error);
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+};
+
 // --- Analytics ---
 
 export const getAnalytics = async (schoolId?: string): Promise<Analytics> => {
@@ -570,11 +988,13 @@ export const getAnalytics = async (schoolId?: string): Promise<Analytics> => {
     const totalData = await sql`SELECT count(*) as c FROM students WHERE school_id = ${sid}`;
     const passedData = await sql`SELECT count(*) as c FROM students WHERE final_result = 'ناجح' AND school_id = ${sid}`;
 
+    const activityData = await sql`SELECT count(*) as c FROM school_activity WHERE school_id = ${sid} AND type = 'Verification'`;
+
     return {
       totalStudents: parseInt(totalData[0].c as string),
       passed: parseInt(passedData[0].c as string),
       failed: parseInt(totalData[0].c as string) - parseInt(passedData[0].c as string),
-      recentVerifications: Math.floor(Math.random() * 20) + 5
+      recentVerifications: parseInt(activityData[0].c as string)
     };
   } catch (e) {
     return { totalStudents: 0, passed: 0, failed: 0, recentVerifications: 0 };
@@ -593,6 +1013,67 @@ export const getSchools = async () => {
   }
 };
 
+export const getGlobalActivity = async () => {
+  try {
+    await seedDatabase();
+    // Fetch recent activity from the centralized school_activity table
+    const activity = await sql`
+      SELECT 
+        sa.type, 
+        sa.user_email as user, 
+        sa.timestamp, 
+        sa.action,
+        s.name as school_name
+      FROM school_activity sa
+      LEFT JOIN schools s ON sa.school_id = s.id
+      ORDER BY sa.timestamp DESC 
+      LIMIT 30
+    `;
+    return activity;
+  } catch (e) {
+    console.error("Global Activity Error:", e);
+    return [];
+  }
+};
+
+export const getPendingRegistrations = async () => {
+  try {
+    await seedDatabase();
+    // Admins who signed up via Clerk but haven't been assigned a school or finished onboarding
+    // OR schools that are still in 'pending' status
+    return await sql`
+      SELECT 
+        a.email, 
+        a.role, 
+        a.is_online, 
+        a.last_active_at, 
+        a.created_at,
+        s.name as school_name,
+        s.id as school_id,
+        s.sub_status as school_status
+      FROM admins a
+      LEFT JOIN schools s ON a.school_id = s.id
+      WHERE (a.school_id IS NULL OR a.has_onboarded = FALSE OR s.sub_status = 'pending') 
+      AND a.role != 'super_admin'
+      ORDER BY a.created_at DESC
+    `;
+  } catch (e) {
+    console.error("Pending Registrations Error:", e);
+    return [];
+  }
+};
+
+export const toggleSchoolStatus = async (schoolId: string, status: 'active' | 'pending') => {
+  try {
+    await seedDatabase();
+    await sql`UPDATE schools SET status = ${status}, sub_status = ${status} WHERE id = ${schoolId}`;
+    return true;
+  } catch (e) {
+    console.error("Failed to toggle school status:", e);
+    return false;
+  }
+};
+
 export const saveSchool = async (school: any) => {
   try {
     await seedDatabase();
@@ -600,9 +1081,9 @@ export const saveSchool = async (school: any) => {
     const existing = await sql`SELECT id FROM schools WHERE id = ${id}`;
 
     if (existing.length > 0) {
-      await sql`UPDATE schools SET name = ${school.name}, sub_status = ${school.sub_status}, sub_expiry = ${school.sub_expiry} WHERE id = ${id}`;
+      await sql`UPDATE schools SET name = ${school.name}, sub_status = ${school.sub_status}, sub_expiry = ${school.sub_expiry}, location = ${school.location}, phone_number = ${school.phone_number} WHERE id = ${id}`;
     } else {
-      await sql`INSERT INTO schools (id, name, sub_status, sub_expiry) VALUES (${id}, ${school.name}, ${school.sub_status}, ${school.sub_expiry})`;
+      await sql`INSERT INTO schools (id, name, sub_status, sub_expiry, location, phone_number) VALUES (${id}, ${school.name}, ${school.sub_status}, ${school.sub_expiry}, ${school.location}, ${school.phone_number})`;
     }
     return true;
   } catch (e) {
@@ -614,7 +1095,7 @@ export const saveSchool = async (school: any) => {
 export const toggleSubscription = async (schoolId: string, status: string) => {
   try {
     await seedDatabase();
-    await sql`UPDATE schools SET sub_status = ${status} WHERE id = ${schoolId}`;
+    await sql`UPDATE schools SET sub_status = ${status}, status = ${status} WHERE id = ${schoolId}`;
     return true;
   } catch (e) {
     console.error(e);
@@ -635,7 +1116,8 @@ export const getSchoolSubscription = async (schoolId: string) => {
 export const getAllAdmins = async () => {
   try {
     await seedDatabase();
-    return await sql`SELECT email, password, role, school_id, is_online, last_active_at FROM admins ORDER BY email ASC`;
+    // For security, do NOT return passwords in the admin list
+    return await sql`SELECT email, role, school_id, is_online, last_active_at, has_onboarded FROM admins ORDER BY email ASC`;
   } catch (e) {
     console.error(e);
     return [];
@@ -675,6 +1157,10 @@ export const trackActivity = async (email: string) => {
         `;
       }
       return true;
+    }
+    // Log into school_activity as well
+    if (adminData.length > 0 && adminData[0].school_id) {
+      await logAction(adminData[0].school_id, 'Admin Login', 'Admin active in system', email);
     }
     return false;
   } catch (e) {
@@ -717,8 +1203,15 @@ export const recordPayment = async (schoolId: string, amount: number, months: nu
   }
 };
 
-export const paySchoolSubscription = async (schoolId: string) => {
-  return await recordPayment(schoolId, 5, 1);
+export const paySchoolSubscription = async (schoolId: string, planMode: 'monthly' | 'yearly' = 'monthly') => {
+  try {
+    await seedDatabase();
+    await sql`UPDATE schools SET sub_status = 'pending', plan_type = ${planMode} WHERE id = ${schoolId}`;
+    return true;
+  } catch (e) {
+    console.error("Pay Subscription Error:", e);
+    return false;
+  }
 };
 
 export const createSchoolAdmin = async (email: string, pass: string, schoolId: string) => {
@@ -755,6 +1248,7 @@ export const updateBillingDetails = async (schoolId: string, updates: any) => {
         if (key === 'sub_expiry') await sql`UPDATE schools SET sub_expiry = ${updates[key]} WHERE id = ${schoolId}`;
         if (key === 'total_paid') await sql`UPDATE schools SET total_paid = ${updates[key]} WHERE id = ${schoolId}`;
         if (key === 'credits') await sql`UPDATE schools SET credits = ${updates[key]} WHERE id = ${schoolId}`;
+        if (key === 'status') await sql`UPDATE schools SET status = ${updates[key]}, sub_status = ${updates[key]} WHERE id = ${schoolId}`;
       }
     }
     return true;
@@ -770,8 +1264,10 @@ export const getSchoolBilling = async () => {
     const schoolId = localStorage.getItem(STORAGE_KEYS.SCHOOL_ID);
     if (!schoolId) return null;
 
-    const data = await sql`SELECT fee_type, balance, billing_message, sub_expiry, sub_status, credits, student_count FROM schools WHERE id = ${schoolId}`;
+    const data = await sql`SELECT name, phone_number, fee_type, balance, billing_message, sub_expiry, sub_status, credits, student_count FROM schools WHERE id = ${schoolId}`;
     return data[0] ? {
+      name: data[0].name,
+      phoneNumber: data[0].phone_number,
       feeType: data[0].fee_type,
       balance: data[0].balance,
       billingMessage: data[0].billing_message,
@@ -885,13 +1381,13 @@ export const saveAttendance = async (records: AttendanceRecord[]) => {
       const sid = record.schoolId || schoolId;
       const existing = await sql`
         SELECT id FROM attendance 
-        WHERE student_id = ${record.studentId} AND school_id = ${sid} AND date = ${record.date}
+        WHERE student_id = ${record.studentId} AND school_id = ${sid} AND date = ${record.date} AND (session = ${record.session || ''} OR session IS NULL)
       `;
 
       if (existing.length > 0) {
         await sql`
           UPDATE attendance 
-          SET status = ${record.status}, notes = ${record.notes || ''}, recorded_by = ${record.recordedBy}
+          SET status = ${record.status}, notes = ${record.notes || ''}, recorded_by = ${record.recordedBy}, session = ${record.session || ''}
           WHERE id = ${existing[0].id}
         `;
       } else {
@@ -963,15 +1459,17 @@ export const getAttendanceReport = async (startDate: string, endDate: string, cl
   }
 };
 
-export const getStudentAttendanceHistory = async (studentId: string): Promise<AttendanceRecord[]> => {
+export const getStudentAttendanceHistory = async (studentId: string, schoolId?: string): Promise<AttendanceRecord[]> => {
   try {
     await seedDatabase();
-    const schoolId = localStorage.getItem(STORAGE_KEYS.SCHOOL_ID);
-    if (!schoolId) return [];
+    const sid = schoolId || localStorage.getItem(STORAGE_KEYS.SCHOOL_ID);
+    if (!sid) return [];
 
+    // Search by both RegID and UUID to be safe and thorough
     const rows = await sql`
       SELECT * FROM attendance 
-      WHERE student_id = ${studentId} AND school_id = ${schoolId}
+      WHERE (student_id = ${studentId} OR student_id = (SELECT id FROM students WHERE student_id = ${studentId} LIMIT 1) OR student_id = (SELECT student_id FROM students WHERE id = ${studentId} LIMIT 1))
+      AND school_id = ${sid}
       ORDER BY date DESC
       LIMIT 100
     `;
@@ -1029,31 +1527,229 @@ export const getMonthlyAttendance = async (year: number, month: number, classLev
   }
 };
 
+export const logAction = async (schoolId: string, type: string, action: string, user: string = 'System') => {
+  try {
+    await seedDatabase();
+    const id = generateUUID();
+    await sql`
+      INSERT INTO school_activity (id, school_id, type, action, timestamp, user_email)
+      VALUES (${id}, ${schoolId}, ${type}, ${action}, ${new Date().toISOString()}, ${user})
+    `;
+    return true;
+  } catch (e) {
+    console.error("Log Action Error:", e);
+    return false;
+  }
+};
+
 export const getSchoolActivity = async (schoolId: string) => {
   try {
     await seedDatabase();
-    const students = await sql`
-      SELECT full_name as action, created_at as timestamp, 'Student Added' as type 
-      FROM students 
+    // Fetch real activity logs
+    return await sql`
+      SELECT id, type, action, timestamp, user_email 
+      FROM school_activity 
       WHERE school_id = ${schoolId} 
-      ORDER BY created_at DESC 
-      LIMIT 5
+      ORDER BY timestamp DESC 
+      LIMIT 20
     `;
-
-    const logins = await sql`
-      SELECT email as action, last_active_at as timestamp, 'Admin Active' as type 
-      FROM admins 
-      WHERE school_id = ${schoolId} 
-      ORDER BY last_active_at DESC 
-      LIMIT 5
-    `;
-
-    return [...students, ...logins].sort((a, b) =>
-      new Date(b.timestamp as string).getTime() - new Date(a.timestamp as string).getTime()
-    ).slice(0, 10);
   } catch (e) {
+    console.error("Get School Activity Error:", e);
     return [];
   }
 };
 
+
+
+export const updateSchoolProfile = async (schoolId: string, data: { name?: string, location?: string, licenseNumber?: string, phoneNumber?: string }) => {
+  try {
+    await seedDatabase();
+
+    // We cannot use sql(obj) with neon driver directly for SET clause usually, so we update fields individually or construct query carefully.
+    // However, since we have a fixed set of fields, we can just write the update query explicitly.
+    // Or we can execute multiple updates, or build a dynamic query string (risky without proper parameterization).
+    // Safest and cleanest for now is to just update all fields if provided, or only those provided.
+
+    // Let's use a simple approach: Update only what's needed.
+    // Since neon supports template literals, we can conditionally build the query? No, that's hard with tagged templates. // actually we can't easily composed tagged templates.
+
+    // Alternative: Just update all columns, using COALESCE or similar if we want to keep old values, but here we expect data to be passed.
+    // "data" contains the fields we want to update.
+
+    const updates: string[] = [];
+    const values: any[] = [];
+
+    if (data.name) {
+      // We'll execute separate or a monolithic query. 
+      // Using neon, we can't easily build dynamic queries safely without a helper.
+      // Let's try to just run specific updates for each field if it exists. Ideally we'd want one query.
+
+      await sql`
+            UPDATE schools 
+            SET 
+                name = COALESCE(${data.name}, name),
+                location = COALESCE(${data.location}, location),
+                license_number = COALESCE(${data.licenseNumber}, license_number),
+                phone_number = COALESCE(${data.phoneNumber}, phone_number)
+            WHERE id = ${schoolId}
+        `;
+    } else {
+      // Fallback if name is missing but others are present (rare in this app flow)
+      await sql`
+            UPDATE schools 
+            SET 
+                location = COALESCE(${data.location}, location),
+                license_number = COALESCE(${data.licenseNumber}, license_number),
+                phone_number = COALESCE(${data.phoneNumber}, phone_number)
+            WHERE id = ${schoolId}
+        `;
+    }
+
+    await logAction(schoolId, 'Profile Update', `Updated profile details`);
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error updating school profile:', error);
+    return { success: false, error };
+  }
+};
+
+// Lightweight: just mark admin as onboarded (used by OnboardingTour)
+export const markTourComplete = async (email: string) => {
+  try {
+    await seedDatabase();
+    await sql`UPDATE admins SET has_onboarded = TRUE WHERE email = ${email}`;
+    localStorage.setItem('cv_has_onboarded', 'true');
+    return { success: true };
+  } catch (error) {
+    console.error('Error marking tour complete:', error);
+    return { success: false, error };
+  }
+};
+
+export const completeOnboarding = async (schoolId: string, email: string, data: { name: string, location: string, licenseNumber: string, phoneNumber: string }) => {
+  try {
+    // 1. Update School Profile
+    const profileResult = await updateSchoolProfile(schoolId, data);
+    if (!profileResult.success) {
+      throw new Error("Failed to update school profile: " + JSON.stringify(profileResult.error));
+    }
+
+    // 2. Mark Admin as Onboarded
+    await sql`
+      UPDATE admins
+      SET has_onboarded = TRUE
+      WHERE email = ${email}
+    `;
+
+    await logAction(schoolId, 'Onboarding', `Completed school setup`, email);
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error completing onboarding:', error);
+    return { success: false, error };
+  }
+};
+
+export const addCredits = async (schoolId: string, amount: number) => {
+  try {
+    await sql`
+      UPDATE schools
+      SET credits = credits + ${amount}
+      WHERE id = ${schoolId}
+    `;
+    await logAction(schoolId, 'Credit Update', `Added ${amount} credits`);
+    return { success: true };
+  } catch (error) {
+    console.error('Error adding credits:', error);
+    return { success: false, error };
+  }
+};
+
+export const requestCredits = async (amount: number, notes: string) => {
+  try {
+    const schoolId = localStorage.getItem(STORAGE_KEYS.SCHOOL_ID);
+    if (!schoolId) return { success: false, error: 'No school ID' };
+    await seedDatabase();
+    const id = generateUUID();
+    await sql`
+      INSERT INTO credit_requests (id, school_id, amount, status, notes)
+      VALUES (${id}, ${schoolId}, ${amount}, 'pending', ${notes})
+    `;
+    await logAction(schoolId, 'Credit Request', `Requested ${amount} credits`);
+    return { success: true };
+  } catch (error) {
+    console.error('Error requesting credits:', error);
+    return { success: false, error };
+  }
+};
+
+export const getCreditRequests = async (schoolId?: string): Promise<CreditRequest[]> => {
+  try {
+    await seedDatabase();
+    let rows;
+    if (schoolId) {
+      rows = await sql`
+        SELECT cr.*, s.name as school_name 
+        FROM credit_requests cr
+        JOIN schools s ON cr.school_id = s.id
+        WHERE cr.school_id = ${schoolId}
+        ORDER BY cr.created_at DESC
+      `;
+    } else {
+      rows = await sql`
+        SELECT cr.*, s.name as school_name 
+        FROM credit_requests cr
+        JOIN schools s ON cr.school_id = s.id
+        ORDER BY cr.created_at DESC
+      `;
+    }
+    return rows.map(row => ({
+      id: row.id,
+      school_id: row.school_id,
+      schoolName: row.school_name,
+      amount: row.amount,
+      status: row.status as any,
+      notes: row.notes,
+      createdAt: row.created_at,
+      processedAt: row.processed_at
+    }));
+  } catch (error) {
+    console.error('Error getting credit requests:', error);
+    return [];
+  }
+};
+
+export const processCreditRequest = async (requestId: string, status: 'approved' | 'rejected') => {
+  try {
+    await seedDatabase();
+    const requestData = await sql`SELECT * FROM credit_requests WHERE id = ${requestId}`;
+    if (requestData.length === 0) return { success: false, error: 'Request not found' };
+
+    const request = requestData[0];
+    if (request.status !== 'pending') return { success: false, error: 'Request already processed' };
+
+    await sql`
+      UPDATE credit_requests 
+      SET status = ${status}, processed_at = CURRENT_TIMESTAMP 
+      WHERE id = ${requestId}
+    `;
+
+    if (status === 'approved') {
+      await sql`
+        UPDATE schools 
+        SET credits = credits + ${request.amount} 
+        WHERE id = ${request.school_id}
+      `;
+      await logAction(request.school_id, 'Credit Approval', `Approved ${request.amount} credits`);
+    } else {
+      await logAction(request.school_id, 'Credit Rejection', `Rejected ${request.amount} credits request`);
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error processing credit request:', error);
+    return { success: false, error };
+  }
+};
 

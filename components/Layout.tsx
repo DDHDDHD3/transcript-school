@@ -1,81 +1,151 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Users, FileBadge, Settings, LogOut, LayoutDashboard, Home, Menu, X, Shield, Calendar } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
-import { logout, getUserSession, trackActivity, getSystemSettings } from '../services/api';
-import LanguageSwitcher from './LanguageSwitcher';
+import React, { useEffect, useState } from "react";
+import { useLocation, useNavigate, Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import {
+  LayoutDashboard,
+  Users,
+  Calendar,
+  Settings,
+  Shield,
+  Home,
+  LogOut,
+  Menu,
+  X,
+  FileBadge,
+  Download,
+  Sun,
+  Moon,
+  Zap,
+  GraduationCap
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { getUserSession, logout, getSystemSettings, getConfig, trackActivity } from "../services/api";
+import { UserButton, useClerk, useUser } from "@clerk/clerk-react";
+import LanguageSwitcher from "./LanguageSwitcher";
+import OnboardingTour from "./OnboardingTour";
+import Footer from "./Footer";
+import PWAInstallButton from "./PWAInstallButton";
+import PWAInstallPrompt from "./PWAInstallPrompt";
 
-// --- LOGO COMPONENT ---
+import { useTheme } from "./ThemeContext";
 
-const AqooniLogoMini: React.FC<{ src?: string }> = ({ src }) => {
+const ThemeToggle = () => {
+  const { isDark, toggleTheme } = useTheme();
+
   return (
-    <div className="w-full h-full">
-      {src ? (
-        <img src={src} alt="Logo" className="w-full h-full object-contain" />
+    <button
+      onClick={toggleTheme}
+      className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-amber-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all group flex items-center gap-2"
+      title="Dark Mode"
+    >
+      {isDark ? (
+        <Sun size={20} className="group-hover:rotate-45 transition-transform" />
       ) : (
-        <div className="w-full h-full bg-qabas-purple rounded-lg flex items-center justify-center text-white font-bold text-[8px]">AQ</div>
+        <div className="relative">
+          <Moon size={20} className="group-hover:-rotate-12 transition-transform" />
+        </div>
+      )}
+      <span className="hidden lg:inline text-xs font-black uppercase tracking-tighter">{isDark ? 'Light Mode' : 'Dark Mode'}</span>
+    </button>
+  );
+};
+
+const AqooniLogoMini: React.FC<{ src?: string; fallbackText?: string }> = ({ src, fallbackText }) => {
+  return (
+    <div className="w-full h-full rounded-2xl bg-gradient-to-br from-qabas-purple to-purple-900 flex items-center justify-center text-white overflow-hidden shadow-2xl shadow-purple-200/50 group-hover:scale-110 transition-transform border border-white/20">
+      {src ? (
+        <img src={src} alt="Logo" className="w-full h-full object-contain scale-110" />
+      ) : (
+        <span className="font-black text-lg tracking-tighter">{fallbackText?.substring(0, 1).toUpperCase() || 'A'}Q</span>
       )}
     </div>
   );
 };
 
-// --- ADMIN LAYOUT ---
-
 export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { t, i18n } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
+  const { signOut } = useClerk();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const session = getUserSession();
+  const { isLoaded, isSignedIn, user } = useUser();
 
   const [systemName, setSystemName] = useState('Aqooni Digital');
-  const [systemLogo, setSystemLogo] = useState('/logo.png');
+  const [systemLogo, setSystemLogo] = useState('/logo.jpg');
+  const [showTour, setShowTour] = useState(false);
+
+  const fetchSettings = async () => {
+    const settings = await getSystemSettings();
+    let name = settings?.name || 'Aqooni Digital';
+    let logo = settings?.logo || '/logo.jpg';
+
+    // If school admin, override with school details
+    if (session.schoolId) {
+      const schoolConfig = await getConfig(session.schoolId);
+      if (schoolConfig) {
+        logo = schoolConfig.logoUrl || '';
+        name = schoolConfig.schoolNameEn || schoolConfig.schoolName || t('common.schoolName');
+      } else {
+        logo = '';
+        name = t('common.schoolName');
+      }
+    }
+
+    setSystemName(name);
+    setSystemLogo(logo);
+  };
 
   useEffect(() => {
-    const fetchSettings = async () => {
-      const settings = await getSystemSettings();
-      if (settings) {
-        setSystemName(settings.name);
-        setSystemLogo(settings.logo);
-      }
-    };
     fetchSettings();
+
+    // Check if tour should be shown
+    if (session.isAuthenticated && session.role === 'school_admin' && !session.hasOnboarded) {
+      setShowTour(true);
+    }
+
+    // Listen for branding updates from AdminSettings
+    window.addEventListener('brandingUpdated', fetchSettings);
 
     const email = localStorage.getItem('cv_user_email');
     if (email) {
-      // Immediate track on mount
       trackActivity(email);
-
-      // Heartbeat every 30 seconds
-      const interval = setInterval(() => {
-        trackActivity(email);
-      }, 30000);
-
-      return () => clearInterval(interval);
+      const interval = setInterval(() => trackActivity(email), 30000);
+      return () => {
+        clearInterval(interval);
+        window.removeEventListener('brandingUpdated', fetchSettings);
+      };
     }
+
+    return () => {
+      window.removeEventListener('brandingUpdated', fetchSettings);
+    };
   }, []);
 
   const handleLogout = async () => {
+    if (isSignedIn) {
+      await signOut();
+    }
     await logout();
     navigate('/admin/login');
   };
 
   const navItems = [
-    { icon: <LayoutDashboard size={20} />, label: t('nav.dashboard'), path: '/admin/dashboard' },
-    { icon: <Users size={20} />, label: t('nav.students'), path: '/admin/students' },
-    { icon: <Calendar size={20} />, label: t('nav.attendance'), path: '/admin/attendance' },
-    { icon: <Settings size={20} />, label: t('nav.settings'), path: '/admin/settings' },
+    { id: 'tour-dashboard', icon: <LayoutDashboard size={20} />, label: t('nav.dashboard'), path: '/admin/dashboard' },
+    { id: 'tour-students', icon: <Users size={20} />, label: t('nav.students'), path: '/admin/students' },
+    { id: 'tour-teachers', icon: <GraduationCap size={20} />, label: t('nav.teachers', { defaultValue: 'Teachers' }), path: '/admin/teachers' },
+    { id: 'tour-attendance', icon: <Calendar size={20} />, label: t('nav.attendance'), path: '/admin/attendance' },
+    { id: 'tour-settings', icon: <Settings size={20} />, label: t('nav.settings'), path: '/admin/settings' },
   ];
 
   const SidebarContent = () => (
     <>
-      <div className="p-6 flex items-center gap-3 border-b border-slate-100 justify-center">
-        <div className="w-10 h-10">
-          <img src={systemLogo} alt="Logo" className="w-full h-full object-contain" />
+      <div className="p-6 flex items-center gap-3 border-b border-slate-100 dark:border-white/10 justify-center">
+        <div className="w-14 h-14 shrink-0 shadow-2xl">
+          <AqooniLogoMini src={systemLogo} fallbackText={systemName} />
         </div>
         <div className="flex flex-col">
-          <span className="font-bold text-slate-800 leading-none">
+          <span className="font-bold text-slate-800 dark:text-slate-100 leading-none">
             {session.role === 'super_admin' ? t('nav.superAdmin') : systemName}
           </span>
           <span className="text-[10px] text-qabas-orange font-bold uppercase truncate max-w-[120px]">
@@ -90,11 +160,12 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children 
           return (
             <Link
               key={item.path}
+              id={item.id}
               to={item.path}
               onClick={() => setIsMobileMenuOpen(false)}
               className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${isActive
-                ? `bg-gradient-to-${i18n.dir() === 'rtl' ? 'r' : 'l'} from-qabas-purple/10 to-transparent text-qabas-purple border-${i18n.dir() === 'rtl' ? 'l' : 'r'}-4 border-qabas-purple`
-                : 'text-slate-500 hover:bg-slate-50 hover:text-qabas-orange'
+                ? `bg-gradient-to-${i18n.dir() === 'rtl' ? 'r' : 'l'} from-qabas-purple/10 to-transparent text-qabas-purple dark:text-purple-400 border-${i18n.dir() === 'rtl' ? 'l' : 'r'}-4 border-qabas-purple`
+                : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-qabas-orange'
                 } ${i18n.dir() === 'rtl' ? 'text-right' : 'text-left'}`}
             >
               {item.icon}
@@ -108,8 +179,8 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children 
             to="/super"
             onClick={() => setIsMobileMenuOpen(false)}
             className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${location.pathname === '/super'
-              ? `bg-purple-100 text-qabas-purple border-${i18n.dir() === 'rtl' ? 'l' : 'r'}-4 border-qabas-purple`
-              : 'text-qabas-purple bg-purple-50 hover:bg-purple-100'
+              ? `bg-purple-100 dark:bg-purple-900/20 text-qabas-purple dark:text-purple-400 border-${i18n.dir() === 'rtl' ? 'l' : 'r'}-4 border-qabas-purple`
+              : 'text-qabas-purple dark:text-purple-400 bg-purple-50 dark:bg-purple-950/20 hover:bg-purple-100 dark:hover:bg-purple-900/30'
               } ${i18n.dir() === 'rtl' ? 'text-right' : 'text-left'}`}
           >
             <Shield size={20} />
@@ -118,12 +189,22 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children 
         )}
       </nav>
 
-      <div className="p-4 border-t border-slate-100 space-y-2">
-        <Link to="/" className="flex w-full items-center gap-3 px-4 py-3 text-slate-500 hover:text-qabas-purple text-sm font-medium transition-colors hover:bg-purple-50 rounded-xl">
+      <div className="p-4 border-t border-slate-100 dark:border-white/10 space-y-2">
+        {isSignedIn && (
+          <div className="px-4 py-2 flex items-center gap-3 bg-slate-50 dark:bg-white/5 rounded-xl mb-2">
+            <UserButton afterSignOutUrl="/admin/login" />
+            <div className="flex flex-col overflow-hidden">
+              <span className="text-xs font-bold text-slate-700 dark:text-slate-200 truncate">{user?.fullName || user?.primaryEmailAddress?.emailAddress}</span>
+              <span className="text-[10px] text-slate-400 dark:text-slate-500 truncate">{user?.primaryEmailAddress?.emailAddress}</span>
+            </div>
+          </div>
+        )}
+        <PWAInstallButton className="mt-2" />
+        <Link to="/" className="flex w-full items-center gap-3 px-4 py-3 text-slate-500 dark:text-slate-400 hover:text-qabas-purple dark:hover:text-purple-400 text-sm font-medium transition-colors hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-xl">
           <Home size={20} />
           {t('nav.backToHome')}
         </Link>
-        <button onClick={handleLogout} className="flex w-full items-center gap-3 px-4 py-3 text-slate-500 hover:text-red-600 text-sm font-medium transition-colors hover:bg-red-50 rounded-xl">
+        <button onClick={handleLogout} className="flex w-full items-center gap-3 px-4 py-3 text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 text-sm font-medium transition-colors hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl">
           <LogOut size={20} />
           {t('nav.logout')}
         </button>
@@ -132,18 +213,22 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children 
   );
 
   return (
-    <div dir={i18n.dir()} className="min-h-screen bg-slate-50 flex font-sans overflow-x-hidden max-w-full">
+    <div dir={i18n.dir()} className="h-screen bg-[var(--bg-main)] text-[var(--text-main)] flex font-sans transition-colors duration-300 overflow-hidden">
 
       {/* Mobile Header */}
-      <div className="md:hidden fixed top-0 w-full bg-white z-50 border-b border-slate-200 px-4 py-2 flex items-center justify-between shadow-sm">
+      <div className="md:hidden fixed top-0 w-full bg-[var(--bg-card)] z-50 border-b border-[var(--border-color)] px-4 py-2 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8">
-            <AqooniLogoMini src={systemLogo} />
+          <div className="w-12 h-12 shrink-0">
+            <AqooniLogoMini src={systemLogo} fallbackText={systemName} />
           </div>
-          <span className="font-bold text-slate-800 text-sm xs:text-base">{t('common.certificateSystem')}</span>
+          <span className="font-bold text-[var(--text-main)] text-sm xs:text-base truncate max-w-[150px]">
+            {session.role === 'super_admin' ? t('nav.superAdmin') : systemName}
+          </span>
         </div>
         <div className="flex items-center gap-2">
+          <ThemeToggle />
           <LanguageSwitcher />
+          {isSignedIn && <UserButton afterSignOutUrl="/admin/login" />}
           <button onClick={() => setIsMobileMenuOpen(true)} className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg active:scale-90 transition-transform">
             <Menu size={24} />
           </button>
@@ -151,7 +236,7 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       </div>
 
       {/* Desktop Sidebar */}
-      <aside className={`w-64 bg-white border-${i18n.dir() === 'rtl' ? 'l' : 'r'} border-slate-200 shadow-xl z-20 hidden md:flex flex-col fixed h-full ${i18n.dir() === 'rtl' ? 'right-0' : 'left-0'} top-0`}>
+      <aside className={`w-64 bg-[var(--sidebar-bg)] border-${i18n.dir() === 'rtl' ? 'l' : 'r'} border-[var(--sidebar-border)] shadow-xl z-20 hidden md:flex flex-col fixed h-full ${i18n.dir() === 'rtl' ? 'right-0' : 'left-0'} top-0`}>
         <SidebarContent />
       </aside>
 
@@ -164,18 +249,18 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children 
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsMobileMenuOpen(false)}
-              className="fixed inset-0 bg-slate-900/50 z-40 md:hidden backdrop-blur-sm"
+              className="fixed inset-0 bg-slate-900/50 dark:bg-black/70 z-40 md:hidden backdrop-blur-sm"
             />
             <motion.aside
               initial={{ x: i18n.dir() === 'rtl' ? '100%' : '-100%' }}
               animate={{ x: 0 }}
               exit={{ x: i18n.dir() === 'rtl' ? '100%' : '-100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className={`fixed inset-y-0 ${i18n.dir() === 'rtl' ? 'right-0' : 'left-0'} w-64 bg-white z-50 md:hidden shadow-2xl flex flex-col`}
+              className={`fixed inset-y-0 ${i18n.dir() === 'rtl' ? 'right-0' : 'left-0'} w-64 bg-[var(--sidebar-bg)] z-50 md:hidden shadow-2xl flex flex-col`}
             >
               <button
                 onClick={() => setIsMobileMenuOpen(false)}
-                className={`absolute top-4 ${i18n.dir() === 'rtl' ? 'left-4' : 'right-4'} p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full`}
+                className={`absolute top-4 ${i18n.dir() === 'rtl' ? 'left-4' : 'right-4'} p-2 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full`}
               >
                 <X size={20} />
               </button>
@@ -186,71 +271,220 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       </AnimatePresence>
 
       {/* Main Content */}
-      <main className={`flex-1 w-full ${i18n.dir() === 'rtl' ? 'md:mr-64' : 'md:ml-64'} p-4 md:p-8 pt-[72px] md:pt-8 overflow-y-auto min-h-screen bg-slate-50/50`}>
-        {location.pathname !== '/super' && (
-          <div className="hidden md:flex justify-end mb-6">
-            <LanguageSwitcher />
-          </div>
-        )}
-        {children}
+      <main id="admin-layout-main" className={`flex-1 bg-[var(--bg-main)] ${i18n.dir() === 'rtl' ? 'md:mr-64' : 'md:ml-64'} h-full flex flex-col overflow-hidden`}>
+        <div id="main-scroll-container" className="flex-1 flex flex-col min-h-0 w-full max-w-screen-2xl mx-auto p-3 md:p-4 pt-[80px] md:pt-4 overflow-y-auto custom-scrollbar">
+          {location.pathname !== '/super' && (
+            <div className="hidden md:flex justify-end items-center gap-4 mb-6">
+              <ThemeToggle />
+              <LanguageSwitcher />
+            </div>
+          )}
+          {children}
+        </div>
       </main>
+
+      {/* Onboarding Tour */}
+      {showTour && session.email && (
+        <OnboardingTour
+          userEmail={session.email}
+          onComplete={() => setShowTour(false)}
+        />
+      )}
     </div>
   );
 };
 
 // --- PUBLIC LAYOUT ---
 
-export const PublicLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { t, i18n } = useTranslation();
-  const [systemLogo, setSystemLogo] = useState('/logo.png');
+const scrollToSection = (key: string) => {
+  const el = document.getElementById(key);
+  if (el) {
+    const offset = 100;
+    const top = el.getBoundingClientRect().top + window.scrollY - offset;
+    window.scrollTo({ top, behavior: 'smooth' });
+  }
+};
+
+const PublicNav: React.FC<{ t: any; i18n: any }> = ({ t }) => {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const [systemName, setSystemName] = useState('Aqooni');
+  const [systemLogo, setSystemLogo] = useState('/logo.jpg');
 
   useEffect(() => {
-    const fetchSettings = async () => {
+    const fetchBranding = async () => {
       const settings = await getSystemSettings();
       if (settings) {
-        setSystemLogo(settings.logo);
+        setSystemName(settings.name || 'Aqooni');
+        setSystemLogo(settings.logo || '/logo.jpg');
       }
     };
-    fetchSettings();
+    fetchBranding();
   }, []);
 
-  return (
-    <div dir={i18n.dir()} className="min-h-screen bg-gradient-to-br from-white to-purple-50 flex flex-col font-sans">
-      <nav className="bg-white/90 backdrop-blur-md border-b border-purple-100 sticky top-0 z-50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 md:h-20 flex flex-col md:flex-row items-center justify-between gap-4">
+  const navLinks = [
+    { key: 'home', label: t('nav.home') },
+    { key: 'features', label: t('nav.features') },
+    { key: 'modules', label: t('nav.modules') },
+    { key: 'verify', label: t('Verify') || 'Verify' },
+    { key: 'pricing', label: t('nav.pricing') },
+    { key: 'contact', label: t('nav.contact') },
+    { key: 'faqs', label: t('nav.faqs') }
+  ];
 
-          <Link to="/" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 transition-transform group-hover:scale-110">
+  const handleNavClick = (key: string) => {
+    setIsMobileMenuOpen(false);
+    if (key === 'home') {
+      if (location.pathname !== '/' && location.pathname !== '/verify') {
+        navigate('/');
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+      return;
+    }
+    
+    if (location.pathname !== '/' && location.pathname !== '/verify') {
+      if (key === 'verify') {
+        navigate('/verify');
+      } else {
+        navigate('/');
+      }
+      setTimeout(() => scrollToSection(key), 300);
+    } else {
+      if (key === 'verify' && location.pathname !== '/verify') {
+        navigate('/verify');
+        setTimeout(() => scrollToSection(key), 100);
+      } else {
+        scrollToSection(key);
+      }
+    }
+  };
+
+  return (
+    <>
+      <nav className="dark-section bg-[#0f172a]/80 backdrop-blur-xl border-b border-white/10 sticky top-2 sm:top-4 z-50 shadow-2xl mx-1 sm:mx-4 lg:mx-auto max-w-7xl rounded-2xl md:h-20">
+        <div className="max-w-7xl mx-auto px-1.5 sm:px-6 lg:px-8 py-2 md:py-3 h-full flex items-center justify-between gap-1 sm:gap-4">
+
+          <Link to="/" className="flex items-center gap-1.5 sm:gap-3 group shrink-0">
+            <div className="w-8 h-8 sm:w-14 sm:h-14 shrink-0 transition-transform group-hover:scale-110 shadow-2xl">
               <AqooniLogoMini src={systemLogo} />
             </div>
-            <div className="flex flex-col">
-              <span className="font-bold text-xl text-qabas-purple font-cairo leading-none">{t('common.instituteName')}</span>
-              <span className="text-xs text-qabas-orange font-bold font-almarai tracking-wider">{t('common.qahi')}</span>
+            <div className="flex flex-col text-left">
+              <span className="font-bold text-xs sm:text-xl text-white font-cairo leading-none">{systemName}</span>
+              <span className="text-[7px] sm:text-[10px] text-amber-500 font-bold font-almarai tracking-wider uppercase leading-none mt-0.5">{t('common.tagline')}</span>
             </div>
           </Link>
 
-          <div className="flex flex-wrap justify-center items-center gap-4">
-            <LanguageSwitcher />
-            <Link to="/verify" className="text-sm font-bold text-slate-600 hover:text-qabas-orange transition-colors hidden sm:block">
-              {t('nav.verify')}
+          {/* Desktop Navigation Links - Only show on Extra Large screens */}
+          <div className="hidden xl:flex items-center gap-4 xl:gap-6">
+            {navLinks.map((item) => (
+              <button
+                key={item.key}
+                onClick={() => handleNavClick(item.key)}
+                className="text-xs xl:text-sm font-bold text-slate-100 hover:text-amber-400 transition-colors bg-transparent border-none cursor-pointer uppercase tracking-wide"
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-2 xl:gap-3">
+            <ThemeToggle />
+            <div className="hidden md:block">
+              <LanguageSwitcher />
+            </div>
+            
+            <PWAInstallButton variant="nav" className="hidden sm:flex" />
+
+            <Link to="/admin/login" className="hidden 2xl:block text-xs font-bold text-white hover:text-qabas-orange transition-colors">
+              {t('Login') || 'Login'}
             </Link>
-            <Link to="/admin/dashboard" className="px-5 py-2 bg-gradient-to-r from-qabas-purple to-purple-800 text-white text-sm font-bold rounded-xl hover:shadow-lg hover:shadow-purple-200 transition-all flex items-center gap-2">
-              <FileBadge size={16} />
-              {t('nav.admin')}
+
+            <Link to="/admin/login" className="hidden lg:flex px-4 py-2 xl:px-5 xl:py-2.5 bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 text-xs font-bold rounded-xl hover:shadow-[0_0_20px_rgba(251,191,36,0.2)] transition-all items-center gap-2 transform hover:scale-105 active:scale-95 whitespace-nowrap overflow-hidden">
+              {t('GetStarted') || 'Get Started'}
+              <span className="text-base">→</span>
             </Link>
+
+            {/* Mobile Hamburger Button - Show on everything below XL */}
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="xl:hidden p-2 text-white hover:bg-white/10 rounded-xl transition-colors"
+              aria-label="Toggle menu"
+            >
+              {isMobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
+            </button>
           </div>
         </div>
+
+        {/* Mobile Dropdown Menu */}
+        <AnimatePresence>
+          {isMobileMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.25, ease: 'easeInOut' }}
+              className="overflow-hidden border-t border-white/10"
+            >
+              <div className="px-4 py-4 flex flex-col gap-2">
+                {navLinks.map((item) => (
+                  <button
+                    key={item.key}
+                    onClick={() => handleNavClick(item.key)}
+                    className="text-sm font-semibold text-slate-200 hover:text-amber-400 hover:bg-white/5 transition-colors bg-transparent border-none cursor-pointer text-left w-full px-4 py-3 rounded-xl"
+                  >
+                    {item.label}
+                  </button>
+                ))}
+                <div className="border-t border-white/10 mt-2 pt-4 flex flex-col gap-2">
+                  <Link
+                    to="/admin/login"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="text-sm font-bold text-white hover:text-qabas-orange transition-colors px-4 py-3 hover:bg-white/5 rounded-xl"
+                  >
+                    {t('Login') || 'Login'}
+                  </Link>
+                  <PWAInstallButton variant="nav" className="w-full justify-start py-3" />
+                  <LanguageSwitcher />
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </nav>
+    </>
+  );
+};
+
+export const PublicLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { t, i18n } = useTranslation();
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: any) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
+
+  return (
+    <div dir={i18n.dir()} className="min-h-screen bg-[var(--bg-main)] transition-colors duration-300">
+      <PublicNav t={t} i18n={i18n} />
 
       <main className="flex-1">
         {children}
       </main>
 
-      <footer className="bg-white border-t border-slate-200 py-8 mt-auto">
-        <div className="max-w-7xl mx-auto px-4 text-center text-slate-400 text-sm font-almarai">
-          &copy; {new Date().getFullYear()} {t('common.digitalCertificateSystem')} - {t('common.instituteName')} ({t('common.qahi')})
-        </div>
-      </footer>
+      <PWAInstallPrompt />
+      <Footer />
     </div>
   );
 };
