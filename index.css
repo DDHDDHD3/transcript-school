@@ -95,101 +95,54 @@ body {
 /* =====================================================
    GLOBAL THEME-AWARE TYPOGRAPHY
    Ensures all text is readable in both Day & Night modes
-   Only applies when no explicit Tailwind text-* class is used
    ===================================================== */
 
-/* Force box-sizing on all elements */
-* {
-  box-sizing: border-box;
+@layer base {
+  /* Force box-sizing on all elements */
+  * {
+    box-sizing: border-box;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: 'Cairo', sans-serif;
+    font-weight: 800;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+    color: var(--text-main);
+  }
+
+  strong,
+  b {
+    font-weight: 700;
+  }
+
+  p,
+  span,
+  label,
+  div {
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Root-level input and textarea text colors */
+  input,
+  textarea,
+  select,
+  button {
+    font-family: inherit;
+    color: var(--text-main);
+  }
+
+  /* Dark mode labels */
+  .dark label {
+    color: var(--text-muted);
+  }
 }
 
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  font-family: 'Cairo', sans-serif;
-  font-weight: 800;
-  line-height: 1.25;
-  letter-spacing: -0.01em;
-  color: var(--text-main);
-}
-
-strong,
-b {
-  font-weight: 700;
-}
-
-/* Paragraphs and labels without explicit class inherit from parent */
-p,
-span,
-label,
-div {
-  text-rendering: optimizeLegibility;
-}
-
-/* Headings WITHOUT an explicit text color class inherit from theme */
-h1:not([class*="text-"]),
-h2:not([class*="text-"]),
-h3:not([class*="text-"]),
-h4:not([class*="text-"]),
-h5:not([class*="text-"]),
-h6:not([class*="text-"]) {
-  color: var(--text-main);
-}
-
-/* Root-level input and textarea text colors */
-input,
-textarea,
-select,
-button {
-  font-family: inherit;
-  color: var(--text-main);
-}
-
-/* Dark mode: force readable text on all inputs/selects */
-.dark input,
-.dark textarea,
-.dark select {
-  color: var(--text-main);
-}
-
-/* Dark mode labels without explicit class */
-.dark label:not([class*="text-"]) {
-  color: var(--text-muted);
-}
-
-/* Dark mode: headings and paragraphs without explicit text class */
-.dark h1:not([class*="text-"]),
-.dark h2:not([class*="text-"]),
-.dark h3:not([class*="text-"]),
-.dark h4:not([class*="text-"]),
-.dark h5:not([class*="text-"]),
-.dark h6:not([class*="text-"]) {
-  color: var(--text-main);
-}
-
-.dark p:not([class]),
-.dark span:not([class]) {
-  color: var(--text-main);
-}
-
-/* Ensure tables are readable in dark mode */
-.dark table td:not([class*="text-"]),
-.dark table th:not([class*="text-"]) {
-  color: var(--text-main);
-}
-
-/* Light mode: unstyled headings use theme color */
-.light h1:not([class*="text-"]),
-.light h2:not([class*="text-"]),
-.light h3:not([class*="text-"]),
-.light h4:not([class*="text-"]),
-.light h5:not([class*="text-"]),
-.light h6:not([class*="text-"]) {
-  color: var(--text-main);
-}
 
 /* =====================================================
    .dark-section UTILITY

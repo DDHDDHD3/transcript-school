@@ -1,0 +1,17 @@
+
+> aqooni-digital@0.0.0 dev C:\Users\hp\Downloads\certi-qabas-al-huda
+> vite
+
+Port 3000 is in use, trying another one...
+Port 3001 is in use, trying another one...
+Port 3002 is in use, trying another one...
+
+  [32m[1mVITE[22m v6.4.1[39m  [2mready in [0m[1m2883[22m[2m[0m ms[22m
+
+  [32mΓ₧£[39m  [1mLocal[22m:   [36mhttps://localhost:[1m3003[22m/[39m
+  [32mΓ₧£[39m  [1mNetwork[22m: [36mhttps://192.168.56.1:[1m3003[22m/[39m
+  [32mΓ₧£[39m  [1mNetwork[22m: [36mhttps://192.168.213.1:[1m3003[22m/[39m
+  [32mΓ₧£[39m  [1mNetwork[22m: [36mhttps://192.168.238.1:[1m3003[22m/[39m
+  [32mΓ₧£[39m  [1mNetwork[22m: [36mhttps://192.168.18.29:[1m3003[22m/[39m
+  [32mΓ₧£[39m  [1mNetwork[22m: [36mhttps://172.24.160.1:[1m3003[22m/[39m
+[2m[32m  Γ₧£[39m[22m[2m  press [22m[1mh + enter[22m[2m to show help[22m

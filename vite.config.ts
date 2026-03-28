@@ -1,6 +1,6 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { defineConfig, loadEnv } from 'vite';
+import { defineConfig, loadEnv, type UserConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
@@ -11,16 +11,16 @@ const __dirname = path.dirname(__filename);
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '');
-  return {
+  
+  const config = {
     server: {
       port: 3000,
       host: '0.0.0.0',
-      https: true, // Enable HTTPS for PWA installation testing on local network
     },
     plugins: [
-      tailwindcss(),
-      react(),
-      mkcert(), // Automatically generate and handle local HTTPS certificates
+      tailwindcss() as any,
+      react() as any,
+      mkcert() as any,
       VitePWA({
         registerType: 'autoUpdate',
         includeAssets: ['favicon.png', 'apple-touch-icon.png', 'masked-icon.svg', 'logo.jpg', 'icons/*.png'],
@@ -51,7 +51,7 @@ export default defineConfig(({ mode }) => {
           enabled: true, // Enable PWA in development mode
           type: 'module'
         }
-      })
+      }) as any
     ],
     resolve: {
       alias: {
@@ -73,4 +73,6 @@ export default defineConfig(({ mode }) => {
       chunkSizeWarningLimit: 1000,
     }
   };
+
+  return config as UserConfig;
 });
