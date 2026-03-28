@@ -1,17 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, Plus, Filter, Download, Edit2, Trash2, X, ChevronLeft, ChevronRight, CheckCircle2, AlertCircle, AlertTriangle, RefreshCw, Upload, PlusCircle, Save, Calendar } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { getStudents, saveStudent, deleteStudent, SUBJECT_LIST, generateUUID, getConfig, saveConfig } from '../services/api';
 import { Student, Subject, CertificateConfig } from '../types';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { normalizeArabic } from '../utils/stringUtils';
 import { useNavigate } from 'react-router-dom';
-
-declare global {
-  interface Window {
-    XLSX: any;
-  }
-}
 
 const AdminStudents = () => {
   const { t, i18n } = useTranslation();
@@ -361,7 +356,7 @@ const AdminStudents = () => {
   };
 
   const handleExportExcel = () => {
-    if (!window.XLSX || students.length === 0) return;
+    if (!XLSX || students.length === 0) return;
 
     const data = students.map(s => {
       const row: Record<string, any> = {
@@ -390,23 +385,23 @@ const AdminStudents = () => {
       return row;
     });
 
-    const worksheet = window.XLSX.utils.json_to_sheet(data);
-    const workbook = window.XLSX.utils.book_new();
-    window.XLSX.utils.book_append_sheet(workbook, worksheet, "Students");
-    window.XLSX.writeFile(workbook, `students_results_${new Date().toISOString().split('T')[0]}.xlsx`);
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Students");
+    XLSX.writeFile(workbook, `students_results_${new Date().toISOString().split('T')[0]}.xlsx`);
   };
 
   const handleImportExcel = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !window.XLSX) return;
+    if (!file || !XLSX) return;
     setIsImporting(true);
     const reader = new FileReader();
     reader.onload = async (evt) => {
       try {
         const bstr = evt.target?.result;
-        const workbook = window.XLSX.read(bstr, { type: 'binary' });
+        const workbook = XLSX.read(bstr, { type: 'binary' });
         const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-        const rawData = window.XLSX.utils.sheet_to_json(worksheet) as any[];
+        const rawData = XLSX.utils.sheet_to_json(worksheet) as any[];
 
         for (const row of rawData) {
           const studentSubjects: Subject[] = [];

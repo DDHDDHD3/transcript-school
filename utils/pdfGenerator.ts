@@ -1,11 +1,6 @@
+import { jsPDF } from 'jspdf';
+import html2canvas from 'html2canvas';
 import { Student } from '../types';
-
-declare global {
-  interface Window {
-    jspdf: any;
-    html2canvas: any;
-  }
-}
 
 export const generateCertificatePDF = async (student: Student, elementId: string) => {
   const element = document.getElementById(elementId);
@@ -20,9 +15,6 @@ export const generateCertificatePDF = async (student: Student, elementId: string
 
   // 3. Brief cooling period for browser layout engine
   await new Promise(resolve => setTimeout(resolve, 1000));
-
-  const { jsPDF } = window.jspdf;
-  const html2canvas = window.html2canvas;
 
   try {
     // CAPTURE PHASE: Forces a high-fidelity 300DPI snapshot

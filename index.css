@@ -1,6 +1,32 @@
 @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&family=Almarai:wght@300;400;700;800&display=swap');
 
 /* Global Styles */
+@import "tailwindcss";
+
+@theme {
+  --color-royal-50: #f0f7ff;
+  --color-royal-100: #e0effe;
+  --color-royal-500: #3b82f6;
+  --color-royal-600: #2563eb;
+  --color-royal-700: #1d4ed8;
+  --color-royal-800: #1e40af;
+  --color-royal-900: #1e3a8a;
+
+  --color-qabas-orange: #ea580c;
+  --color-qabas-orange-light: #f97316;
+  --color-qabas-purple: #5b21b6;
+  --color-qabas-purple-light: #7c3aed;
+  --color-qabas-gold: #d97706;
+
+  --font-sans: "Cairo", "Almarai", "sans-serif";
+  --font-serif: "Amiri", "Noto Naskh Arabic", "serif";
+  --font-naskh: "Noto Naskh Arabic", "serif";
+  --font-amiri: "Amiri", "serif";
+  --font-cairo: "Cairo", "sans-serif";
+  --font-almarai: "Almarai", "sans-serif";
+  --font-scheherazade: "Scheherazade New", "serif";
+}
+
 :root {
   --qabas-purple: #5b21b6;
   --qabas-purple-light: #7c3aed;

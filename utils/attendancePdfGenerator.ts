@@ -1,11 +1,6 @@
+import { jsPDF } from 'jspdf';
+import html2canvas from 'html2canvas';
 import { Student, AttendanceRecord, AttendanceReport, CertificateConfig } from '../types';
-
-declare global {
-    interface Window {
-        jspdf: any;
-        html2canvas: any;
-    }
-}
 
 /**
  * Generates a branded PDF attendance report for a specific student (Parent View)
@@ -19,7 +14,6 @@ export const generateStudentAttendancePDF = async (
     // Ensure fonts are loaded
     await document.fonts.ready;
 
-    const { jsPDF } = window.jspdf;
     const doc = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
@@ -74,8 +68,6 @@ export const generateAttendancePDF = async (
     await Promise.all(Array.from(images).map(img => (img as HTMLImageElement).decode().catch(() => { })));
     await new Promise(resolve => setTimeout(resolve, 1000));
 
-    const { jsPDF } = window.jspdf;
-    const html2canvas = window.html2canvas;
     const isRtl = lang === 'ar';
     const isLandscape = orientation === 'landscape';
 
