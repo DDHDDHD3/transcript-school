@@ -191,7 +191,7 @@ const StandardTableTemplate: React.FC<TemplateProps & { theme: any, variant?: 'd
                         </tr>
                     </thead>
                     <tbody className="text-[40px] font-bold">
-                        {student.subjects.map((sub, idx) => (
+                        {Array.isArray(student.subjects) && student.subjects.map((sub, idx) => (
                             <tr key={idx} className="border-b border-slate-200 hover:bg-slate-50/50 transition-colors">
                                 <td {...getElementProps(`cell-${idx}-name`, `py-5 px-8 border-x border-slate-100 uppercase text-center`)}>
                                     {getSubjectLabel(sub.name)}

@@ -48,7 +48,10 @@ const StandaloneVerify = () => {
         setLoading(true);
         setError('');
         try {
-            const student = await getStudentByRegId(regId);
+            const sanitizedId = regId.trim();
+            if (!sanitizedId) return;
+
+            const student = await getStudentByRegId(sanitizedId);
             if (student) {
                 setResult(student);
                 if (student.schoolId) {
@@ -93,13 +96,15 @@ const StandaloneVerify = () => {
 
             // Apply width-based scale mostly, but allow it to be larger than viewport height
             // This fulfills the "increased size and full zoom" request
-            let scale = scaleW;
+        let scale = scaleW;
 
-            // Ensure it's not too small or ridiculously large
-            if (scale > 1.5) scale = 1.5;
-            if (scale < 0.1) scale = 0.1;
+        // Ensure it's not too small, ridiculously large, or NaN/Infinity
+        // On some mobile browsers, if window.innerWidth is reported incorrectly, it could lead to NaN
+        if (isNaN(scale) || !isFinite(scale)) scale = 0.5; 
+        if (scale > 1.5) scale = 1.5;
+        if (scale < 0.1) scale = 0.1;
 
-            setPreviewScale(scale);
+        setPreviewScale(scale);
         };
         handleResize();
         window.addEventListener('resize', handleResize);

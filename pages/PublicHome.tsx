@@ -83,11 +83,16 @@ const PublicHome = () => {
   }, [location]);
 
   const handleVerify = () => {
-    if (!searchId.trim()) return;
+    // Sanitize input: Remove all invisible characters, newlines, and non-printable chars
+    // This prevents "black screen" crashes caused by bidi characters or newlines from mobile paste
+    const sanitizedId = searchId.replace(/[\s\u0000-\u001F\u007F-\u009F\u200B-\u200D\uFEFF]/g, '').trim();
+    
+    if (!sanitizedId) return;
     setLoading(true);
     // Add a slight delay for "fast-loading" feel with feedback
     setTimeout(() => {
-      navigate(`/v/${searchId.trim()}`);
+      // Use encodeURIComponent to ensure slashes or special characters don't break routing
+      navigate(`/v/${encodeURIComponent(sanitizedId)}`);
       setLoading(false);
     }, 400);
   };
