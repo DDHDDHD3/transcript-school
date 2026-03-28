@@ -1,0 +1,17 @@
+
+plugins ΓÇö Install open-plugin format plugins into agent tools
+
+Usage:
+  plugins add <repo-path-or-url>          Install plugins from a repo
+  plugins discover <repo-path-or-url>     Discover plugins in a repo
+  plugins targets                         List available install targets
+  plugins <repo-path-or-url>              Shorthand for add
+
+Options:
+  -t, --target <target>   Target tool (e.g. claude-code). Default: auto-detect
+  -s, --scope <scope>     Install scope: user, project, local. Default: user
+  -y, --yes               Skip confirmation prompts
+  --remote                Include remote-source plugins in output
+  --debug                 Show verbose installation output
+  -h, --help              Show this help
+
