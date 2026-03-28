@@ -21,7 +21,7 @@ export default defineConfig(({ mode }) => {
       mkcert(), // Automatically generate and handle local HTTPS certificates
       VitePWA({
         registerType: 'autoUpdate',
-        includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg', 'logo.jpg', 'icons/*.png'],
+        includeAssets: ['favicon.png', 'apple-touch-icon.png', 'masked-icon.svg', 'logo.jpg', 'icons/*.png'],
         manifest: {
           name: 'Aqooni Digital',
           short_name: 'Aqooni Dig',

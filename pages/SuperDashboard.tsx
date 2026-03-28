@@ -803,12 +803,10 @@ const SuperDashboard = () => {
                                                 <p className="text-xs font-bold text-slate-700">{inquiry.schoolName}</p>
                                                 <p className="text-[10px] text-slate-500">{inquiry.location}</p>
                                             </td>
-                                            <td className="py-5">
-                                                <div className="max-w-xs">
-                                                    <p className="text-xs text-slate-600 line-clamp-2 italic">
-                                                        "{inquiry.message}"
-                                                    </p>
-                                                </div>
+                                            <td className="py-5 max-w-[220px]">
+                                                <p className="text-xs text-slate-600 italic line-clamp-2 break-words overflow-hidden">
+                                                    "{inquiry.message}"
+                                                </p>
                                             </td>
                                             <td className="py-5 text-right">
                                                 <div className="flex items-center justify-end gap-2 text-right">
@@ -845,57 +843,93 @@ const SuperDashboard = () => {
                 {/* Reply Modal */}
                 <AnimatePresence>
                     {isReplyModalOpen && selectedInquiry && (
-                        <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md">
+                        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-md">
                             <motion.div
-                                initial={{ scale: 0.9, opacity: 0 }}
-                                animate={{ scale: 1, opacity: 1 }}
-                                exit={{ scale: 0.9, opacity: 0 }}
-                                className="bg-white dark:bg-[#0f172a] rounded-[32px] p-8 max-w-2xl w-full shadow-2xl border border-slate-100 dark:border-white/10"
+                                initial={{ scale: 0.95, opacity: 0, y: 16 }}
+                                animate={{ scale: 1, opacity: 1, y: 0 }}
+                                exit={{ scale: 0.95, opacity: 0, y: 16 }}
+                                transition={{ type: 'spring', stiffness: 300, damping: 28 }}
+                                className="bg-white dark:bg-[#0f172a] rounded-[28px] w-full max-w-xl shadow-2xl border border-slate-100 dark:border-white/10 overflow-hidden flex flex-col max-h-[90vh]"
                             >
-                                <div className="flex items-center justify-between mb-6">
-                                    <h3 className="text-xl font-black text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                                        <Mail className="text-blue-500" size={24} />
-                                        Reply to {selectedInquiry.fullName}
-                                    </h3>
-                                    <button onClick={() => setIsReplyModalOpen(false)} className="p-2 hover:bg-slate-50 rounded-xl transition-all">
-                                        <XCircle size={24} className="text-slate-400" />
+                                {/* Modal Header */}
+                                <div className="flex items-center justify-between px-7 pt-6 pb-5 border-b border-slate-100 dark:border-white/10">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 bg-blue-50 rounded-2xl flex items-center justify-center">
+                                            <Mail className="text-blue-500" size={20} />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-base font-black text-slate-800 dark:text-slate-100 leading-none">Reply to {selectedInquiry.fullName}</h3>
+                                            <p className="text-[11px] text-slate-400 font-medium mt-0.5">{selectedInquiry.email}</p>
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={() => setIsReplyModalOpen(false)}
+                                        className="w-9 h-9 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-white/10 rounded-xl transition-all text-slate-400 hover:text-slate-600"
+                                    >
+                                        <XCircle size={20} />
                                     </button>
                                 </div>
 
-                                <div className="bg-slate-50 dark:bg-white/5 p-4 rounded-2xl mb-6">
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Inquiry Message:</p>
-                                    <p className="text-sm text-slate-600 dark:text-slate-400 italic">"{selectedInquiry.message}"</p>
+                                <div className="px-7 py-5 space-y-5 overflow-y-auto flex-1 custom-scrollbar">
+                                    {/* Sender Info Row */}
+                                    <div className="flex items-center gap-3 flex-wrap">
+                                        {selectedInquiry.schoolName && (
+                                            <span className="inline-flex items-center gap-1.5 bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300 text-[11px] font-bold px-3 py-1.5 rounded-lg">
+                                                🏫 {selectedInquiry.schoolName}
+                                            </span>
+                                        )}
+                                        {selectedInquiry.location && (
+                                            <span className="inline-flex items-center gap-1.5 bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300 text-[11px] font-bold px-3 py-1.5 rounded-lg">
+                                                📍 {selectedInquiry.location}
+                                            </span>
+                                        )}
+                                        {selectedInquiry.phone && (
+                                            <span className="inline-flex items-center gap-1.5 bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300 text-[11px] font-bold px-3 py-1.5 rounded-lg">
+                                                📞 {selectedInquiry.phone}
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    {/* Inquiry Message Box */}
+                                    <div className="bg-blue-50/60 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/40 rounded-2xl p-4">
+                                        <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-2">Their Message</p>
+                                        <div className="max-h-28 overflow-y-auto custom-scrollbar">
+                                            <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed break-words whitespace-pre-wrap">
+                                                {selectedInquiry.message}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {/* Reply Textarea */}
+                                    <div>
+                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Your Response</label>
+                                        <textarea
+                                            value={replyText}
+                                            onChange={(e) => setReplyText(e.target.value)}
+                                            rows={5}
+                                            className="w-full bg-slate-50 dark:bg-white/5 border-2 border-slate-100 dark:border-white/10 rounded-2xl px-4 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-300 focus:bg-white dark:focus:bg-white/10 transition-all text-slate-800 dark:text-slate-100 resize-none leading-relaxed"
+                                            placeholder="Write your reply here..."
+                                        />
+                                    </div>
                                 </div>
 
-                                <div className="mb-6">
-                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Your Response:</label>
-                                    <textarea
-                                        value={replyText}
-                                        onChange={(e) => setReplyText(e.target.value)}
-                                        className="w-full h-48 bg-slate-50 dark:bg-white/5 border-2 border-slate-100 dark:border-white/10 rounded-2xl p-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-slate-800 dark:text-slate-100"
-                                        placeholder="Type your reply here..."
-                                    />
-                                </div>
-
-                                <div className="flex items-center gap-4">
+                                {/* Modal Footer */}
+                                <div className="flex items-center gap-3 px-7 py-4 border-t border-slate-100 dark:border-white/10 shrink-0">
                                     <button
                                         onClick={() => setIsReplyModalOpen(false)}
-                                        className="flex-1 py-4 bg-slate-100 text-slate-600 font-black rounded-2xl hover:bg-slate-200 transition-all uppercase tracking-widest text-xs"
+                                        className="px-6 py-3 bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300 font-bold rounded-xl hover:bg-slate-200 dark:hover:bg-white/20 transition-all text-sm"
                                     >
                                         Cancel
                                     </button>
                                     <button
                                         onClick={handleSendReply}
                                         disabled={isSendingReply || !replyText.trim()}
-                                        className="flex-[2] py-4 bg-blue-600 text-white font-black rounded-2xl shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all uppercase tracking-widest text-xs disabled:opacity-50 flex items-center justify-center gap-2"
+                                        className="flex-1 py-3 bg-blue-600 text-white font-black rounded-xl shadow-lg shadow-blue-200 hover:bg-blue-700 active:scale-[0.98] transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                                     >
                                         {isSendingReply ? (
-                                            <RefreshCw className="animate-spin" size={18} />
+                                            <><RefreshCw className="animate-spin" size={16} /> Sending...</>
                                         ) : (
-                                            <>
-                                                <Send size={18} />
-                                                Send Reply
-                                            </>
+                                            <><Send size={16} /> Send Reply</>                                        
                                         )}
                                     </button>
                                 </div>

@@ -216,16 +216,16 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     <div dir={i18n.dir()} className="h-screen bg-[var(--bg-main)] text-[var(--text-main)] flex font-sans transition-colors duration-300 overflow-hidden">
 
       {/* Mobile Header */}
-      <div className="md:hidden fixed top-0 w-full bg-[var(--bg-card)] z-50 border-b border-[var(--border-color)] px-4 py-2 flex items-center justify-between shadow-sm pt-[calc(0.5rem+env(safe-area-inset-top,0px))]">
-        <div className="flex items-center gap-2">
-          <div className="w-12 h-12 shrink-0">
+      <div className="md:hidden fixed top-0 w-full bg-[var(--bg-card)] z-50 border-b border-[var(--border-color)] px-3 xs:px-4 py-2 flex items-center justify-between shadow-sm pt-[calc(0.5rem+env(safe-area-inset-top,0px))] gap-2">
+        <div className="flex items-center gap-2 shrink-0 overflow-hidden">
+          <div className="w-9 h-9 xs:w-12 xs:h-12 shrink-0">
             <AqooniLogoMini src={systemLogo} fallbackText={systemName} />
           </div>
-          <span className="font-bold text-[var(--text-main)] text-sm xs:text-base truncate max-w-[150px]">
+          <span className="font-bold text-[var(--text-main)] text-sm xs:text-base truncate max-w-[100px] xs:max-w-[150px]">
             {session.role === 'super_admin' ? t('nav.superAdmin') : systemName}
           </span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
           <ThemeToggle />
           <LanguageSwitcher />
           {isSignedIn && <UserButton afterSignOutUrl="/admin/login" />}
@@ -344,7 +344,7 @@ const PublicNav: React.FC<{ t: any; i18n: any }> = ({ t }) => {
       }
       return;
     }
-    
+
     if (location.pathname !== '/' && location.pathname !== '/verify') {
       if (key === 'verify') {
         navigate('/verify');
@@ -364,7 +364,7 @@ const PublicNav: React.FC<{ t: any; i18n: any }> = ({ t }) => {
 
   return (
     <>
-      <nav 
+      <nav
         className="dark-section bg-[#0f172a]/80 backdrop-blur-xl border-b border-white/10 sticky z-50 shadow-2xl mx-1 sm:mx-4 lg:mx-auto max-w-7xl rounded-2xl md:h-20"
         style={{ top: 'calc(env(safe-area-inset-top, 0px) + 0.5rem)' }}
       >
@@ -393,12 +393,10 @@ const PublicNav: React.FC<{ t: any; i18n: any }> = ({ t }) => {
             ))}
           </div>
 
-          <div className="flex items-center gap-2 xl:gap-3">
+          <div className="flex items-center gap-1 sm:gap-2 xl:gap-3 shrink-0">
             <ThemeToggle />
-            <div className="hidden md:block">
-              <LanguageSwitcher />
-            </div>
-            
+            <LanguageSwitcher />
+
             <PWAInstallButton variant="nav" className="hidden sm:flex" />
 
             <Link to="/admin/login" className="hidden 2xl:block text-xs font-bold text-white hover:text-qabas-orange transition-colors">
@@ -413,7 +411,7 @@ const PublicNav: React.FC<{ t: any; i18n: any }> = ({ t }) => {
             {/* Mobile Hamburger Button - Show on everything below XL */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="xl:hidden p-2 text-white hover:bg-white/10 rounded-xl transition-colors"
+              className="xl:hidden p-1.5 xs:p-2 text-white hover:bg-white/10 rounded-xl transition-colors shrink-0"
               aria-label="Toggle menu"
             >
               {isMobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
@@ -425,13 +423,14 @@ const PublicNav: React.FC<{ t: any; i18n: any }> = ({ t }) => {
         <AnimatePresence>
           {isMobileMenuOpen && (
             <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.25, ease: 'easeInOut' }}
-              className="overflow-hidden border-t border-white/10"
+              initial={{ opacity: 0, y: -10, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.98 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+              className="absolute top-full left-0 right-0 mt-2 mx-1 sm:mx-0 bg-[#0f172a]/95 backdrop-blur-3xl border border-white/10 rounded-2xl shadow-2xl overflow-y-auto custom-scrollbar z-50"
+              style={{ maxHeight: 'calc(100vh - 100px)' }}
             >
-              <div className="px-4 py-4 flex flex-col gap-2">
+              <div className="px-4 py-5 flex flex-col gap-1.5">
                 {navLinks.map((item) => (
                   <button
                     key={item.key}
@@ -441,16 +440,27 @@ const PublicNav: React.FC<{ t: any; i18n: any }> = ({ t }) => {
                     {item.label}
                   </button>
                 ))}
-                <div className="border-t border-white/10 mt-2 pt-4 flex flex-col gap-2">
+
+                <div className="h-px w-full bg-white/10 my-2"></div>
+
+                <div className="flex flex-col gap-2 pb-2">
                   <Link
                     to="/admin/login"
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className="text-sm font-bold text-white hover:text-qabas-orange transition-colors px-4 py-3 hover:bg-white/5 rounded-xl"
+                    className="flex justify-center text-sm font-bold text-white hover:text-qabas-orange transition-colors px-4 py-3 hover:bg-white/5 rounded-xl border border-white/10"
                   >
                     {t('Login') || 'Login'}
                   </Link>
-                  <PWAInstallButton variant="nav" className="w-full justify-start py-3" />
-                  <LanguageSwitcher />
+                  <Link
+                    to="/admin/login"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="flex justify-center text-sm font-bold text-slate-950 bg-gradient-to-r from-amber-400 to-amber-600 hover:shadow-[0_0_20px_rgba(251,191,36,0.2)] transition-all px-4 py-3 rounded-xl"
+                  >
+                    {t('GetStarted') || 'Get Started'}
+                  </Link>
+                  <div className="mt-1">
+                    <PWAInstallButton variant="nav" className="w-full justify-center py-3 border border-white/5 bg-white/5 hover:bg-white/10 rounded-xl" />
+                  </div>
                 </div>
               </div>
             </motion.div>

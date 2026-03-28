@@ -17,6 +17,9 @@ const LanguageSwitcher: React.FC = () => {
 
     const changeLanguage = (code: string) => {
         i18n.changeLanguage(code);
+        localStorage.setItem('aqooni_lang', code);
+        // Clear old key to avoid conflicts with LanguageDetector
+        localStorage.removeItem('i18nextLng');
         document.documentElement.dir = languages.find(l => l.code === code)?.dir || 'ltr';
         setIsOpen(false);
     };

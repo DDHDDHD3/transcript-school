@@ -1,6 +1,5 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
-import LanguageDetector from 'i18next-browser-languagedetector';
 
 // Custom backend to load translations from /locales/{{lng}}.json
 // This avoids the need for i18next-http-backend dependency
@@ -24,19 +23,20 @@ const customBackend = {
     },
 };
 
+// Supported languages — English is the default
+const SUPPORTED_LANGUAGES = ['en', 'ar', 'so'];
+const savedLang = localStorage.getItem('aqooni_lang');
+const defaultLang = savedLang && SUPPORTED_LANGUAGES.includes(savedLang) ? savedLang : 'en';
+
 i18n
     .use(customBackend)
-    .use(LanguageDetector)
     .use(initReactI18next)
     .init({
-        fallbackLng: 'ar',
-        lng: localStorage.getItem('i18nextLng') || 'ar',
+        fallbackLng: 'en',
+        lng: defaultLang,
+        supportedLngs: SUPPORTED_LANGUAGES,
         interpolation: {
             escapeValue: false,
-        },
-        detection: {
-            order: ['querystring', 'cookie', 'localStorage', 'navigator', 'htmlTag', 'path', 'subdomain'],
-            caches: ['localStorage', 'cookie'],
         },
     });
 

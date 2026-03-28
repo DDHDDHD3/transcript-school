@@ -3,7 +3,7 @@ import { MessageCircle, X, Send, Bot, User as UserIcon, MessageSquare, ChevronDo
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || 'AIzaSyAvj8TXgedGKSPkpDcZU8EwtHeJOUd-Qlg'; // Fallback to provided key if env fails
+const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 const WA_LINK = 'https://wa.me/252614163362';
 
 type Message = {
