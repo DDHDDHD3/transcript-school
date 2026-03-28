@@ -22,6 +22,8 @@
   --sidebar-bg: #ffffff;
   --sidebar-border: #e2e8f0;
   --input-bg: #ffffff;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 html {

@@ -216,7 +216,7 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     <div dir={i18n.dir()} className="h-screen bg-[var(--bg-main)] text-[var(--text-main)] flex font-sans transition-colors duration-300 overflow-hidden">
 
       {/* Mobile Header */}
-      <div className="md:hidden fixed top-0 w-full bg-[var(--bg-card)] z-50 border-b border-[var(--border-color)] px-4 py-2 flex items-center justify-between shadow-sm">
+      <div className="md:hidden fixed top-0 w-full bg-[var(--bg-card)] z-50 border-b border-[var(--border-color)] px-4 py-2 flex items-center justify-between shadow-sm pt-[calc(0.5rem+env(safe-area-inset-top,0px))]">
         <div className="flex items-center gap-2">
           <div className="w-12 h-12 shrink-0">
             <AqooniLogoMini src={systemLogo} fallbackText={systemName} />
@@ -364,7 +364,10 @@ const PublicNav: React.FC<{ t: any; i18n: any }> = ({ t }) => {
 
   return (
     <>
-      <nav className="dark-section bg-[#0f172a]/80 backdrop-blur-xl border-b border-white/10 sticky top-2 sm:top-4 z-50 shadow-2xl mx-1 sm:mx-4 lg:mx-auto max-w-7xl rounded-2xl md:h-20">
+      <nav 
+        className="dark-section bg-[#0f172a]/80 backdrop-blur-xl border-b border-white/10 sticky z-50 shadow-2xl mx-1 sm:mx-4 lg:mx-auto max-w-7xl rounded-2xl md:h-20"
+        style={{ top: 'calc(env(safe-area-inset-top, 0px) + 0.5rem)' }}
+      >
         <div className="max-w-7xl mx-auto px-1.5 sm:px-6 lg:px-8 py-2 md:py-3 h-full flex items-center justify-between gap-1 sm:gap-4">
 
           <Link to="/" className="flex items-center gap-1.5 sm:gap-3 group shrink-0">

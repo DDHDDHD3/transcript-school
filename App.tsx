@@ -141,7 +141,7 @@ const App = () => {
   const handleLoadingDone = useCallback(() => setAppReady(true), []);
 
   useEffect(() => {
-    console.log('App Mounted - Version: 2026-03-08 Update Typography'); // Updated version string
+    console.log('App Mounted - Version: 2026-03-26 PWA Safe Area & Verify Fix'); // Updated version string
     seedDatabase();
   }, []);
 

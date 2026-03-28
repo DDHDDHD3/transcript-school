@@ -57,13 +57,13 @@ const StandaloneVerify = () => {
                 }
                 const history = await getStudentAttendanceHistory(student.studentId, student.schoolId);
                 // Normalize history to use RegID for template compatibility
-                const normalizedHistory = history.map(rec => ({
+                const normalizedHistory = Array.isArray(history) ? history.map(rec => ({
                     ...rec,
                     studentId: student.studentId
-                }));
+                })) : [];
                 setAttendanceHistory(normalizedHistory);
-                if (normalizedHistory.length > 0) {
-                    setPerceivedMonth(normalizedHistory[0].date.slice(0, 7));
+                if (normalizedHistory.length > 0 && normalizedHistory[0]?.date) {
+                    setPerceivedMonth(normalizedHistory[0].date.substring(0, 7));
                 }
             } else {
                 setError(t('ErrorNotFound') || 'Records not found for this ID.');
