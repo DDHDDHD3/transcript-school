@@ -1,13 +1,18 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Loader2, Search, Shield, Cloud, Database, Users,
-  Headphones, CheckCircle2, Star, Zap, ChevronDown, Download
+  Headphones, CheckCircle2, Star, Zap, ChevronDown, Download, Mail
 } from 'lucide-react';
-import { useNavigate, Link, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
+import { SignUpButton, SignedIn, SignedOut } from "@clerk/clerk-react";
 import { useTranslation } from 'react-i18next';
 import AIChatHelper from '../components/AIChatHelper';
 import ContactForm from '../components/ContactForm';
+import '../i18n'; // Ensure i18n is initialized client-side
 
 const TypewriterText = ({ text }: { text: string }) => {
   const [displayText, setDisplayText] = useState('');
@@ -44,6 +49,7 @@ const TypewriterText = ({ text }: { text: string }) => {
 const PublicHome = () => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchId, setSearchId] = useState('');
   const [loading, setLoading] = useState(false);
   const [activeFeature, setActiveFeature] = useState(0);
@@ -56,8 +62,7 @@ const PublicHome = () => {
     { icon: <Headphones className="text-amber-400" />, label: t('Support247'), desc: t('SupportDescription') },
     { icon: <Shield className="text-amber-400" />, label: t('MultiSchoolManagement'), desc: t('MultiSchoolDescription') },
     { icon: <Zap className="text-amber-400" />, label: t('RoleBasedDashboards'), desc: t('RoleBasedDescription') },
-    { icon: <Download className="text-amber-400" />, label: t('CertificateGeneration'), desc: t('CertificateDescription') },
-    { icon: <CheckCircle2 className="text-amber-400" />, label: t('AttendanceMonitoring'), desc: t('AttendanceDescription') }
+    { icon: <Download className="text-amber-400" />, label: t('CertificateGeneration'), desc: t('CertificateDescription') }
   ];
 
   useEffect(() => {
@@ -67,10 +72,10 @@ const PublicHome = () => {
     return () => clearInterval(interval);
   }, [features.length]);
 
-  const location = useLocation();
+
   useEffect(() => {
-    if (location.hash) {
-      const id = location.hash.substring(1);
+    if (typeof window !== 'undefined' && window.location.hash) {
+      const id = window.location.hash.substring(1);
       const el = document.getElementById(id);
       if (el) {
         setTimeout(() => {
@@ -80,18 +85,14 @@ const PublicHome = () => {
         }, 100);
       }
     }
-  }, [location]);
+  }, [location.pathname]);
 
   const handleVerify = () => {
-    // Sanitize input: Remove all invisible characters, newlines, and non-printable chars
-    // This prevents "black screen" crashes caused by bidi characters or newlines from mobile paste
     const sanitizedId = searchId.replace(/[\s\u0000-\u001F\u007F-\u009F\u200B-\u200D\uFEFF]/g, '').trim();
     
     if (!sanitizedId) return;
     setLoading(true);
-    // Add a slight delay for "fast-loading" feel with feedback
     setTimeout(() => {
-      // Use encodeURIComponent to ensure slashes or special characters don't break routing
       navigate(`/v/${encodeURIComponent(sanitizedId)}`);
       setLoading(false);
     }, 400);
@@ -130,16 +131,16 @@ const PublicHome = () => {
       </div>
 
       {/* Hero Section */}
-      <section id="home" className="w-full relative py-12 md:py-20 lg:py-32 px-4 overflow-hidden hero-gradient wave-bg bg-slate-950">
+      <section id="home" className="w-full relative py-12 md:py-20 lg:py-32 px-4 overflow-hidden hero-gradient wave-bg bg-white">
         <div className="max-w-7xl mx-auto relative z-10">
           <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
             <div className="flex-1 text-center lg:text-left">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-amber-400 text-xs font-bold uppercase tracking-widest mb-8 backdrop-blur-sm"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-100 border border-slate-200 text-amber-600 text-xs font-bold uppercase tracking-widest mb-8 backdrop-blur-sm"
               >
-                <Star size={14} className="fill-amber-400" />
+                <Star size={14} className="fill-amber-600" />
                 {t('VerificationTitle') || 'Official Academic Portal'}
               </motion.div>
 
@@ -147,11 +148,11 @@ const PublicHome = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="text-3xl md:text-6xl lg:text-7xl font-black text-white mb-6 font-cairo leading-tight"
+                className="text-3xl md:text-6xl lg:text-7xl font-black text-slate-900 mb-6 font-cairo leading-tight"
               >
                 Aqooni Digital <br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-amber-400 to-amber-600">
-                  School Management
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-600 via-amber-700 to-amber-900">
+                  Academic Transcripts & Credentials
                 </span>
               </motion.h1>
 
@@ -159,7 +160,7 @@ const PublicHome = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
-                className="text-slate-300 font-almarai text-lg md:text-xl max-w-2xl lg:mx-0 mx-auto leading-relaxed mb-10"
+                className="text-black font-almarai text-lg md:text-xl max-w-2xl lg:mx-0 mx-auto leading-relaxed mb-10"
               >
                 {t('LandingHeroSubtitle')}
               </motion.p>
@@ -174,15 +175,24 @@ const PublicHome = () => {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
-                  <Link to="/admin/login" className="px-10 py-4 bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 font-black rounded-xl shadow-lg shadow-amber-400/20 hover:shadow-amber-400/40 transition-all flex items-center justify-center gap-2 text-lg no-underline uppercase tracking-widest w-full sm:w-auto">
-                    {t('nav.getStarted')}
-                  </Link>
+                  <SignedOut>
+                    <SignUpButton mode="modal">
+                      <button className="px-10 py-4 bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 font-black rounded-xl shadow-lg shadow-amber-400/20 hover:shadow-amber-400/40 transition-all flex items-center justify-center gap-2 text-lg no-underline uppercase tracking-widest w-full sm:w-auto border-none cursor-pointer">
+                        {t('nav.getStarted')}
+                      </button>
+                    </SignUpButton>
+                  </SignedOut>
+                  <SignedIn>
+                    <Link to="/admin/dashboard" className="px-10 py-4 bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 font-black rounded-xl shadow-lg shadow-amber-400/20 hover:shadow-amber-400/40 transition-all flex items-center justify-center gap-2 text-lg no-underline uppercase tracking-widest w-full sm:w-auto">
+                      Go to Dashboard
+                    </Link>
+                  </SignedIn>
                 </motion.div>
                 <motion.div
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
-                  <a href="#verify" className="px-10 py-4 bg-white/5 border border-white/10 text-white font-black rounded-xl hover:bg-white/10 transition-all backdrop-blur-sm text-lg no-underline flex items-center justify-center uppercase tracking-widest w-full sm:w-auto">
+                  <a href="#verify" className="px-10 py-4 bg-slate-100 border border-slate-200 text-slate-900 font-black rounded-xl hover:bg-slate-200 transition-all backdrop-blur-sm text-lg no-underline flex items-center justify-center uppercase tracking-widest w-full sm:w-auto">
                     {t('VerifyNow')}
                   </a>
                 </motion.div>
@@ -206,7 +216,7 @@ const PublicHome = () => {
                   repeat: Infinity,
                   ease: "easeInOut"
                 }}
-                className="relative rounded-[2.5rem] overflow-hidden border border-white/20 shadow-2xl bg-white/5 backdrop-blur-sm"
+                className="relative rounded-[2.5rem] overflow-hidden border border-slate-200 shadow-2xl bg-white/50 backdrop-blur-sm"
               >
                 <img src="/image.png" alt="Preview" className="w-full h-auto brightness-110" />
               </motion.div>
@@ -267,7 +277,7 @@ const PublicHome = () => {
                   className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-6 transition-colors duration-500 ${activeFeature === idx ? 'bg-amber-400 text-slate-950' : 'bg-amber-400/10 text-amber-400'
                     }`}
                 >
-                  {React.cloneElement(f.icon as React.ReactElement, { size: 32 })}
+                  {React.cloneElement(f.icon as React.ReactElement<any>, { size: 32 })}
                 </motion.div>
                 <h3 className={`text-xl font-black uppercase tracking-widest font-cairo mb-2 transition-colors duration-500 ${activeFeature === idx ? 'text-amber-500' : 'text-[var(--text-main)]'
                   }`}>
@@ -302,10 +312,8 @@ const PublicHome = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {[
               { id: 'Student', icon: <Users className="text-amber-400" /> },
-              { id: 'Teacher', icon: <Users className="text-amber-400" /> },
               { id: 'Admin', icon: <Shield className="text-amber-400" /> },
-              { id: 'Certificate', icon: <Download className="text-amber-400" /> },
-              { id: 'Attendance', icon: <CheckCircle2 className="text-amber-400" /> }
+              { id: 'Certificate', icon: <Download className="text-amber-400" /> }
             ].map((m, idx) => (
               <motion.div
                 key={m.id}
@@ -329,7 +337,7 @@ const PublicHome = () => {
                     transition={{ type: "spring", stiffness: 400, damping: 10 }}
                     className="w-16 h-16 bg-amber-400/10 text-amber-400 rounded-3xl flex items-center justify-center group-hover:bg-amber-400 group-hover:text-slate-950 transition-all duration-500 shadow-xl shadow-amber-400/0 group-hover:shadow-amber-400/20"
                   >
-                    {React.cloneElement(m.icon as React.ReactElement, { size: 32 })}
+                    {React.cloneElement(m.icon as React.ReactElement<any>, { size: 32 })}
                   </motion.div>
                   <motion.span
                     initial={{ y: 10, opacity: 0 }}
@@ -396,7 +404,7 @@ const PublicHome = () => {
                   </span>
                 )}
                 <div className="w-16 h-16 bg-amber-400/10 text-amber-400 rounded-3xl flex items-center justify-center mb-8">
-                  {React.cloneElement(p.icon as React.ReactElement, { size: 32 })}
+                  {React.cloneElement(p.icon as React.ReactElement<any>, { size: 32 })}
                 </div>
                 <h3 className="text-3xl font-black text-[var(--text-main)] font-cairo mb-4 uppercase">
                   {t(`${p.id}Plan`)}
@@ -404,9 +412,18 @@ const PublicHome = () => {
                 <p className="text-[var(--text-muted)] font-bold mb-8 flex-1">
                   {t(`${p.id}Description`)}
                 </p>
-                <Link to="/admin/login" className={`w-full py-5 rounded-2xl font-black text-center transition-all uppercase tracking-widest ${p.popular ? 'bg-amber-400 text-slate-950 hover:bg-amber-500 shadow-xl' : 'bg-slate-800 text-white hover:bg-slate-700'}`}>
-                  {t('ActivatePlan')}
-                </Link>
+                <SignedOut>
+                  <SignUpButton mode="modal">
+                    <button className={`w-full py-5 rounded-2xl font-black text-center transition-all uppercase tracking-widest border-none cursor-pointer ${p.popular ? 'bg-amber-400 text-slate-950 hover:bg-amber-500 shadow-xl' : 'bg-slate-100 text-slate-900 hover:bg-slate-200'}`}>
+                      {t('ActivatePlan')}
+                    </button>
+                  </SignUpButton>
+                </SignedOut>
+                <SignedIn>
+                  <Link to="/admin/dashboard" className={`w-full py-5 rounded-2xl font-black text-center transition-all uppercase tracking-widest block ${p.popular ? 'bg-amber-400 text-slate-950 hover:bg-amber-500 shadow-xl' : 'bg-slate-100 text-slate-900 hover:bg-slate-200'}`}>
+                    Go to Dashboard
+                  </Link>
+                </SignedIn>
               </motion.div>
             ))}
           </div>
@@ -519,7 +536,7 @@ const PublicHome = () => {
         whileInView={{ opacity: 1 }}
         viewport={{ once: true }}
         transition={{ duration: 1 }}
-        className="w-full py-32 px-4 bg-slate-950 relative overflow-hidden z-10"
+        className="w-full py-32 px-4 bg-slate-50 relative overflow-hidden z-10"
       >
         <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-transparent to-amber-900/20 opacity-50" />
 
@@ -542,15 +559,15 @@ const PublicHome = () => {
             </div>
 
             <div className="mt-16 pt-16 border-t border-slate-100 dark:border-slate-800 flex flex-wrap justify-center gap-10">
-              <div className="flex items-center gap-3 text-slate-600 dark:text-slate-300 font-bold font-cairo">
+              <div className="flex items-center gap-3 text-black dark:text-black font-bold font-cairo">
                 <CheckCircle2 className="text-amber-500" size={20} />
                 <span>Mogadishu, Somalia</span>
               </div>
-              <div className="flex items-center gap-3 text-slate-600 dark:text-slate-300 font-bold font-cairo">
+              <div className="flex items-center gap-3 text-black dark:text-black font-bold font-cairo">
                 <CheckCircle2 className="text-amber-500" size={20} />
                 <span>Enterprise SLA</span>
               </div>
-              <div className="flex items-center gap-3 text-slate-600 dark:text-slate-300 font-bold font-cairo">
+              <div className="flex items-center gap-3 text-black dark:text-black font-bold font-cairo">
                 <CheckCircle2 className="text-amber-500" size={20} />
                 <span>Secure Infrastructure</span>
               </div>

@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { CreditCard, CheckCircle2, AlertCircle, ArrowRight, ShieldCheck, Zap, RefreshCw } from 'lucide-react';
+import { CreditCard, CheckCircle2, AlertCircle, ArrowRight, ShieldCheck, Zap, RefreshCw, UserPlus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { paySchoolSubscription } from '../services/api';
+import { useClerk } from '@clerk/clerk-react';
+import { useNavigate } from 'react-router-dom';
+import { paySchoolSubscription, logout } from '../services/api';
 
 interface SubscriptionPaywallProps {
     schoolId: string;
@@ -15,9 +17,23 @@ interface SubscriptionPaywallProps {
 
 const SubscriptionPaywall: React.FC<SubscriptionPaywallProps> = ({ schoolId, billingInfo, logoUrl, onPaymentSuccess, onRefresh, onProceed }) => {
     const { t } = useTranslation();
+    const { signOut } = useClerk();
+    const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
+    const [switchingAccount, setSwitchingAccount] = useState(false);
     const [showDocument, setShowDocument] = useState(false);
     const [plan, setPlan] = useState<'monthly' | 'yearly'>('monthly');
+
+    const handleSwitchAccount = async () => {
+        setSwitchingAccount(true);
+        try {
+            await logout();
+            await signOut();
+            navigate('/admin/login');
+        } catch {
+            navigate('/admin/login');
+        }
+    };
 
     const isPending = billingInfo?.subStatus === 'pending';
 
@@ -233,6 +249,20 @@ const SubscriptionPaywall: React.FC<SubscriptionPaywallProps> = ({ schoolId, bil
                                 Check Activation Status
                             </button>
                         )}
+
+                        {/* Add Another Account */}
+                        <button
+                            onClick={handleSwitchAccount}
+                            disabled={switchingAccount}
+                            className="w-full mt-3 flex items-center justify-center gap-2 py-3.5 rounded-2xl border border-slate-200 hover:border-qabas-purple/40 text-slate-500 hover:text-qabas-purple bg-slate-50 hover:bg-purple-50/50 text-xs font-bold uppercase tracking-widest transition-all group"
+                        >
+                            {switchingAccount ? (
+                                <div className="w-4 h-4 border-2 border-slate-400/40 border-t-qabas-purple rounded-full animate-spin" />
+                            ) : (
+                                <UserPlus size={14} className="group-hover:scale-110 transition-transform" />
+                            )}
+                            Add Another Account
+                        </button>
                     </div>
 
                     <div className="pt-2 flex justify-center gap-8">

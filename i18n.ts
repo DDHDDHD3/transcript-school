@@ -2,7 +2,6 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
 // Custom backend to load translations from /locales/{{lng}}.json
-// This avoids the need for i18next-http-backend dependency
 const customBackend = {
     type: 'backend' as const,
     read(language: string, namespace: string, callback: (err: Error | null, data: any) => void) {
@@ -23,17 +22,20 @@ const customBackend = {
     },
 };
 
-// Supported languages — English is the default
+// Supported languages — English is always the primary/default language
 const SUPPORTED_LANGUAGES = ['en', 'ar', 'so'];
-const savedLang = localStorage.getItem('aqooni_lang');
-const defaultLang = savedLang && SUPPORTED_LANGUAGES.includes(savedLang) ? savedLang : 'en';
+
+// Clear any stale saved language so the system always starts in English
+if (typeof window !== 'undefined') {
+    localStorage.removeItem('aqooni_lang');
+}
 
 i18n
     .use(customBackend)
     .use(initReactI18next)
     .init({
         fallbackLng: 'en',
-        lng: defaultLang,
+        lng: 'en',                // Always start in English
         supportedLngs: SUPPORTED_LANGUAGES,
         interpolation: {
             escapeValue: false,

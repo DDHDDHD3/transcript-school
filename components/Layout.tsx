@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -20,7 +22,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { getUserSession, logout, getSystemSettings, getConfig, trackActivity } from "../services/api";
-import { UserButton, useClerk, useUser } from "@clerk/clerk-react";
+import { UserButton, useClerk, useUser, SignInButton, SignUpButton, SignedIn, SignedOut } from "@clerk/clerk-react";
 import LanguageSwitcher from "./LanguageSwitcher";
 import OnboardingTour from "./OnboardingTour";
 import Footer from "./Footer";
@@ -52,7 +54,7 @@ const ThemeToggle = () => {
 
 const AqooniLogoMini: React.FC<{ src?: string; fallbackText?: string }> = ({ src, fallbackText }) => {
   return (
-    <div className="w-full h-full rounded-2xl bg-gradient-to-br from-qabas-purple to-purple-900 flex items-center justify-center text-white overflow-hidden shadow-2xl shadow-purple-200/50 group-hover:scale-110 transition-transform border border-white/20">
+    <div className="w-full h-full rounded-2xl bg-gradient-to-br from-violet-50 to-violet-100 flex items-center justify-center text-violet-600 overflow-hidden shadow-sm group-hover:scale-110 transition-transform border border-violet-200/50">
       {src ? (
         <img src={src} alt="Logo" className="w-full h-full object-contain scale-110" />
       ) : (
@@ -70,6 +72,7 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const session = getUserSession();
   const { isLoaded, isSignedIn, user } = useUser();
+  const { isDark } = useTheme();
 
   const [systemName, setSystemName] = useState('Aqooni Digital');
   const [systemLogo, setSystemLogo] = useState('/logo.jpg');
@@ -133,8 +136,7 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children 
   const navItems = [
     { id: 'tour-dashboard', icon: <LayoutDashboard size={20} />, label: t('nav.dashboard'), path: '/admin/dashboard' },
     { id: 'tour-students', icon: <Users size={20} />, label: t('nav.students'), path: '/admin/students' },
-    { id: 'tour-teachers', icon: <GraduationCap size={20} />, label: t('nav.teachers', { defaultValue: 'Teachers' }), path: '/admin/teachers' },
-    { id: 'tour-attendance', icon: <Calendar size={20} />, label: t('nav.attendance'), path: '/admin/attendance' },
+
     { id: 'tour-settings', icon: <Settings size={20} />, label: t('nav.settings'), path: '/admin/settings' },
   ];
 
@@ -145,10 +147,13 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children 
           <AqooniLogoMini src={systemLogo} fallbackText={systemName} />
         </div>
         <div className="flex flex-col">
-          <span className="font-bold text-slate-800 dark:text-slate-100 leading-none">
+          <span 
+            className="font-black text-black dark:text-white text-base leading-tight tracking-tight"
+            style={{ color: isDark ? '#ffffff' : '#000000', fontWeight: 900, opacity: 1 }}
+          >
             {session.role === 'super_admin' ? t('nav.superAdmin') : systemName}
           </span>
-          <span className="text-[10px] text-qabas-orange font-bold uppercase truncate max-w-[120px]">
+          <span className="text-[10px] text-indigo-600 dark:text-amber-400 font-black uppercase tracking-widest mt-0.5 truncate max-w-[120px]">
             {session.schoolId || 'Platform'}
           </span>
         </div>
@@ -164,8 +169,8 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children 
               to={item.path}
               onClick={() => setIsMobileMenuOpen(false)}
               className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${isActive
-                ? `bg-gradient-to-${i18n.dir() === 'rtl' ? 'r' : 'l'} from-qabas-purple/10 to-transparent text-qabas-purple dark:text-purple-400 border-${i18n.dir() === 'rtl' ? 'l' : 'r'}-4 border-qabas-purple`
-                : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-qabas-orange'
+                ? `bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 font-black border-${i18n.dir() === 'rtl' ? 'l' : 'r'}-4 border-purple-600`
+                : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-purple-700 dark:hover:text-purple-300'
                 } ${i18n.dir() === 'rtl' ? 'text-right' : 'text-left'}`}
             >
               {item.icon}
@@ -179,8 +184,8 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children 
             to="/super"
             onClick={() => setIsMobileMenuOpen(false)}
             className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${location.pathname === '/super'
-              ? `bg-purple-100 dark:bg-purple-900/20 text-qabas-purple dark:text-purple-400 border-${i18n.dir() === 'rtl' ? 'l' : 'r'}-4 border-qabas-purple`
-              : 'text-qabas-purple dark:text-purple-400 bg-purple-50 dark:bg-purple-950/20 hover:bg-purple-100 dark:hover:bg-purple-900/30'
+              ? `bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 font-black border-${i18n.dir() === 'rtl' ? 'l' : 'r'}-4 border-purple-600`
+              : 'text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/40 hover:bg-purple-100 dark:hover:bg-purple-900/40'
               } ${i18n.dir() === 'rtl' ? 'text-right' : 'text-left'}`}
           >
             <Shield size={20} />
@@ -192,7 +197,7 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       <div className="p-4 border-t border-slate-100 dark:border-white/10 space-y-2">
         {isSignedIn && (
           <div className="px-4 py-2 flex items-center gap-3 bg-slate-50 dark:bg-white/5 rounded-xl mb-2">
-            <UserButton afterSignOutUrl="/admin/login" />
+            <UserButton />
             <div className="flex flex-col overflow-hidden">
               <span className="text-xs font-bold text-slate-700 dark:text-slate-200 truncate">{user?.fullName || user?.primaryEmailAddress?.emailAddress}</span>
               <span className="text-[10px] text-slate-400 dark:text-slate-500 truncate">{user?.primaryEmailAddress?.emailAddress}</span>
@@ -200,11 +205,11 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children 
           </div>
         )}
         <PWAInstallButton className="mt-2" />
-        <Link to="/" className="flex w-full items-center gap-3 px-4 py-3 text-slate-500 dark:text-slate-400 hover:text-qabas-purple dark:hover:text-purple-400 text-sm font-medium transition-colors hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-xl">
+        <Link to="/" className="flex w-full items-center gap-3 px-4 py-3 text-slate-700 dark:text-slate-200 hover:text-purple-700 dark:hover:text-purple-300 text-sm font-bold transition-colors hover:bg-slate-100 dark:hover:bg-white/10 rounded-xl">
           <Home size={20} />
           {t('nav.backToHome')}
         </Link>
-        <button onClick={handleLogout} className="flex w-full items-center gap-3 px-4 py-3 text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 text-sm font-medium transition-colors hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl">
+        <button onClick={handleLogout} className="flex w-full items-center gap-3 px-4 py-3 text-slate-700 dark:text-slate-200 hover:text-red-600 dark:hover:text-red-400 text-sm font-bold transition-colors hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl">
           <LogOut size={20} />
           {t('nav.logout')}
         </button>
@@ -221,7 +226,10 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children 
           <div className="w-9 h-9 xs:w-12 xs:h-12 shrink-0">
             <AqooniLogoMini src={systemLogo} fallbackText={systemName} />
           </div>
-          <span className="font-bold text-[var(--text-main)] text-sm xs:text-base truncate max-w-[100px] xs:max-w-[150px]">
+          <span 
+            className="font-black text-black dark:text-white text-sm xs:text-base tracking-tight leading-none truncate max-w-[100px] xs:max-w-[150px]"
+            style={{ color: isDark ? '#ffffff' : '#000000', fontWeight: 900, opacity: 1 }}
+          >
             {session.role === 'super_admin' ? t('nav.superAdmin') : systemName}
           </span>
         </div>
@@ -365,7 +373,7 @@ const PublicNav: React.FC<{ t: any; i18n: any }> = ({ t }) => {
   return (
     <>
       <nav
-        className="dark-section bg-[#0f172a]/80 backdrop-blur-xl border-b border-white/10 sticky z-50 shadow-2xl mx-1 sm:mx-4 lg:mx-auto max-w-7xl rounded-2xl md:h-20"
+        className="bg-white/80 backdrop-blur-xl border-b border-slate-100 sticky z-50 shadow-sm mx-1 sm:mx-4 lg:mx-auto max-w-7xl rounded-2xl md:h-20"
         style={{ top: 'calc(env(safe-area-inset-top, 0px) + 0.5rem)' }}
       >
         <div className="max-w-7xl mx-auto px-1.5 sm:px-6 lg:px-8 py-2 md:py-3 h-full flex items-center justify-between gap-1 sm:gap-4">
@@ -375,8 +383,8 @@ const PublicNav: React.FC<{ t: any; i18n: any }> = ({ t }) => {
               <AqooniLogoMini src={systemLogo} />
             </div>
             <div className="flex flex-col text-left">
-              <span className="font-bold text-xs sm:text-xl text-white font-cairo leading-none">{systemName}</span>
-              <span className="text-[7px] sm:text-[10px] text-amber-500 font-bold font-almarai tracking-wider uppercase leading-none mt-0.5">{t('common.tagline')}</span>
+              <span className="font-bold text-xs sm:text-xl text-slate-900 font-cairo leading-none">{systemName}</span>
+              <span className="text-[7px] sm:text-[10px] text-amber-600 font-bold font-almarai tracking-wider uppercase leading-none mt-0.5">{t('common.tagline')}</span>
             </div>
           </Link>
 
@@ -386,7 +394,7 @@ const PublicNav: React.FC<{ t: any; i18n: any }> = ({ t }) => {
               <button
                 key={item.key}
                 onClick={() => handleNavClick(item.key)}
-                className="text-xs xl:text-sm font-bold text-slate-100 hover:text-amber-400 transition-colors bg-transparent border-none cursor-pointer uppercase tracking-wide"
+                className="text-xs xl:text-sm font-bold text-slate-600 hover:text-amber-600 transition-colors bg-transparent border-none cursor-pointer uppercase tracking-wide"
               >
                 {item.label}
               </button>
@@ -399,19 +407,25 @@ const PublicNav: React.FC<{ t: any; i18n: any }> = ({ t }) => {
 
             <PWAInstallButton variant="nav" className="hidden sm:flex" />
 
-            <Link to="/admin/login" className="hidden 2xl:block text-xs font-bold text-white hover:text-qabas-orange transition-colors">
-              {t('Login') || 'Login'}
-            </Link>
+            <SignedOut>
+              <SignInButton mode="modal">
+              <button className="hidden 2xl:block text-xs font-bold text-slate-600 hover:text-qabas-orange transition-colors bg-transparent border-none cursor-pointer">
+                {t('Login') || 'Login'}
+              </button>
+              </SignInButton>
 
-            <Link to="/admin/login" className="hidden lg:flex px-4 py-2 xl:px-5 xl:py-2.5 bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 text-xs font-bold rounded-xl hover:shadow-[0_0_20px_rgba(251,191,36,0.2)] transition-all items-center gap-2 transform hover:scale-105 active:scale-95 whitespace-nowrap overflow-hidden">
-              {t('GetStarted') || 'Get Started'}
-              <span className="text-base">→</span>
-            </Link>
+              <SignUpButton mode="modal">
+              <button className="hidden lg:flex px-4 py-2 xl:px-5 xl:py-2.5 bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 text-xs font-bold rounded-xl hover:shadow-[0_0_20px_rgba(251,191,36,0.2)] transition-all items-center gap-2 transform hover:scale-105 active:scale-95 whitespace-nowrap overflow-hidden border-none cursor-pointer">
+                {t('GetStarted') || 'Get Started'}
+                <span className="text-base">→</span>
+              </button>
+              </SignUpButton>
+            </SignedOut>
 
             {/* Mobile Hamburger Button - Show on everything below XL */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="xl:hidden p-1.5 xs:p-2 text-white hover:bg-white/10 rounded-xl transition-colors shrink-0"
+              className="xl:hidden p-1.5 xs:p-2 text-slate-600 hover:bg-slate-50 rounded-xl transition-colors shrink-0"
               aria-label="Toggle menu"
             >
               {isMobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
@@ -427,7 +441,7 @@ const PublicNav: React.FC<{ t: any; i18n: any }> = ({ t }) => {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -10, scale: 0.98 }}
               transition={{ duration: 0.2, ease: 'easeOut' }}
-              className="absolute top-full left-0 right-0 mt-2 mx-1 sm:mx-0 bg-[#0f172a]/95 backdrop-blur-3xl border border-white/10 rounded-2xl shadow-2xl overflow-y-auto custom-scrollbar z-50"
+              className="absolute top-full left-0 right-0 mt-2 mx-1 sm:mx-0 bg-white backdrop-blur-3xl border border-slate-100 rounded-2xl shadow-2xl overflow-y-auto custom-scrollbar z-50"
               style={{ maxHeight: 'calc(100vh - 100px)' }}
             >
               <div className="px-4 py-5 flex flex-col gap-1.5">
@@ -444,20 +458,24 @@ const PublicNav: React.FC<{ t: any; i18n: any }> = ({ t }) => {
                 <div className="h-px w-full bg-white/10 my-2"></div>
 
                 <div className="flex flex-col gap-2 pb-2">
-                  <Link
-                    to="/admin/login"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="flex justify-center text-sm font-bold text-white hover:text-qabas-orange transition-colors px-4 py-3 hover:bg-white/5 rounded-xl border border-white/10"
-                  >
-                    {t('Login') || 'Login'}
-                  </Link>
-                  <Link
-                    to="/admin/login"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="flex justify-center text-sm font-bold text-slate-950 bg-gradient-to-r from-amber-400 to-amber-600 hover:shadow-[0_0_20px_rgba(251,191,36,0.2)] transition-all px-4 py-3 rounded-xl"
-                  >
-                    {t('GetStarted') || 'Get Started'}
-                  </Link>
+                  <SignedOut>
+                    <SignInButton mode="modal">
+                      <button
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className="flex justify-center w-full text-sm font-bold text-slate-600 hover:text-qabas-orange transition-colors px-4 py-3 hover:bg-slate-50 rounded-xl border border-slate-100 bg-transparent cursor-pointer"
+                      >
+                        {t('Login') || 'Login'}
+                      </button>
+                    </SignInButton>
+                    <SignUpButton mode="modal">
+                      <button
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className="flex justify-center w-full text-sm font-bold text-slate-950 bg-gradient-to-r from-amber-400 to-amber-600 hover:shadow-[0_0_20px_rgba(251,191,36,0.2)] transition-all px-4 py-3 rounded-xl border-none cursor-pointer"
+                      >
+                        {t('GetStarted') || 'Get Started'}
+                      </button>
+                    </SignUpButton>
+                  </SignedOut>
                   <div className="mt-1">
                     <PWAInstallButton variant="nav" className="w-full justify-center py-3 border border-white/5 bg-white/5 hover:bg-white/10 rounded-xl" />
                   </div>

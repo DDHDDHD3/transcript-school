@@ -1,26 +1,47 @@
 import { jsPDF } from 'jspdf';
-import html2canvas from 'html2canvas';
+import html2canvas from 'html2canvas-pro';
 import { Student } from '../types';
 
+/**
+ * Captures the element with `elementId` and renders it as a portrait A4 PDF.
+ *
+ * Key fix: Using html2canvas-pro to support Tailwind CSS v4 oklch() colors.
+ */
 export const generateCertificatePDF = async (student: Student, elementId: string) => {
   const element = document.getElementById(elementId);
-  if (!element) return;
+  if (!element) {
+    alert('Certificate view is not currently available for PDF export.');
+    return false;
+  }
 
-  // 1. Ensure fonts are fully loaded to prevent text splitting
+  // 1. Wait for web-fonts (prevents invisible/broken Arabic text)
   await document.fonts.ready;
 
-  // 2. Wait for layout and images (especially the logo) to be fully ready
+  // 2. Wait for every <img> to finish decoding
   const images = element.querySelectorAll('img');
-  await Promise.all(Array.from(images).map(img => (img as HTMLImageElement).decode().catch(() => { })));
+  await Promise.all(
+    Array.from(images).map((img) =>
+      (img as HTMLImageElement).decode().catch(() => {})
+    )
+  );
 
-  // 3. Brief cooling period for browser layout engine
-  await new Promise(resolve => setTimeout(resolve, 1000));
+  // 3. Brief cooldown for the browser layout engine to settle
+  await new Promise((resolve) => setTimeout(resolve, 500));
+
+  // Detect RTL — walk up the DOM to find the nearest dir attribute
+  let originalDir = 'rtl';
+  let node: HTMLElement | null = element;
+  while (node) {
+    const dir = node.getAttribute('dir');
+    if (dir) { originalDir = dir; break; }
+    node = node.parentElement;
+  }
 
   try {
-    // CAPTURE PHASE: Forces a high-fidelity 300DPI snapshot
     const canvas = await html2canvas(element, {
-      scale: 1, // Use explicit 1:1 scale for our fixed pixel dimensions
+      scale: 2, // High-quality 2x resolution for certificates
       useCORS: true,
+      allowTaint: false,
       logging: false,
       backgroundColor: '#ffffff',
       width: 2480,
@@ -29,64 +50,76 @@ export const generateCertificatePDF = async (student: Student, elementId: string
       windowHeight: 3508,
       scrollX: 0,
       scrollY: 0,
-      allowTaint: true,
       onclone: (clonedDoc: Document) => {
-        const originalDir = element.getAttribute('dir') || 'rtl';
         const clonedElement = clonedDoc.getElementById(elementId);
+        if (!clonedElement) return;
 
-        if (clonedElement) {
-          clonedElement.style.position = 'fixed';
-          clonedElement.style.top = '0';
-          clonedElement.style.left = '0';
-          clonedElement.style.margin = '0';
-          clonedElement.style.padding = '0';
-          clonedElement.style.transform = 'none';
-          clonedElement.style.width = '2480px';
-          clonedElement.style.height = '3508px';
-          clonedElement.style.display = 'block';
-          clonedElement.style.overflow = 'hidden';
-          clonedElement.style.zIndex = '999999';
-          clonedElement.setAttribute('dir', originalDir);
+        // ── Reset all interfering CSS ─────────────────────────────────────
+        clonedElement.style.position      = 'fixed';
+        clonedElement.style.top           = '0';
+        clonedElement.style.left          = '0';
+        clonedElement.style.margin        = '0';
+        clonedElement.style.padding       = '0';
+        clonedElement.style.transform     = 'none';
+        clonedElement.style.transformOrigin = 'top left';
+        clonedElement.style.width         = '2480px';
+        clonedElement.style.height        = '3508px';
+        clonedElement.style.minWidth      = '2480px';
+        clonedElement.style.minHeight     = '3508px';
+        clonedElement.style.maxWidth      = '2480px';
+        clonedElement.style.maxHeight     = '3508px';
+        clonedElement.style.display       = 'block';
+        clonedElement.style.overflow      = 'hidden';
+        clonedElement.style.opacity       = '1';
+        clonedElement.style.visibility    = 'visible';
+        clonedElement.style.zIndex        = '999999';
+        clonedElement.setAttribute('dir', originalDir);
 
-          // --- FIX FOR DISCONNECTED ARABIC LETTERS & FONT STABILITY ---
-          const allElements = clonedElement.querySelectorAll('*');
-          allElements.forEach((el: any) => {
-            el.style.letterSpacing = 'normal';
-            el.style.textShadow = 'none';
-            el.style.lineHeight = '1.4';
-            if (['H1', 'H2', 'P', 'SPAN', 'TD', 'TH', 'DIV'].includes(el.tagName)) {
-              el.style.fontFamily = '"Amiri", "Noto Naskh Arabic", serif';
-            }
-          });
+        // ── Force CORS on all images ──────────────────────────────────────
+        clonedElement.querySelectorAll('img').forEach((img) => {
+          img.setAttribute('crossOrigin', 'anonymous');
+          if (img.src && !img.src.startsWith('data:')) {
+            const sep = img.src.includes('?') ? '&' : '?';
+            img.src = `${img.src}${sep}cors_bust=${Date.now()}`;
+          }
+        });
 
-          void clonedElement.offsetHeight;
-        }
-      }
+        // ── Arabic font stability ─────────────────────────────────────────
+        clonedElement.querySelectorAll<HTMLElement>('*').forEach((el) => {
+          el.style.letterSpacing = 'normal';
+          el.style.textShadow   = 'none';
+          el.style.lineHeight   = '1.4';
+          if (['H1', 'H2', 'P', 'SPAN', 'TD', 'TH', 'DIV'].includes(el.tagName)) {
+            el.style.fontFamily = '"Amiri", "Noto Naskh Arabic", serif';
+          }
+        });
+      },
     });
 
-    // RENDER PHASE: Convert to high-quality image format
-    const imgData = canvas.toDataURL('image/png'); // Use PNG for better alignment/rotation compatibility
+    // Convert canvas to a lossless PNG (high quality)
+    const imgData = canvas.toDataURL('image/png');
 
-    // PDF ASSEMBLY: Strict Portrait A4
     const doc = new jsPDF({
-      orientation: 'p', // Lock to 'Portrait'
+      orientation: 'p',
       unit: 'mm',
       format: 'a4',
-      putOnlyUsedFonts: true,
-      floatPrecision: 16 // Better precision for positioning
+      compress: false, // Maximum quality, no compression
+      floatPrecision: 16,
     });
 
-    const pdfWidth = doc.internal.pageSize.getWidth();
+    const pdfWidth  = doc.internal.pageSize.getWidth();
     const pdfHeight = doc.internal.pageSize.getHeight();
-
-    // Fit to page perfectly
     doc.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
-
-    // EXPORT: Save as file
     doc.save(`${student.studentId}_Certificate.pdf`);
+    return true;
 
   } catch (error) {
-    console.error("PDF Generation failed:", error);
-    alert("حدث خطأ أثناء إنشاء ملف PDF. يرجى المحاولة مرة أخرى.");
+    if (error instanceof Error && error.message.includes('Tainted')) {
+      alert('Security Error: Unable to export PDF due to cross-origin images.');
+    } else {
+      console.error('Certificate PDF Generation failed:', error);
+      alert('PDF Error: ' + (error as Error).message);
+    }
+    return false;
   }
 };

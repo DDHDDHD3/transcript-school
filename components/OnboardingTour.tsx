@@ -21,7 +21,7 @@ const OnboardingTour: React.FC<OnboardingTourProps> = ({ userEmail, onComplete }
     const { t } = useTranslation();
     const [currentStep, setCurrentStep] = useState(0);
     const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
-    const requestRef = useRef<number>();
+    const requestRef = useRef<number | undefined>(undefined);
 
     const steps: Step[] = [
         {

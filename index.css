@@ -18,13 +18,13 @@
   --color-qabas-purple-light: #7c3aed;
   --color-qabas-gold: #d97706;
 
-  --font-sans: "Cairo", "Almarai", "sans-serif";
-  --font-serif: "Amiri", "Noto Naskh Arabic", "serif";
-  --font-naskh: "Noto Naskh Arabic", "serif";
-  --font-amiri: "Amiri", "serif";
-  --font-cairo: "Cairo", "sans-serif";
-  --font-almarai: "Almarai", "sans-serif";
-  --font-scheherazade: "Scheherazade New", "serif";
+  --font-sans: "Inter", "Plus Jakarta Sans", "Cairo", "Almarai", sans-serif;
+  --font-serif: "Amiri", "Noto Naskh Arabic", serif;
+  --font-naskh: "Noto Naskh Arabic", serif;
+  --font-amiri: "Amiri", serif;
+  --font-cairo: "Cairo", sans-serif;
+  --font-almarai: "Almarai", sans-serif;
+  --font-scheherazade: "Scheherazade New", serif;
 }
 
 :root {
@@ -32,16 +32,16 @@
   --qabas-purple-light: #7c3aed;
   --qabas-orange: #ea580c;
   --accent-gold: #fbbf24;
-  --dark-bg: #0f172a;
+  --dark-bg: #f8fafc;
   --glass-bg: rgba(255, 255, 255, 0.05);
   --glass-border: rgba(255, 255, 255, 0.1);
   --premium-purple: #2d005d;
 
-  /* Theme Variables - Default Light */
+  /* Theme Variables - High Contrast Light */
   --bg-main: #f8fafc;
   --bg-card: #ffffff;
   --bg-secondary: #f1f5f9;
-  --text-main: #1e293b;
+  --text-main: #0f172a;
   --text-secondary: #334155;
   --text-muted: #64748b;
   --border-color: #e2e8f0;
@@ -69,16 +69,16 @@ html {
 }
 
 .dark {
-  --bg-main: #020617;
-  --bg-card: #0f172a;
-  --bg-secondary: rgba(255, 255, 255, 0.05);
-  --text-main: #f1f5f9;
-  --text-secondary: #e2e8f0;
+  --bg-main: #0f172a;
+  --bg-card: #1e293b;
+  --bg-secondary: #334155;
+  --text-main: #f8fafc;
+  --text-secondary: #cbd5e1;
   --text-muted: #94a3b8;
-  --border-color: #1e293b;
-  --sidebar-bg: #0f172a;
-  --sidebar-border: rgba(255, 255, 255, 0.1);
-  --input-bg: rgba(255, 255, 255, 0.05);
+  --border-color: #334155;
+  --sidebar-bg: #1e293b;
+  --sidebar-border: #334155;
+  --input-bg: #0f172a;
 }
 
 body {
@@ -98,6 +98,7 @@ body {
    ===================================================== */
 
 @layer base {
+
   /* Force box-sizing on all elements */
   * {
     box-sizing: border-box;
@@ -174,7 +175,7 @@ body {
 /* Hero gradient always keeps white text */
 .hero-gradient h1,
 .hero-gradient p {
-  color: #ffffff;
+  color: #0f172a;
 }
 
 
@@ -265,7 +266,7 @@ body>div[class*="cl-internal-"][style*="background-color: rgb(255, 122, 0)"] {
 
 /* Premium Design Utilities */
 .hero-gradient {
-  background: radial-gradient(circle at 50% 0%, #4c1d95, #2e1065, #0a051d);
+  background: radial-gradient(circle at 50% 0%, #f5f3ff, #ede9fe, #ffffff);
   position: relative;
 }
 
@@ -383,7 +384,7 @@ body>div[class*="cl-internal-"][style*="background-color: rgb(255, 122, 0)"] {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: radial-gradient(ellipse at 30% 20%, #2d005d 0%, #0f0525 40%, #020617 100%);
+  background: #ffffff;
   overflow: hidden;
   will-change: opacity, transform;
 }
@@ -600,7 +601,7 @@ body>div[class*="cl-internal-"][style*="background-color: rgb(255, 122, 0)"] {
 .ls-subtitle {
   font-family: 'Cairo', sans-serif;
   font-size: 0.82rem;
-  color: rgba(196, 181, 253, 0.75);
+  color: #64748b;
   letter-spacing: 0.01em;
   margin: 0 0 20px;
   direction: rtl;

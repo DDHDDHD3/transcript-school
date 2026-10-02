@@ -1,3 +1,5 @@
+import React from 'react';
+
 export interface AssessmentColumn {
   id: string;
   name: string;
@@ -22,34 +24,65 @@ export interface Subject {
   assessments?: Record<string, number | string>; // dynamic scores/values by column id
 }
 
+export interface Course {
+  id: string;
+  institutionId: string;
+  courseCode: string;
+  courseName: string;
+  creditHours: number;
+}
+
+export interface AcademicRecord {
+  id: string;
+  studentId: string;
+  courseId: string;
+  courseCode?: string;
+  courseName?: string;
+  creditHours?: number;
+  semester: string;
+  academicYear: string;
+  grade: string;
+  gradePoint: number;
+}
+
+export interface IssuedDocument {
+  id: string;
+  studentId: string;
+  institutionId: string;
+  documentType: 'transcript' | 'certificate';
+  status: 'draft' | 'issued' | 'revoked';
+  issuedAt?: string;
+  revokedAt?: string;
+  qrCodeHash?: string;
+}
+
 export interface Student {
-  id: string; // Internal UUID
-  studentId: string; // رقم الطالب (12 digits)
-  fullName: string; // اسم الطالب
-  academicYear: string; // العام الدراسي
-  classLevel: string; // المستوى
-
-  // Marks
-  subjects: Subject[];
-
-  // Summary
-  total: number; // المجموع
-  percentage: number; // النسبة المئوية
-  finalResult: string; // النتيجة النهائية
-
-  // Meta
-  schoolId?: string;
+  id: string;
+  registrationNumber?: string;
+  fullName: string;
+  faculty?: string;
+  program?: string;
+  enrollmentYear?: string;
+  graduationDate?: string;
+  cgpa?: number;
+  institutionId?: string;
   createdAt: string;
+
+  // Legacy fields for smooth migration
+  name?: string;
+  studentId?: string;
+  academicYear?: string;
+  classLevel?: string;
+  class?: string;
+  schoolId?: string;
+  subjects?: Subject[];
+  total?: number;
+  percentage?: number;
+  finalResult?: string;
+  teacherId?: string;
 }
 
 export interface ClassLevel {
-  id: string;
-  nameAr: string;
-  nameEn: string;
-  nameSo: string;
-}
-
-export interface AttendanceSession {
   id: string;
   nameAr: string;
   nameEn: string;
@@ -70,11 +103,9 @@ export interface CertificateConfig {
   passThreshold: number; // e.g., 50 (for 50%) or 100 (for total sum >= 100)
   studentPrefix?: string;
   classLevels?: ClassLevel[];
-  attendanceSessions?: AttendanceSession[];
 
   // New Template Features
   templateId: string;
-  attendanceTemplateId?: string;
   primaryColor: string;
   secondaryColor: string;
   accentColor: string;
@@ -89,48 +120,12 @@ export interface AdminUser {
 
 export interface Analytics {
   totalStudents: number;
+  totalTeachers?: number;
+  attendanceToday?: number;
   passed: number;
-  failed: number;
+  failed?: number;
   recentVerifications: number;
-}
-
-export interface AttendanceRecord {
-  id: string;
-  studentId: string;
-  studentName?: string;
-  schoolId: string;
-  date: string;          // YYYY-MM-DD
-  status: 'present' | 'absent' | 'late' | 'excused';
-  session?: string;      // Optional: morning/afternoon
-  teacherId?: string;    // Added for teacher connection
-  notes?: string;
-  recordedBy: string;
-  createdAt: string;
-}
-
-export interface AttendanceReport {
-  studentId: string;
-  studentName: string;
-  classLevel: string;
-  totalDays: number;
-  presentDays: number;
-  absentDays: number;
-  lateDays: number;
-  excusedDays: number;
-  attendanceRate: number;
-  teacherName?: string; // Added for report display
-}
-
-export interface Teacher {
-  id: string;
-  fullName: string;
-  fullNameAr?: string;
-  email?: string;
-  phoneNumber?: string;
-  subjects?: string[];
-  assignedClasses?: string[];
-  schoolId: string;
-  createdAt: string;
+  totalCertificates?: number;
 }
 
 export interface School {
@@ -160,6 +155,9 @@ export interface BillingDetails {
   subStatus: 'active' | 'expired';
   credits: number;
   studentCount: number;
+  name?: string;
+  location?: string;
+  phoneNumber?: string;
 }
 
 export interface CreditRequest {

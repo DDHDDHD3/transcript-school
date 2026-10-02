@@ -98,14 +98,14 @@ const StandardTableTemplate: React.FC<TemplateProps & { theme: any, variant?: 'd
     };
 
     return (
-        <div className="w-full h-full bg-white p-[100px] flex flex-col font-amiri relative overflow-hidden text-slate-900 border-[16px] border-double rounded-[48px]"
+        <div className="w-full h-full bg-white p-[140px] flex flex-col font-amiri relative overflow-hidden text-slate-900 border-[16px] border-double rounded-[48px]"
             style={{ borderColor: `${theme.primary}20` }}>
 
             {/* Header Section */}
             <header className="flex flex-col items-center text-center mb-10 pt-4">
                 {/* School Logo */}
                 {config.logoUrl && (
-                    <img src={config.logoUrl} className="h-32 object-contain mb-6" alt="School Logo" />
+                    <img src={config.logoUrl} crossOrigin="anonymous" className="h-32 object-contain mb-6" alt="School Logo" />
                 )}
 
                 <h1 className="text-[72px] font-black mb-2 leading-tight font-amiri" style={{ color: theme.primary }}>
@@ -142,7 +142,7 @@ const StandardTableTemplate: React.FC<TemplateProps & { theme: any, variant?: 'd
                     </div>
                     <div className="flex flex-col border-b border-slate-200 pb-2 text-center">
                         <span className="text-[36px] font-bold font-cairo mb-2" style={{ color: theme.primary }}>{t('pdf.level')} :</span>
-                        <span className="text-[56px] font-bold leading-none">{getLevelLabel(student.classLevel)}</span>
+                        <span className="text-[56px] font-bold leading-none">{getLevelLabel(student.classLevel || '')}</span>
                     </div>
                     <div className="flex flex-col border-b border-slate-200 pb-2 text-center">
                         <span className="text-[36px] font-bold font-cairo mb-2" style={{ color: theme.primary }}>{t('pdf.academicYear')} :</span>
@@ -228,7 +228,7 @@ const StandardTableTemplate: React.FC<TemplateProps & { theme: any, variant?: 'd
             </div>
 
             {/* Footer Summary & Signature */}
-            <div className="flex justify-between items-end mb-32">
+            <div className="flex justify-between items-end mb-20">
 
                 {/* Consolidated Result Box */}
                 <div className="border-[3px] rounded-3xl overflow-hidden flex shadow-sm" style={{ borderColor: theme.primary }}>
@@ -244,7 +244,7 @@ const StandardTableTemplate: React.FC<TemplateProps & { theme: any, variant?: 'd
                         <span className="text-[32px] font-bold opacity-80 uppercase font-cairo mb-2">{t('pdf.finalResult')}</span>
                         <span className="text-[60px] font-black font-cairo leading-none">
                             {/* Try to parse final result string or use percentage */}
-                            {getTranslatedResult(student.finalResult || '', student.percentage)}
+                            {getTranslatedResult(student.finalResult || '', student.percentage ?? 0)}
                         </span>
                     </div>
                 </div>
@@ -258,7 +258,7 @@ const StandardTableTemplate: React.FC<TemplateProps & { theme: any, variant?: 'd
 
                     <div className="h-[80px] flex items-end justify-center mb-2">
                         {config.managerSignatureUrl && (
-                            <img src={config.managerSignatureUrl} className="h-full object-contain" alt="Sig" />
+                            <img src={config.managerSignatureUrl} crossOrigin="anonymous" className="h-full object-contain" alt="Sig" />
                         )}
                     </div>
                     <p className="text-[30px] font-bold uppercase font-cairo opacity-80" style={{ color: theme.primary }}>{t('pdf.signature')}</p>
@@ -266,7 +266,7 @@ const StandardTableTemplate: React.FC<TemplateProps & { theme: any, variant?: 'd
             </div>
 
             {/* Simple Bottom Line */}
-            <div className="h-[6px] w-full rounded-full opacity-20" style={{ backgroundColor: theme.primary }} />
+            <div className="h-[6px] w-full rounded-full opacity-20 mb-8" style={{ backgroundColor: theme.primary }} />
         </div>
     );
 };
@@ -302,8 +302,25 @@ const CertificateTemplates: React.FC<TemplateProps> = (props) => {
     } : defaults;
 
     return (
-        <div style={{ width: '100%', height: '100%' }}>
-            <StandardTableTemplate {...props} theme={theme} />
+        <div 
+            id="certificate-inner-template" 
+            className="flex items-center justify-center bg-white"
+            style={{ 
+                width: '2480px', 
+                height: '3508px', 
+                position: 'relative', 
+                overflow: 'hidden' 
+            }}
+        >
+            <div 
+                style={{ 
+                    width: '2100px', 
+                    height: '3100px', 
+                    backgroundColor: 'white' 
+                }}
+            >
+                <StandardTableTemplate {...props} theme={theme} />
+            </div>
         </div>
     );
 };

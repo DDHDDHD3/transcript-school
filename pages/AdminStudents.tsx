@@ -1,12 +1,15 @@
+'use client';
+
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Plus, Filter, Download, Edit2, Trash2, X, ChevronLeft, ChevronRight, CheckCircle2, AlertCircle, AlertTriangle, RefreshCw, Upload, PlusCircle, Save, Calendar } from 'lucide-react';
+import { Search, Plus, Filter, Download, Edit2, Trash2, X, ChevronLeft, ChevronRight, CheckCircle2, AlertCircle, AlertTriangle, RefreshCw, Upload, PlusCircle, Save, Calendar, ArrowRight, GraduationCap } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { getStudents, saveStudent, deleteStudent, SUBJECT_LIST, generateUUID, getConfig, saveConfig } from '../services/api';
 import { Student, Subject, CertificateConfig } from '../types';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { normalizeArabic } from '../utils/stringUtils';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { getLevelLabel } from '../utils/levelUtils';
 
 const AdminStudents = () => {
   const { t, i18n } = useTranslation();
@@ -27,6 +30,18 @@ const AdminStudents = () => {
     loadStudents();
     getConfig().then(setConfig);
   }, []);
+
+  const [searchParams] = useSearchParams();
+  const editId = searchParams.get('editId');
+
+  useEffect(() => {
+    if (editId && students.length > 0) {
+      const studentToEdit = students.find(s => s.id === editId);
+      if (studentToEdit) {
+        handleOpenModal(studentToEdit);
+      }
+    }
+  }, [editId, students]);
 
   const loadStudents = async () => {
     setLoading(true);
@@ -367,7 +382,7 @@ const AdminStudents = () => {
       };
 
       // Add dynamic subjects and their assessments
-      s.subjects.forEach(sub => {
+      (s.subjects || []).forEach(sub => {
         if (config?.assessmentColumns && config.assessmentColumns.length > 0) {
           config.assessmentColumns.forEach(col => {
             const key = `${sub.name} - ${col.name}`;
@@ -437,14 +452,17 @@ const AdminStudents = () => {
 
           // Map level name back to ID if necessary
           let levelId = row[t('students.table.level')] || 'level1';
-          const possibleLevels = [
-            'level1', 'level2', 'level3', 'level4', 'level5', 'level6',
-            'level7', 'level8', 'level9', 'level10', 'level11', 'level12'
-          ];
 
-          const foundLevel = possibleLevels.find(l => t(`students.levels.${l}`) === levelId);
-          if (foundLevel) {
-            levelId = foundLevel;
+          if (config?.classLevels) {
+            const foundLevel = config.classLevels.find(l =>
+              l.nameAr === levelId ||
+              l.nameEn === levelId ||
+              l.nameSo === levelId ||
+              t(`students.levels.${l.id}`) === levelId
+            );
+            if (foundLevel) {
+              levelId = foundLevel.id;
+            }
           }
 
           const student: Student = {
@@ -476,8 +494,8 @@ const AdminStudents = () => {
 
   const filteredStudents = students.filter(s => {
     const normalizedFilter = normalizeArabic(filter);
-    return normalizeArabic(s.fullName).includes(normalizedFilter) ||
-      s.studentId.toLowerCase().includes(filter.toLowerCase());
+    return normalizeArabic(s.fullName || '').includes(normalizedFilter) ||
+      (s.studentId || '').toLowerCase().includes(filter.toLowerCase());
   });
 
   return (
@@ -497,7 +515,7 @@ const AdminStudents = () => {
             <span>{isImporting ? t('students.importing') : t('students.importExcel')}</span>
             <input type="file" accept=".xlsx, .xls" className="hidden" ref={fileInputRef} onChange={handleImportExcel} disabled={isImporting} />
           </label>
-          <button onClick={() => handleOpenModal()} className="flex-1 md:flex-none bg-[var(--qabas-purple)] hover:bg-purple-700 text-white px-4 py-2 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg text-sm font-bold">
+          <button onClick={() => handleOpenModal()} className="flex-1 md:flex-none bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg text-sm font-bold">
             <Plus size={18} /> {t('students.addStudent')}
           </button>
         </div>
@@ -517,27 +535,29 @@ const AdminStudents = () => {
       <div id="tour-students-table" className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-2xl shadow-sm overflow-hidden transition-all">
         <div className="overflow-x-auto min-h-[400px]">
           <table className="w-full text-right border-collapse min-w-[800px]">
-            <thead className="bg-[var(--bg-secondary)] text-[var(--text-muted)] text-[10px] uppercase font-bold tracking-tighter">
+            <thead className="bg-[var(--bg-secondary)] text-slate-700 dark:text-slate-200 text-xs uppercase font-black tracking-wider border-b border-[var(--border-color)]">
               <tr>
-                <th className="px-3 py-3">{t('students.table.name')}</th>
-                <th className="px-3 py-3">{t('students.table.id')}</th>
-                <th className="px-3 py-3">{t('students.table.level')}</th>
-                <th className="px-3 py-3">{t('students.table.result')}</th>
-                <th className="px-3 py-3 text-center">{t('nav.attendance') || 'Attendance'}</th>
-                <th className="px-3 py-3 text-center">{t('students.table.actions')}</th>
+                <th className="px-4 py-3.5">{t('students.table.name')}</th>
+                <th className="px-4 py-3.5">{t('students.table.id')}</th>
+                <th className="px-4 py-3.5">{t('students.table.level')}</th>
+                <th className="px-4 py-3.5">{t('students.table.result')}</th>
+                <th className="px-4 py-3.5 text-center">Transcript</th>
+                <th className="px-4 py-3.5 text-center">{t('students.table.actions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--border-color)]">
               {loading ? (
-                <tr><td colSpan={5} className="px-6 py-8 text-center text-slate-500">{t('common.loading')}</td></tr>
+                <tr><td colSpan={6} className="px-6 py-12 text-center text-slate-600 dark:text-slate-300 font-bold uppercase tracking-widest text-xs">{t('common.loading')}</td></tr>
               ) : filteredStudents.length === 0 ? (
-                <tr><td colSpan={5} className="px-6 py-8 text-center text-slate-500">{t('students.messages.noRecords')}</td></tr>
+                <tr><td colSpan={6} className="px-6 py-12 text-center text-slate-600 dark:text-slate-300 font-bold uppercase tracking-widest text-xs">{t('students.messages.noRecords')}</td></tr>
               ) : (
                 filteredStudents.map((student) => (
                   <tr key={student.id} className="hover:bg-[var(--bg-secondary)] transition-colors group border-b border-[var(--border-color)] text-xs">
                     <td className="px-3 py-2 font-bold text-[var(--text-main)]">{student.fullName}</td>
                     <td className="px-3 py-2 font-mono text-[var(--text-secondary)]">{student.studentId}</td>
-                    <td className="px-3 py-2 text-[var(--text-secondary)]">{student.classLevel}</td>
+                    <td className="px-3 py-2 text-[var(--text-secondary)]">
+                      {getLevelLabel(student.classLevel || '', config, i18n.language, t)}
+                    </td>
                     <td className="px-6 py-4">
                       <span className={`text-[10px] font-black uppercase px-3 py-1 rounded-full ${
                         // Support all three languages for pass/fail
@@ -552,18 +572,18 @@ const AdminStudents = () => {
                     </td>
                     <td className="px-3 py-2 text-center">
                       <button
-                        title="View Attendance"
-                        onClick={() => navigate('/admin/attendance', { state: { studentId: student.studentId, studentName: student.fullName } })}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-purple-50 hover:bg-purple-100 dark:bg-purple-500/10 dark:hover:bg-purple-500/20 text-purple-600 dark:text-purple-400 rounded-xl text-xs font-bold transition-all"
+                        title="View Transcript"
+                        onClick={() => navigate(`/v/${student.studentId}`)}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 dark:bg-amber-500/10 dark:hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 rounded-xl text-xs font-bold transition-all cursor-pointer"
                       >
-                        <Calendar size={14} />
-                        <span>{t('nav.attendance') || 'Attendance'}</span>
+                        <GraduationCap size={14} />
+                        <span>Transcript</span>
                       </button>
                     </td>
                     <td className="px-6 py-4 text-left">
                       <div className="flex justify-end gap-3">
-                        <button onClick={() => handleOpenModal(student)} className="text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-500/10 p-2 rounded-xl transition-all cursor-pointer"><Edit2 size={18} /></button>
-                        <button onClick={(e) => handleDeleteClick(e, student.id)} className="text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 p-2 rounded-xl transition-all cursor-pointer"><Trash2 size={18} /></button>
+                        <button onClick={() => handleOpenModal(student)} className="text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 p-2 rounded-xl transition-all cursor-pointer"><Edit2 size={18} /></button>
+                        <button onClick={(e) => handleDeleteClick(e, student.id)} className="text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 p-2 rounded-xl transition-all cursor-pointer"><Trash2 size={18} /></button>
                       </div>
                     </td>
                   </tr>
@@ -575,7 +595,7 @@ const AdminStudents = () => {
       </div>
 
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 dark:bg-black/70 backdrop-blur-sm p-4 overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 overflow-y-auto">
           <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-[var(--bg-card)] rounded-[2rem] shadow-2xl w-full max-w-5xl my-4 md:my-8 overflow-hidden flex flex-col max-h-[95vh] border border-[var(--border-color)]">
             <div className="flex justify-between items-center px-6 py-4 border-b border-[var(--border-color)] bg-[var(--bg-secondary)]">
               <h3 className="font-bold text-lg text-[var(--text-main)]">{editingStudent ? t('students.modal.editTitle') : t('students.modal.addTitle')}</h3>
@@ -603,7 +623,14 @@ const AdminStudents = () => {
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-[var(--text-muted)] uppercase">{t('students.modal.level')}</label>
-                  <select className="w-full px-3 py-2 border border-[var(--border-color)] bg-[var(--bg-secondary)] rounded-xl focus:ring-2 focus:ring-[var(--qabas-purple)] outline-none text-sm text-[var(--text-main)] transition-all" value={formData.classLevel || (config?.classLevels?.[0]?.id || 'level1')} onChange={e => setFormData({ ...formData, classLevel: e.target.value })}>
+                  <select
+                    className="w-full px-3 py-2 border border-[var(--border-color)] bg-[var(--bg-secondary)] rounded-xl focus:ring-2 focus:ring-[var(--qabas-purple)] outline-none text-sm text-[var(--text-main)] transition-all"
+                    value={formData.classLevel || (config?.classLevels?.[0]?.id || '')}
+                    onChange={e => setFormData({ ...formData, classLevel: e.target.value })}
+                  >
+                    {!formData.classLevel && !config?.classLevels?.length && (
+                      <option value="">{t('students.searchPlaceholder')}</option>
+                    )}
                     {config?.classLevels && config.classLevels.length > 0 ? (
                       config.classLevels.map(level => (
                         <option key={level.id} value={level.id}>
@@ -611,14 +638,7 @@ const AdminStudents = () => {
                         </option>
                       ))
                     ) : (
-                      <>
-                        <option value="level1">{t('students.levels.level1')}</option>
-                        <option value="level2">{t('students.levels.level2')}</option>
-                        <option value="level3">{t('students.levels.level3')}</option>
-                        <option value="level4">{t('students.levels.level4')}</option>
-                        <option value="level5">{t('students.levels.level5')}</option>
-                        <option value="level6">{t('students.levels.level6')}</option>
-                      </>
+                      <option value="">No levels defined in Settings</option>
                     )}
                   </select>
                 </div>
@@ -634,8 +654,19 @@ const AdminStudents = () => {
                   <button type="button" onClick={handleAddAssessmentColumn} className="text-[10px] bg-[var(--bg-secondary)] text-orange-600 dark:text-orange-400 hover:bg-[var(--bg-card)] border border-[var(--border-color)] px-3 py-1 rounded-full font-black uppercase tracking-widest flex items-center gap-1 transition-all">
                     <Plus size={12} /> {t('settings.grading.addColumn')}
                   </button>
+                  <div className="hidden sm:flex items-center gap-2 bg-purple-100 dark:bg-purple-900/40 px-4 py-2 rounded-xl border-2 border-purple-200 dark:border-purple-700 text-sm font-bold text-slate-900 dark:text-white ml-2 shadow-sm">
+                    <span>If you want to make changes, please go to Settings.</span>
+                    <button 
+                      type="button" 
+                      onClick={() => { setIsModalOpen(false); navigate('/admin/settings'); }}
+                      className="bg-purple-600 hover:bg-purple-700 text-white rounded-full p-1 transition-all flex items-center justify-center cursor-pointer group shadow-sm"
+                      title="Go to Settings"
+                    >
+                      <ArrowRight size={12} className="group-hover:translate-x-0.5 transition-transform" />
+                    </button>
+                  </div>
                 </div>
-                <button type="button" onClick={handleAddSubject} className="text-xs text-[var(--qabas-purple)] hover:text-purple-700 flex items-center gap-1 font-bold bg-[var(--bg-secondary)] px-3 py-1.5 rounded-xl transition-all active:scale-[0.98] border border-[var(--border-color)]"><PlusCircle size={14} /> {t('students.modal.addSubject')}</button>
+                <button type="button" onClick={handleAddSubject} className="text-xs text-purple-700 dark:text-purple-300 hover:text-purple-800 flex items-center gap-1 font-bold bg-[var(--bg-secondary)] px-3 py-1.5 rounded-xl transition-all active:scale-[0.98] border border-[var(--border-color)]"><PlusCircle size={14} /> {t('students.modal.addSubject')}</button>
               </div>
 
               <div className="border border-[var(--border-color)] rounded-xl overflow-hidden mb-6 overflow-x-auto shadow-sm bg-[var(--bg-card)]">
@@ -651,7 +682,7 @@ const AdminStudents = () => {
                             <button
                               type="button"
                               onClick={() => handleColDeleteClick(col.id)}
-                              className="opacity-0 group-hover/col:opacity-100 text-red-400 hover:text-red-600 transition-all ml-1"
+                              className="opacity-0 group-hover/col:opacity-100 text-red-400 dark:text-red-500 hover:text-red-600 transition-all ml-1"
                             >
                               <X size={10} />
                             </button>
@@ -712,7 +743,7 @@ const AdminStudents = () => {
                           </span>
                         </td>
                         <td className="px-4 py-2 text-center">
-                          <button type="button" onClick={() => handleDeleteSubject(index)} className="text-[var(--text-muted)] hover:text-red-500 transition-colors p-2 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl"><Trash2 size={14} /></button>
+                          <button type="button" onClick={() => handleDeleteSubject(index)} className="text-[var(--text-muted)] hover:text-red-500 dark:hover:text-red-400 transition-colors p-2 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl"><Trash2 size={14} /></button>
                         </td>
                       </tr>
                     ))}
@@ -724,11 +755,11 @@ const AdminStudents = () => {
                       <td className="px-4 py-4 text-center" colSpan={2}>
                         <div className="flex flex-col items-center">
                           <span className="text-xl font-black text-[var(--qabas-purple)]">{formData.percentage}%</span>
-                          <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
+                          <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-full ${
                             // Support all three languages for pass/fail
                             ['ناجح', 'pass', 'gudbay', 'passed', 'gudbey'].includes(formData.finalResult?.toLowerCase()?.trim() || '')
-                              ? 'bg-green-500 text-white'
-                              : 'bg-red-500 text-white'
+                              ? 'bg-emerald-600 text-white'
+                              : 'bg-red-600 text-white'
                             }`}>
                             {['ناجح', 'pass', 'gudbay', 'passed', 'gudbey'].includes(formData.finalResult?.toLowerCase()?.trim() || '')
                               ? t('students.status.pass')
@@ -744,7 +775,7 @@ const AdminStudents = () => {
 
             <div className="px-6 py-4 border-t border-[var(--border-color)] bg-[var(--bg-secondary)] flex justify-end gap-3 items-center">
               <button onClick={() => setIsModalOpen(false)} className="px-5 py-2 text-[var(--text-secondary)] hover:text-[var(--text-main)] font-bold text-sm transition-colors">{t('students.modal.footer.cancel')}</button>
-              <button onClick={handleSubmit} className="px-8 py-2.5 bg-[var(--qabas-purple)] hover:bg-purple-700 text-white rounded-xl font-black shadow-xl shadow-purple-900/20 flex items-center gap-2 transition-all active:scale-[0.98] text-sm uppercase tracking-wide border border-white/10">
+              <button onClick={handleSubmit} className="px-8 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-black shadow-xl shadow-purple-900/20 flex items-center gap-2 transition-all active:scale-[0.98] text-sm uppercase tracking-wide border border-white/10">
                 <Save size={18} /> {t('students.modal.footer.save')}
               </button>
             </div>
@@ -762,7 +793,7 @@ const AdminStudents = () => {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setConfirmColDeleteModal({ show: false, colId: null })}
-              className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+              className="absolute inset-0 bg-slate-900/40 dark:bg-black/70 backdrop-blur-sm"
             />
             <motion.div
               initial={{ opacity: 0, scale: 0.9, y: 20 }}

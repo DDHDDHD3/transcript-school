@@ -70,7 +70,7 @@ const Footer: React.FC = () => {
                     {/* Brand Section */}
                     <div className="space-y-6">
                         <div className="flex items-center gap-3 group">
-                            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-qabas-purple to-purple-900 flex items-center justify-center text-white shadow-2xl shadow-purple-200/50 group-hover:scale-110 transition-transform border border-white/20 overflow-hidden shrink-0">
+                            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-50 to-violet-100 flex items-center justify-center text-violet-600 shadow-sm group-hover:scale-110 transition-transform border border-violet-200/50 overflow-hidden shrink-0">
                                 <img src="/logo.jpg" alt="Aqooni Logo" className="w-full h-full object-cover" />
                             </div>
                             <div className="flex flex-col">

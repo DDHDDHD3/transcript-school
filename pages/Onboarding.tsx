@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser, useClerk } from '@clerk/clerk-react';
 import { useTranslation } from 'react-i18next';
-import { motion } from 'framer-motion';
-import { School, MapPin, FileText, Phone, CheckCircle2, Loader2, Building2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { School, MapPin, FileText, Phone, CheckCircle2, Loader2, Building2, Upload, Plus, AlertCircle } from 'lucide-react';
 import { getUserSession, completeOnboarding, getConfig } from '../services/api';
 
 const Onboarding = () => {
@@ -17,9 +17,22 @@ const Onboarding = () => {
     const [formData, setFormData] = useState({
         name: '',
         location: '',
-        licenseNumber: '',
-        phoneNumber: ''
+        description: '',
+        phone: '',
+        logo: ''
     });
+    const [error, setError] = useState<string | null>(null);
+
+    const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setFormData(prev => ({ ...prev, logo: reader.result as string }));
+            };
+            reader.readAsDataURL(file);
+        }
+    };
 
     useEffect(() => {
         // Pre-fill school name if available
@@ -33,42 +46,41 @@ const Onboarding = () => {
     }, [session.schoolId]);
 
     const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
         if (!formData.name.trim() || formData.name.includes('New School') || formData.name.includes('Pending Onboarding')) {
-            alert('Please enter a valid School Name.');
+            setError('Please enter a valid School Name.');
             return;
         }
         if (!formData.location.trim() || formData.location === 'Not Set') {
-            alert('Please enter your School Location.');
+            setError('Please enter your School Location.');
             return;
         }
-        if (!formData.phoneNumber.trim() || formData.phoneNumber === 'Not Set') {
-            alert('Please enter a valid Phone Number.');
+        if (!formData.phone.trim() || formData.phone === 'Not Set') {
+            setError('Please enter a valid Phone Number.');
             return;
         }
 
         setLoading(true);
+        setError(null);
         try {
             const result = await completeOnboarding(
                 session.schoolId,
-                user.primaryEmailAddress.emailAddress,
+                user?.primaryEmailAddress?.emailAddress || '',
                 formData
             );
 
             if (result.success) {
-                // Update local storage to reflect onboarding status immediately
-                localStorage.setItem('cv_has_onboarded', 'true');
-
-                // Short delay for visual success
+                // Short delay for visual feedback
                 setTimeout(() => {
-                    navigate('/admin/dashboard');
-                    window.location.reload(); // Force reload to update Layout state
+                    navigate('/admin/dashboard', { replace: true });
+                    window.location.reload();
                 }, 1000);
             } else {
-                alert('Failed to save details. Please try again.');
+                setError('Failed to save details. Please try again.');
             }
-        } catch (error) {
-            console.error('Onboarding error:', error);
-            alert('An error occurred: ' + (error instanceof Error ? error.message : 'Unknown error'));
+        } catch (err) {
+            console.error('Onboarding error:', err);
+            setError('An error occurred while saving your details.');
         } finally {
             setLoading(false);
         }
@@ -82,39 +94,47 @@ const Onboarding = () => {
                 className="bg-white dark:bg-[#0f172a] rounded-[40px] shadow-2xl overflow-hidden max-w-2xl w-full flex flex-col md:flex-row min-h-[500px]"
             >
                 {/* Sidebar / Visual */}
-                <div className="bg-qabas-purple p-10 flex flex-col justify-between text-white md:w-2/5 relative overflow-hidden">
-                    <div className="absolute top-0 left-0 w-full h-full opacity-10">
-                        <div className="absolute top-10 right-10 w-40 h-40 rounded-full bg-white blur-3xl"></div>
-                        <div className="absolute bottom-10 left-10 w-40 h-40 rounded-full bg-qabas-orange blur-3xl"></div>
+                <div className="bg-slate-50 p-10 flex flex-col justify-between text-slate-900 md:w-2/5 relative overflow-hidden border-r border-slate-100">
+                    <div className="absolute top-0 left-0 w-full h-full opacity-30">
+                        <div className="absolute top-10 right-10 w-40 h-40 rounded-full bg-violet-100 blur-3xl"></div>
+                        <div className="absolute bottom-10 left-10 w-40 h-40 rounded-full bg-amber-50 blur-3xl"></div>
                     </div>
 
                     <div className="relative z-10">
-                        <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center mb-6 overflow-hidden p-2">
-                            {session.schoolId === 'super' ? (
-                                <Building2 size={28} />
-                            ) : (
-                                <img src="/logo.jpg" alt="Logo" className="w-full h-full object-contain brightness-0 invert" />
-                            )}
+                        <div className="relative group mb-6">
+                            <label className="cursor-pointer">
+                                <div className="w-20 h-20 bg-white shadow-sm rounded-2xl flex items-center justify-center overflow-hidden border-2 border-dashed border-slate-200 group-hover:border-violet-400 transition-all">
+                                    {formData.logo ? (
+                                        <img src={formData.logo} alt="Logo Preview" className="w-full h-full object-cover" />
+                                    ) : (
+                                        <Upload size={28} className="text-black" />
+                                    )}
+                                </div>
+                                <input type="file" accept="image/*" onChange={handleLogoChange} className="hidden" />
+                                <div className="absolute -bottom-1 -right-1 bg-violet-600 text-white p-1.5 rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-all scale-75 group-hover:scale-100">
+                                    <Plus size={12} strokeWidth={3} />
+                                </div>
+                            </label>
                         </div>
-                        <h2 className="text-3xl font-black mb-2">{t('onboarding.title') || 'Setup School'}</h2>
-                        <p className="text-purple-200 font-medium text-sm leading-relaxed">
+                        <h2 className="text-3xl font-black mb-2 text-slate-900">{t('onboarding.title') || 'Setup School'}</h2>
+                        <p className="text-slate-500 font-medium text-sm leading-relaxed">
                             {t('onboarding.subtitle') || 'Please complete your school profile to access the dashboard.'}
                         </p>
                     </div>
 
                     <div className="relative z-10 space-y-4">
-                        <div className="flex items-center gap-3 text-sm font-medium text-purple-100">
-                            <CheckCircle2 size={16} className="text-green-400" />
+                        <div className="flex items-center gap-3 text-sm font-medium text-slate-500">
+                            <CheckCircle2 size={16} className="text-emerald-500" />
                             <span>{t('onboarding.step1') || 'Create Account'}</span>
                         </div>
-                        <div className="flex items-center gap-3 text-sm font-bold text-white">
-                            <div className="w-4 h-4 rounded-full border-2 border-white flex items-center justify-center">
-                                <div className="w-2 h-2 bg-white rounded-full"></div>
+                        <div className="flex items-center gap-3 text-sm font-bold text-slate-900">
+                            <div className="w-4 h-4 rounded-full border-2 border-violet-600 flex items-center justify-center">
+                                <div className="w-2 h-2 bg-violet-600 rounded-full"></div>
                             </div>
                             <span>{t('onboarding.step2') || 'School Details'}</span>
                         </div>
-                        <div className="flex items-center gap-3 text-sm font-medium text-purple-100 opacity-50">
-                            <div className="w-4 h-4 rounded-full border-2 border-purple-300"></div>
+                        <div className="flex items-center gap-3 text-sm font-medium text-slate-400">
+                            <div className="w-4 h-4 rounded-full border-2 border-slate-200"></div>
                             <span>{t('onboarding.step3') || 'Dashboard Access'}</span>
                         </div>
                     </div>
@@ -132,7 +152,7 @@ const Onboarding = () => {
                                 <input
                                     type="text"
                                     required
-                                    className="w-full pl-12 pr-4 py-3.5 bg-slate-50 dark:bg-white/5 rounded-xl border-none font-bold text-slate-700 dark:text-slate-100 focus:ring-2 focus:ring-purple-100 transition-all"
+                                    className="w-full pl-12 pr-4 py-3.5 bg-slate-50 dark:bg-white/5 rounded-xl border-none font-bold text-black dark:text-black focus:ring-2 focus:ring-purple-100 transition-all"
                                     placeholder="e.g. Al-Huda Islamic School"
                                     value={formData.name}
                                     onChange={e => setFormData({ ...formData, name: e.target.value })}
@@ -149,7 +169,7 @@ const Onboarding = () => {
                                 <input
                                     type="text"
                                     required
-                                    className="w-full pl-12 pr-4 py-3.5 bg-slate-50 dark:bg-white/5 rounded-xl border-none font-bold text-slate-700 dark:text-slate-100 focus:ring-2 focus:ring-purple-100 transition-all"
+                                    className="w-full pl-12 pr-4 py-3.5 bg-slate-50 dark:bg-white/5 rounded-xl border-none font-bold text-black dark:text-black focus:ring-2 focus:ring-purple-100 transition-all"
                                     placeholder="e.g. Mogadishu, Hodan District"
                                     value={formData.location}
                                     onChange={e => setFormData({ ...formData, location: e.target.value })}
@@ -159,17 +179,17 @@ const Onboarding = () => {
 
                         <div>
                             <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">
-                                {t('onboarding.license') || 'License Number'}
+                                {t('onboarding.description') || 'School Description'}
                             </label>
                             <div className="relative">
                                 <FileText className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                                 <input
                                     type="text"
                                     required
-                                    className="w-full pl-12 pr-4 py-3.5 bg-slate-50 dark:bg-white/5 rounded-xl border-none font-bold text-slate-700 dark:text-slate-100 focus:ring-2 focus:ring-purple-100 transition-all"
-                                    placeholder="e.g. LIC-2024-001"
-                                    value={formData.licenseNumber}
-                                    onChange={e => setFormData({ ...formData, licenseNumber: e.target.value })}
+                                    className="w-full pl-12 pr-4 py-3.5 bg-slate-50 dark:bg-white/5 rounded-xl border-none font-bold text-black dark:text-black focus:ring-2 focus:ring-purple-100 transition-all"
+                                    placeholder="e.g. A primary school focused on Islamic education"
+                                    value={formData.description}
+                                    onChange={e => setFormData({ ...formData, description: e.target.value })}
                                 />
                             </div>
                         </div>
@@ -183,29 +203,56 @@ const Onboarding = () => {
                                 <input
                                     type="tel"
                                     required
-                                    className="w-full pl-12 pr-4 py-3.5 bg-slate-50 dark:bg-white/5 rounded-xl border-none font-bold text-slate-700 dark:text-slate-100 focus:ring-2 focus:ring-purple-100 transition-all"
+                                    className="w-full pl-12 pr-4 py-3.5 bg-slate-50 dark:bg-white/5 rounded-xl border-none font-bold text-black dark:text-black focus:ring-2 focus:ring-purple-100 transition-all"
                                     placeholder="e.g. +252 61 5000000"
-                                    value={formData.phoneNumber}
-                                    onChange={e => setFormData({ ...formData, phoneNumber: e.target.value })}
+                                    value={formData.phone}
+                                    onChange={e => setFormData({ ...formData, phone: e.target.value })}
                                 />
                             </div>
                         </div>
 
-                        <div className="pt-4 flex items-center gap-4">
-                            <button
-                                type="button"
-                                onClick={() => signOut()}
-                                className="px-6 py-3.5 rounded-xl font-bold text-slate-500 hover:bg-slate-50 transition-colors"
-                            >
-                                {t('common.cancel') || 'Logout'}
-                            </button>
-                            <button
-                                type="submit"
-                                disabled={loading}
-                                className="flex-1 bg-qabas-purple text-white py-3.5 rounded-xl font-black shadow-lg shadow-purple-200 hover:bg-purple-800 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
-                            >
-                                {loading ? <Loader2 className="animate-spin" /> : (t('onboarding.submit') || 'Complete Setup')}
-                            </button>
+                        <div className="pt-4 space-y-4">
+                            <AnimatePresence>
+                                {error && (
+                                    <motion.div
+                                        initial={{ opacity: 0, height: 0 }}
+                                        animate={{ opacity: 1, height: 'auto' }}
+                                        exit={{ opacity: 0, height: 0 }}
+                                        className="bg-red-500/10 border border-red-500/20 rounded-2xl p-4 flex items-center gap-3 text-red-600 dark:text-red-400 text-sm font-bold"
+                                    >
+                                        <AlertCircle size={18} className="shrink-0" />
+                                        <p>{error}</p>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+
+                            <div className="flex items-center gap-4">
+                                <button
+                                    type="button"
+                                    onClick={() => signOut(() => navigate('/'))}
+                                    className="px-6 py-4 rounded-2xl font-bold text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors"
+                                >
+                                    {t('common.cancel') || 'Logout'}
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={loading}
+                                    className="flex-1 h-14 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-black rounded-2xl shadow-xl shadow-indigo-900/20 transition-all active:scale-[0.98] flex items-center justify-center gap-3 group relative overflow-hidden"
+                                >
+                                    {loading ? (
+                                        <div className="flex items-center gap-2">
+                                            <Loader2 size={20} className="animate-spin" />
+                                            <span className="tracking-wide uppercase text-xs">Saving Profile...</span>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <span className="tracking-wide uppercase text-xs">Complete Setup</span>
+                                            <CheckCircle2 size={20} className="group-hover:translate-x-1 transition-transform" />
+                                        </>
+                                    )}
+                                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-[shine_1.5s_infinite] pointer-events-none" />
+                                </button>
+                            </div>
                         </div>
                     </form>
                 </div>

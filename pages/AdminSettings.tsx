@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
 import { getConfig, saveConfig, changeAdminPassword, getSchoolBilling, recordPayment, getUserSession, getStudents, requestCredits } from '../services/api';
 import { CertificateConfig } from '../types';
@@ -6,10 +8,12 @@ import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import CertificateTemplates, { TEMPLATE_DESIGNS } from '../components/CertificateTemplates';
 import { Student } from '../types';
+import { getLevelLabel } from '../utils/levelUtils';
 
 const MOCK_STUDENT: Student = {
   id: 'mock-id',
   studentId: 'cd-alhuda',
+  registrationNumber: 'cd-alhuda',
   fullName: 'Yaasir Ali Ahmed',
   academicYear: '2026',
   classLevel: 'level3',
@@ -63,7 +67,25 @@ const AdminSettings = () => {
   const [creditRequestLoading, setCreditRequestLoading] = useState(false);
 
   useEffect(() => {
-    getConfig().then(setConfig);
+    getConfig().then(data => {
+      if (data) {
+        // Migration: If no levels, add Level 1-6 as per user agreement
+        if (!data.classLevels || data.classLevels.length === 0) {
+          const defaults = [1, 2, 3, 4, 5, 6].map(num => ({
+            id: `level${num}`,
+            nameAr: `المستوى ${num}`,
+            nameEn: `Level ${num}`,
+            nameSo: `Heerka ${num}`
+          }));
+          const updated = { ...data, classLevels: defaults };
+          setConfig(updated);
+          // Auto-save this migration if it's the first time
+          saveConfig(updated);
+        } else {
+          setConfig(data);
+        }
+      }
+    });
     getSchoolBilling().then(setBilling);
     loadAllStudents();
 
@@ -220,9 +242,9 @@ const AdminSettings = () => {
   if (!config) return <div className="p-8 text-center text-slate-500">{t('settings.loading')}</div>;
 
   return (
-    <div className="max-w-4xl mx-auto" dir={i18n.dir()}>
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8" dir={i18n.dir()}>
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-[var(--text-main)]">{t('settings.title')}</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold text-[var(--text-main)]">{t('settings.title')}</h1>
         <p className="text-[var(--text-muted)]">{t('settings.subtitle')}</p>
       </div>
 
@@ -230,9 +252,9 @@ const AdminSettings = () => {
         {/* --- BILLING SECTION --- */}
         {billing && (
           <div className="bg-[var(--bg-card)] rounded-xl shadow-sm border border-[var(--border-color)] overflow-hidden">
-            <div className="bg-slate-900 px-6 py-4 flex items-center justify-between">
-              <div className="flex items-center gap-3 text-white">
-                <CreditCard className="text-[var(--qabas-orange)]" />
+            <div className="bg-[var(--bg-card)] px-6 py-4 flex items-center justify-between border-b border-[var(--border-color)]">
+              <div className="flex items-center gap-3 text-[var(--text-main)]">
+                <CreditCard className="text-orange-500" />
                 <div>
                   <h2 className="font-bold text-lg">{t('settings.billing.title')}</h2>
                   <p className="text-[10px] text-slate-400 uppercase font-black tracking-widest">
@@ -241,15 +263,15 @@ const AdminSettings = () => {
                 </div>
               </div>
               <div className="text-right">
-                <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${billing.subStatus === 'active' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${billing.subStatus === 'active' ? 'bg-green-500/10 text-green-600 border border-green-500/20' : 'bg-red-500/10 text-red-600 border border-red-500/20'}`}>
                   {billing.subStatus === 'active' ? t('settings.billing.active') : t('settings.billing.expired')}
                 </div>
               </div>
             </div>
 
-            <div className="p-6 grid md:grid-cols-3 gap-6">
+            <div className="p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               <div className="space-y-1">
-                <p className="text-xs font-bold text-[var(--text-muted)] uppercase">{t('settings.billing.balance')}</p>
+                <p className="text-[10px] sm:text-xs font-bold text-[var(--text-muted)] uppercase">{t('settings.billing.balance')}</p>
                 <p className={`text-2xl font-black ${Number(billing.balance || 0) > 0 ? 'text-red-600' : 'text-[var(--text-main)]'}`}>
                   ${Number(billing.balance || 0).toFixed(2)}
                 </p>
@@ -329,7 +351,7 @@ const AdminSettings = () => {
             <h2 className="font-bold text-lg text-[var(--text-main)]">{t('settings.security.title')}</h2>
           </div>
 
-          <form onSubmit={handleChangePassword} className="flex flex-col md:flex-row gap-4 items-end max-w-full">
+          <form onSubmit={handleChangePassword} className="flex flex-col sm:flex-row gap-4 items-end max-w-full">
             <div className="flex-1 w-full space-y-1">
               <label className="text-sm font-medium text-[var(--text-secondary)]">{t('settings.security.newPasswordLabel')}</label>
               <input
@@ -345,7 +367,7 @@ const AdminSettings = () => {
             <button
               type="submit"
               disabled={!newPassword || passwordLoading}
-              className="bg-slate-800 hover:bg-slate-900 text-white px-6 py-2 rounded-lg font-bold transition-all disabled:opacity-50 flex items-center gap-2 h-[42px] shrink-0 whitespace-nowrap"
+              className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg font-bold transition-all disabled:opacity-50 flex items-center gap-2 h-[42px] shrink-0 whitespace-nowrap shadow-md"
             >
               <Lock size={16} />
               {passwordLoading ? t('settings.security.loading') : t('settings.security.button')}
@@ -379,7 +401,7 @@ const AdminSettings = () => {
                     <div className="space-y-2">
                       <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Step 1: Select Academic Level</label>
                       <select
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-qabas-purple/20 transition-all cursor-pointer"
+                        className="w-full bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl px-4 py-3 text-sm font-bold text-[var(--text-main)] outline-none focus:ring-2 focus:ring-purple-500/20 transition-all cursor-pointer"
                         value={selectedLevel}
                         onChange={(e) => {
                           setSelectedLevel(e.target.value);
@@ -387,16 +409,24 @@ const AdminSettings = () => {
                         }}
                       >
                         <option value="">{t('students.searchPlaceholder') || 'Select Level'}</option>
-                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(num => (
-                          <option key={num} value={`level${num}`}>{t(`students.levels.level${num}`)}</option>
-                        ))}
+                        {config?.classLevels && config.classLevels.length > 0 ? (
+                          config.classLevels.map(level => (
+                            <option key={level.id} value={level.id}>
+                              {i18n.language === 'ar' ? level.nameAr : (i18n.language === 'so' ? level.nameSo : level.nameEn)}
+                            </option>
+                          ))
+                        ) : (
+                          [1, 2, 3, 4, 5, 6].map(num => (
+                            <option key={num} value={`level${num}`}>{t(`students.levels.level${num}`)}</option>
+                          ))
+                        )}
                       </select>
                     </div>
 
                     <div className="space-y-2">
                       <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Step 2: Select Student</label>
                       <select
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-qabas-purple/20 transition-all cursor-pointer disabled:opacity-50"
+                        className="w-full bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl px-4 py-3 text-sm font-bold text-[var(--text-main)] outline-none focus:ring-2 focus:ring-purple-500/20 transition-all cursor-pointer disabled:opacity-50"
                         value={selectedStudent?.id || ''}
                         disabled={!selectedLevel}
                         onChange={(e) => {
@@ -427,10 +457,10 @@ const AdminSettings = () => {
                 </div>
 
                 {/* Responsive scrollable container that adapts to all screen sizes */}
-                <div className="w-full overflow-x-auto bg-slate-100 rounded-lg">
+                <div className="w-full overflow-x-auto bg-slate-100 rounded-lg p-2 sm:p-4">
                   <div
                     ref={previewContainerRef}
-                    className="mx-auto bg-white shadow-2xl rounded-lg border border-slate-200 overflow-hidden"
+                    className="mx-auto bg-white shadow-2xl rounded-lg border border-slate-200 overflow-hidden shrink-0"
                     style={{
                       width: `${2480 * previewScale}px`,
                       height: `${3508 * previewScale}px`,
@@ -498,7 +528,7 @@ const AdminSettings = () => {
                             type="text"
                             value={config[color.field] || color.default}
                             onChange={e => setConfig({ ...config, [color.field]: e.target.value })}
-                            className="w-16 bg-transparent border-none outline-none font-mono text-[10px] uppercase text-slate-600 text-center font-bold"
+                            className="w-16 bg-transparent border-none outline-none font-mono text-[10px] uppercase text-black text-center font-bold"
                           />
                         </div>
                       </div>
@@ -512,7 +542,7 @@ const AdminSettings = () => {
                   <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest block mb-4">
                     {t('settings.template.select') || 'Design Library'}
                   </h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(num => (
                       <button
                         key={num}
@@ -535,22 +565,22 @@ const AdminSettings = () => {
                           <CertificateTemplates
                             student={MOCK_STUDENT}
                             config={{ ...config, templateId: `template${num}` }}
-                            getLevelLabel={(l) => t(`students.levels.${l}`) || l}
+                            getLevelLabel={(l) => getLevelLabel(l, config, i18n.language, t)}
                             getSubjectLabel={(s) => t(s.toLowerCase()) || s}
                             useCustomColors={false}
                           />
                         </div>
 
-                        <div className={`absolute inset-0 transition-opacity flex items-center justify-center ${config.templateId === `template${num}` ? 'bg-qabas-purple/10' : 'bg-black/0 group-hover:bg-black/5'}`}>
+                        <div className={`absolute inset-0 transition-opacity flex items-center justify-center ${config.templateId === `template${num}` ? 'bg-purple-600/20' : 'bg-black/0 group-hover:bg-black/5'}`}>
                           {config.templateId === `template${num}` && (
-                            <div className="bg-qabas-purple text-white p-2 rounded-full shadow-2xl scale-110 animate-in zoom-in duration-200">
+                            <div className="bg-purple-600 text-white p-2 rounded-full shadow-2xl scale-110 animate-in zoom-in duration-200">
                               <Check size={16} strokeWidth={4} />
                             </div>
                           )}
                         </div>
 
                         <div className="absolute bottom-0 left-0 right-0 p-3 bg-white/90 backdrop-blur-sm border-t border-slate-50">
-                          <p className="text-[10px] font-black uppercase text-slate-600 tracking-wider">
+                          <p className="text-[10px] font-black uppercase text-black tracking-wider">
                             {t('settings.template.design')} {num}
                           </p>
                         </div>
@@ -562,72 +592,17 @@ const AdminSettings = () => {
             </div>
           </div>
 
-          {/* --- ATTENDANCE TEMPLATE SECTION --- */}
-          <div className="bg-[var(--bg-card)] p-8 rounded-2xl shadow-sm border border-[var(--border-color)]">
-            <div className="flex items-center justify-between mb-8 pb-4 border-b border-[var(--border-color)]">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-[var(--bg-secondary)] rounded-xl flex items-center justify-center text-[var(--qabas-purple)]">
-                  <Layout size={24} />
-                </div>
-                <div>
-                  <h2 className="font-bold text-xl text-[var(--text-main)]">{t('settings.attendanceTemplate.title')}</h2>
-                  <p className="text-sm text-[var(--text-muted)] font-medium">{t('settings.attendanceTemplate.subtitle')}</p>
-                </div>
-              </div>
-            </div>
 
-            <div className="grid lg:grid-cols-3 gap-8">
-              {/* Template Selection Grid */}
-              <div className="lg:col-span-3">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {[
-                    { id: 'classic', name: t('settings.attendanceTemplate.classic'), color: 'bg-slate-900' },
-                    { id: 'modern', name: t('settings.attendanceTemplate.modern'), color: 'bg-blue-600' },
-                    { id: 'compact', name: t('settings.attendanceTemplate.density'), color: 'bg-emerald-600' }
-                  ].map(template => (
-                    <button
-                      key={template.id}
-                      type="button"
-                      onClick={() => setConfig({ ...config, attendanceTemplateId: template.id })}
-                      className={`relative group overflow-hidden rounded-2xl border-2 transition-all text-left h-48 ${config.attendanceTemplateId === template.id ? 'border-qabas-purple ring-4 ring-purple-50 shadow-xl' : 'border-slate-100 hover:border-slate-200 hover:shadow-lg'}`}
-                    >
-                      <div className={`h-full w-full p-6 flex flex-col justify-between ${template.id === 'classic' ? 'bg-white' : 'bg-slate-50'}`}>
-                        {/* Abstract Preview */}
-                        <div className="space-y-2 opacity-50">
-                          <div className={`h-2 w-1/3 rounded-full ${template.color}`}></div>
-                          <div className="h-2 w-2/3 bg-slate-200 rounded-full"></div>
-                          <div className="space-y-1 mt-4">
-                            <div className="h-1 w-full bg-slate-200 rounded-full"></div>
-                            <div className="h-1 w-full bg-slate-200 rounded-full"></div>
-                            <div className="h-1 w-full bg-slate-200 rounded-full"></div>
-                          </div>
-                        </div>
-
-                        <div className="flex justify-between items-end">
-                          <span className="font-bold text-slate-700">{template.name}</span>
-                          {config.attendanceTemplateId === template.id && (
-                            <div className="bg-qabas-purple text-white p-1.5 rounded-full shadow-lg">
-                              <Check size={14} strokeWidth={3} />
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
           {/* General Info */}
-          <div className="bg-white dark:bg-[#0f172a] p-6 rounded-xl shadow-sm border border-slate-100 dark:border-white/10">
-            <h2 className="font-bold text-lg text-[var(--text-main)] mb-4 pb-2 border-b border-slate-50 dark:border-white/10">{t('settings.school.title')}</h2>
-            <div className="grid md:grid-cols-2 gap-6">
+          <div className="bg-[var(--bg-card)] p-5 sm:p-8 rounded-2xl shadow-sm border border-[var(--border-color)]">
+            <h2 className="font-bold text-lg text-[var(--text-main)] mb-6 pb-2 border-b border-[var(--border-color)]">{t('settings.school.title')}</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
               <div className="space-y-1">
-                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('settings.school.nameAr')}</label>
+                <label className="text-sm font-medium text-black dark:text-black">{t('settings.school.nameAr')}</label>
                 <input required type="text" className={`w-full px-3 py-2 border border-slate-200 dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-[var(--text-main)] ${i18n.dir() === 'rtl' ? 'text-right' : 'text-left'}`} value={config.schoolName} onChange={e => setConfig({ ...config, schoolName: e.target.value })} />
               </div>
               <div className="space-y-1">
-                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('settings.school.nameEn')}</label>
+                <label className="text-sm font-medium text-black dark:text-black">{t('settings.school.nameEn')}</label>
                 <input required type="text" className="w-full px-3 py-2 border border-slate-200 dark:border-white/10 rounded-lg text-left bg-white dark:bg-white/5 text-[var(--text-main)]" dir="ltr" value={config.schoolNameEn} onChange={e => setConfig({ ...config, schoolNameEn: e.target.value })} />
               </div>
             </div>
@@ -653,36 +628,36 @@ const AdminSettings = () => {
                   };
                   setConfig({ ...config, subjects: [...(config.subjects || []), newSubject] });
                 }}
-                className="text-sm bg-purple-50 text-qabas-purple hover:bg-purple-100 px-3 py-1.5 rounded-lg font-bold flex items-center gap-1 transition-colors"
+                className="text-sm bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/50 px-3 py-1.5 rounded-lg font-bold flex items-center gap-1 transition-colors"
               >
                 <Plus size={16} /> {t('settings.subjects.add') || 'Add Subject'}
               </button>
             </div>
 
-            <p className="text-sm text-slate-500 mb-6">{t('settings.subjects.subtitle') || 'Manage the subjects taught at your school. These will appear in student forms and certificates.'}</p>
+            <p className="text-[10px] sm:text-sm text-slate-500 mb-6 font-medium">{t('settings.subjects.subtitle') || 'Manage the subjects taught at your school. These will appear in student forms and certificates.'}</p>
 
-            <div className="border border-[var(--border-color)] rounded-xl overflow-hidden overflow-x-auto">
-              <table className="w-full text-right text-sm min-w-[700px]">
-                <thead className="bg-[var(--bg-secondary)] font-bold text-[var(--text-muted)]">
+            <div className="border border-[var(--border-color)] rounded-xl overflow-hidden overflow-x-auto custom-scrollbar shadow-inner bg-[var(--bg-secondary)]">
+              <table className="w-full text-right text-xs sm:text-sm min-w-[700px] sm:min-w-[800px]">
+                <thead className="bg-[var(--bg-secondary)] font-black text-[var(--text-muted)] uppercase tracking-tighter text-[10px]">
                   <tr>
-                    <th className="px-4 py-3 text-center w-12">#</th>
-                    <th className="px-4 py-3">{t('settings.subjects.nameAr') || 'Arabic Name'}</th>
-                    <th className="px-4 py-3">{t('settings.subjects.nameEn') || 'English Name'}</th>
-                    <th className="px-4 py-3">{t('settings.subjects.nameSo') || 'Somali Name'}</th>
-                    <th className="px-4 py-3 w-24 text-center">{t('settings.subjects.maxMarks') || 'Max'}</th>
-                    <th className="px-4 py-3 w-24 text-center">{t('settings.subjects.active') || 'Active'}</th>
-                    <th className="px-4 py-3 text-center w-20">{t('common.actions')}</th>
+                    <th className="px-3 py-4 text-center w-12">#</th>
+                    <th className="px-3 py-4">{t('settings.subjects.nameAr') || 'Arabic Name'}</th>
+                    <th className="px-3 py-4">{t('settings.subjects.nameEn') || 'English Name'}</th>
+                    <th className="px-4 py-4">{t('settings.subjects.nameSo') || 'Somali Name'}</th>
+                    <th className="px-3 py-4 w-24 text-center">{t('settings.subjects.maxMarks') || 'Max'}</th>
+                    <th className="px-3 py-4 w-24 text-center">{t('settings.subjects.active') || 'Active'}</th>
+                    <th className="px-3 py-4 text-center w-20">{t('common.actions')}</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-50">
+                <tbody className="divide-y divide-slate-100 dark:divide-white/5 bg-[var(--bg-card)]">
                   {(config.subjects || []).map((subj, idx) => (
-                    <tr key={subj.id} className="hover:bg-slate-50/50 dark:hover:bg-white/5 border-t border-slate-100 dark:border-white/5">
-                      <td className="px-4 py-3 text-center font-mono text-slate-400">{idx + 1}</td>
+                    <tr key={subj.id} className="hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors">
+                      <td className="px-3 py-3 text-center font-mono text-slate-400 text-[10px]">{idx + 1}</td>
                       <td className="px-4 py-3">
                         <input
                           type="text"
                           dir="rtl"
-                          className="w-full bg-transparent border-b border-transparent focus:border-qabas-purple outline-none py-1 font-medium text-slate-700 dark:text-slate-300"
+                          className="w-full bg-transparent border-b border-transparent focus:border-purple-600 outline-none py-1 font-medium text-[var(--text-main)]"
                           value={subj.nameAr}
                           onChange={(e) => {
                             const newSubjects = [...(config.subjects || [])];
@@ -695,7 +670,7 @@ const AdminSettings = () => {
                         <input
                           type="text"
                           dir="ltr"
-                          className="w-full bg-transparent border-b border-transparent focus:border-qabas-purple outline-none py-1 font-medium text-slate-700 text-left"
+                          className="w-full bg-transparent border-b border-transparent focus:border-purple-600 outline-none py-1 font-medium text-[var(--text-main)] text-left"
                           value={subj.nameEn}
                           onChange={(e) => {
                             const newSubjects = [...(config.subjects || [])];
@@ -708,7 +683,7 @@ const AdminSettings = () => {
                         <input
                           type="text"
                           dir="ltr"
-                          className="w-full bg-transparent border-b border-transparent focus:border-qabas-purple outline-none py-1 font-medium text-slate-700 text-left"
+                          className="w-full bg-transparent border-b border-transparent focus:border-purple-600 outline-none py-1 font-medium text-[var(--text-main)] text-left"
                           value={subj.nameSo}
                           onChange={(e) => {
                             const newSubjects = [...(config.subjects || [])];
@@ -763,8 +738,8 @@ const AdminSettings = () => {
           </div>
 
           {/* --- GRADING STRUCTURE SECTION --- */}
-          <div className="bg-white dark:bg-[#0f172a] p-6 rounded-xl shadow-sm border border-slate-100 dark:border-white/10">
-            <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-50 dark:border-white/10">
+          <div className="bg-[var(--bg-card)] p-6 rounded-xl shadow-sm border border-[var(--border-color)]">
+            <div className="flex items-center justify-between mb-4 pb-2 border-b border-[var(--border-color)]">
               <div className="flex items-center gap-2">
                 <Shield className="text-qabas-orange" />
                 <h2 className="font-bold text-lg text-[var(--text-main)]">{t('settings.grading.title')}</h2>
@@ -773,7 +748,7 @@ const AdminSettings = () => {
 
             <div className="grid md:grid-cols-2 gap-6 mb-8">
               <div className="space-y-1">
-                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('settings.grading.methodTitle')}</label>
+                <label className="text-sm font-medium text-black dark:text-black">{t('settings.grading.methodTitle')}</label>
                 <select
                   className="w-full px-3 py-2 border border-slate-200 dark:border-white/10 rounded-lg outline-none focus:border-qabas-orange bg-white dark:bg-white/5 text-[var(--text-main)]"
                   value={config.gradingMethod || 'sum'}
@@ -789,7 +764,7 @@ const AdminSettings = () => {
                 </p>
               </div>
               <div className="space-y-1">
-                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('settings.grading.thresholdTitle')}</label>
+                <label className="text-sm font-medium text-black dark:text-black">{t('settings.grading.thresholdTitle')}</label>
                 <input
                   type="number"
                   className="w-full px-3 py-2 border border-slate-200 dark:border-white/10 rounded-lg outline-none focus:border-qabas-orange bg-white dark:bg-white/5 text-[var(--text-main)]"
@@ -824,7 +799,7 @@ const AdminSettings = () => {
             </div>
 
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-sm text-slate-700">{t('settings.grading.columns')}</h3>
+              <h3 className="font-bold text-sm text-black dark:text-black">{t('settings.grading.columns')}</h3>
               <button
                 type="button"
                 onClick={() => {
@@ -856,7 +831,7 @@ const AdminSettings = () => {
                       <td className="px-4 py-3">
                         <input
                           type="text"
-                          className="w-full bg-transparent border-b border-transparent focus:border-royal-400 outline-none py-1 font-medium text-slate-700"
+                          className="w-full bg-transparent border-b border-transparent focus:border-purple-600 outline-none py-1 font-medium text-[var(--text-main)]"
                           value={col.name}
                           onChange={(e) => {
                             const newCols = [...(config.assessmentColumns || [])];
@@ -908,8 +883,8 @@ const AdminSettings = () => {
           </div>
 
           {/* Signatures & Images */}
-          <div className="bg-white dark:bg-[#0f172a] p-6 rounded-xl shadow-sm border border-slate-100 dark:border-white/10">
-            <h2 className="font-bold text-lg text-[var(--text-main)] mb-4 pb-2 border-b border-slate-50 dark:border-white/10">{t('settings.media.title')}</h2>
+          <div className="bg-[var(--bg-card)] p-6 rounded-xl shadow-sm border border-[var(--border-color)]">
+            <h2 className="font-bold text-lg text-[var(--text-main)] mb-4 pb-2 border-b border-[var(--border-color)]">{t('settings.media.title')}</h2>
             <div className="grid md:grid-cols-3 gap-8">
 
               {/* Logo Upload */}
@@ -1070,98 +1045,7 @@ const AdminSettings = () => {
                 </div>
               </div>
 
-              {/* Attendance Sessions Manager */}
-              <div className="space-y-4 pt-4 border-t border-slate-50">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-bold text-slate-700">{t('settings.studentConfig.sessionsTitle') || 'Attendance Sessions'}</h3>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const newSession = {
-                        id: `session_${Date.now()}`,
-                        nameAr: 'جلسة جديدة',
-                        nameEn: 'New Session',
-                        nameSo: 'Session Cusub'
-                      };
-                      setConfig({ ...config, attendanceSessions: [...(config.attendanceSessions || []), newSession] });
-                    }}
-                    className="text-xs bg-orange-50 text-orange-600 hover:bg-orange-100 px-3 py-1.5 rounded-lg font-bold flex items-center gap-1 transition-colors"
-                  >
-                    <Plus size={14} /> {t('settings.studentConfig.addSession') || 'Add Session'}
-                  </button>
-                </div>
-                <div className="border border-[var(--border-color)] rounded-xl overflow-hidden overflow-x-auto">
-                  <table className="w-full text-right text-xs min-w-[500px]">
-                    <thead className="bg-[var(--bg-secondary)] font-bold text-[var(--text-muted)]">
-                      <tr>
-                        <th className="px-4 py-2 text-center w-12">#</th>
-                        <th className="px-4 py-2 text-[var(--text-muted)]">{t('settings.studentConfig.nameAr') || 'Arabic'}</th>
-                        <th className="px-4 py-2 text-[var(--text-muted)]">{t('settings.studentConfig.nameEn') || 'English'}</th>
-                        <th className="px-4 py-2 text-[var(--text-muted)]">{t('settings.studentConfig.nameSo') || 'Somali'}</th>
-                        <th className="px-4 py-2 text-center w-20 text-[var(--text-muted)]">{t('common.actions')}</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[var(--border-color)]">
-                      {(config.attendanceSessions || []).map((session, idx) => (
-                        <tr key={session.id}>
-                          <td className="px-4 py-2 text-center text-slate-400">{idx + 1}</td>
-                          <td className="px-4 py-2">
-                            <input
-                              type="text"
-                              dir="rtl"
-                              className="w-full bg-transparent border-b border-transparent focus:border-royal-400 outline-none py-1"
-                              value={session.nameAr}
-                              onChange={(e) => {
-                                const newSessions = [...(config.attendanceSessions || [])];
-                                newSessions[idx] = { ...newSessions[idx], nameAr: e.target.value };
-                                setConfig({ ...config, attendanceSessions: newSessions });
-                              }}
-                            />
-                          </td>
-                          <td className="px-4 py-2">
-                            <input
-                              type="text"
-                              dir="ltr"
-                              className="w-full bg-transparent border-b border-transparent focus:border-royal-400 outline-none py-1"
-                              value={session.nameEn}
-                              onChange={(e) => {
-                                const newSessions = [...(config.attendanceSessions || [])];
-                                newSessions[idx] = { ...newSessions[idx], nameEn: e.target.value };
-                                setConfig({ ...config, attendanceSessions: newSessions });
-                              }}
-                            />
-                          </td>
-                          <td className="px-4 py-2">
-                            <input
-                              type="text"
-                              dir="ltr"
-                              className="w-full bg-transparent border-b border-transparent focus:border-royal-400 outline-none py-1"
-                              value={session.nameSo}
-                              onChange={(e) => {
-                                const newSessions = [...(config.attendanceSessions || [])];
-                                newSessions[idx] = { ...newSessions[idx], nameSo: e.target.value };
-                                setConfig({ ...config, attendanceSessions: newSessions });
-                              }}
-                            />
-                          </td>
-                          <td className="px-4 py-2 text-center">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const newSessions = (config.attendanceSessions || []).filter((_, i) => i !== idx);
-                                setConfig({ ...config, attendanceSessions: newSessions });
-                              }}
-                              className="text-red-400 hover:text-red-600 p-1"
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+
             </div>
           </div>
 
@@ -1169,7 +1053,7 @@ const AdminSettings = () => {
             <button
               type="submit"
               disabled={saving}
-              className="bg-[var(--qabas-purple)] hover:bg-[var(--qabas-purple-light)] text-white px-8 py-3 rounded-lg font-bold shadow-lg flex items-center gap-2 transition-all active:scale-[0.98] disabled:opacity-50"
+              className="bg-[var(--qabas-purple)] hover:bg-[var(--qabas-purple-light)] text-qabas-purple px-8 py-3 rounded-lg font-bold shadow-lg flex items-center gap-2 transition-all active:scale-[0.98] disabled:opacity-50"
             >
               <Save size={20} />
               {saving ? t('settings.saving') : t('settings.save')}
@@ -1193,8 +1077,8 @@ const AdminSettings = () => {
               >
                 <div className="p-8">
                   <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-xl font-bold text-slate-800">Request More Credits</h3>
-                    <button onClick={() => setIsCreditRequestModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+                    <h3 className="text-xl font-bold text-black dark:text-qabas-purple">Request More Credits</h3>
+                    <button onClick={() => setIsCreditRequestModalOpen(false)} className="text-slate-400 hover:text-black">
                       <X size={24} />
                     </button>
                   </div>
@@ -1229,7 +1113,7 @@ const AdminSettings = () => {
                     <button
                       type="submit"
                       disabled={creditRequestLoading}
-                      className="w-full bg-qabas-purple hover:bg-purple-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-purple-200 transition-all flex items-center justify-center gap-2"
+                      className="w-full bg-qabas-purple hover:bg-purple-700 text-qabas-purple font-bold py-4 rounded-xl shadow-lg shadow-purple-200 transition-all flex items-center justify-center gap-2"
                     >
                       {creditRequestLoading ? <Loader2 className="animate-spin" /> : <CheckCircle2 size={20} />}
                       Submit Request
@@ -1251,17 +1135,17 @@ const AdminSettings = () => {
                 exit={{ scale: 0.95, opacity: 0, y: 20 }}
                 className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden"
               >
-                <div className="bg-slate-900 px-8 py-6 flex items-center justify-between border-b border-white/10">
-                  <div className="flex items-center gap-3 text-white">
-                    <div className="w-14 h-14 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center p-2.5 shadow-inner border border-white/5 overflow-hidden">
-                        <img src="/logo.jpg" alt="Logo" className="w-full h-full object-contain brightness-0 invert" />
+                <div className="bg-white px-8 py-6 flex items-center justify-between border-b border-slate-100">
+                  <div className="flex items-center gap-3 text-slate-900 dark:text-qabas-purple">
+                    <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center p-2.5 shadow-inner border border-slate-100 overflow-hidden">
+                        <img src="/logo.jpg" alt="Logo" className="w-full h-full object-contain" />
                     </div>
                     <div>
                       <h3 className="font-bold text-lg">{t('settings.billing.payNow')}</h3>
                       <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{t('settings.billing.paymentModal.secureHeader')}</p>
                     </div>
                   </div>
-                  <button onClick={() => setIsPaymentModalOpen(false)} className="text-slate-400 hover:text-white p-2 transition-colors">
+                  <button onClick={() => setIsPaymentModalOpen(false)} className="text-slate-400 hover:text-black p-2 transition-colors">
                     <X size={20} />
                   </button>
                 </div>
@@ -1270,12 +1154,12 @@ const AdminSettings = () => {
                   <div className="bg-slate-50 p-6 rounded-2xl space-y-4">
                     <div className="flex items-center justify-between">
                       <p className="text-sm font-bold text-slate-500">{t('settings.billing.paymentModal.currBalance')}</p>
-                      <p className="text-xl font-black text-slate-900">${Number(billing.balance || 0).toFixed(2)}</p>
+                      <p className="text-xl font-black text-slate-900 dark:text-qabas-purple">${Number(billing.balance || 0).toFixed(2)}</p>
                     </div>
                     <div className="h-px bg-slate-200" />
                     <div className="flex items-center justify-between">
                       <p className="text-sm font-bold text-slate-500">{t('settings.billing.paymentModal.svcExpiry')}</p>
-                      <p className="text-sm font-bold text-slate-700">{new Date(billing.subExpiry || 0).toLocaleDateString()}</p>
+                      <p className="text-sm font-bold text-black dark:text-black">{new Date(billing.subExpiry || 0).toLocaleDateString()}</p>
                     </div>
                   </div>
 
@@ -1299,7 +1183,7 @@ const AdminSettings = () => {
                             key={m}
                             type="button"
                             onClick={() => setPaymentMonths(m)}
-                            className={`py-3 rounded-xl text-sm font-bold transition-all ${paymentMonths === m ? 'bg-qabas-purple text-white shadow-lg' : 'bg-slate-50 text-slate-500 hover:bg-slate-100'}`}
+                            className={`py-3 rounded-xl text-sm font-bold transition-all ${paymentMonths === m ? 'bg-qabas-purple text-qabas-purple shadow-lg' : 'bg-slate-50 text-slate-500 hover:bg-slate-100'}`}
                           >
                             {m} {m === 1 ? t('settings.billing.paymentModal.month') : t('settings.billing.paymentModal.months')}
                           </button>
@@ -1311,7 +1195,7 @@ const AdminSettings = () => {
                   <button
                     onClick={handlePayment}
                     disabled={paymentLoading || paymentAmount <= 0}
-                    className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-700 text-white font-bold rounded-2xl shadow-xl shadow-blue-200 transition-all active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100 flex items-center justify-center gap-2 text-lg"
+                    className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-700 text-qabas-purple font-bold rounded-2xl shadow-xl shadow-blue-200 transition-all active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100 flex items-center justify-center gap-2 text-lg"
                   >
                     {paymentLoading ? (
                       <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -1348,13 +1232,13 @@ const AdminSettings = () => {
                 <div className="flex gap-3 justify-center">
                   <button
                     onClick={() => setConfirmDeleteModal({ show: false, idx: null })}
-                    className="flex-1 px-6 py-3 rounded-xl border border-slate-200 text-slate-600 font-bold hover:bg-slate-50 transition-colors"
+                    className="flex-1 px-6 py-3 rounded-xl border border-slate-200 text-black font-bold hover:bg-slate-50 transition-colors"
                   >
                     {t('common.cancel')}
                   </button>
                   <button
                     onClick={confirmDelete}
-                    className="flex-1 px-6 py-3 rounded-xl bg-red-500 text-white font-bold hover:bg-red-600 shadow-lg shadow-red-500/30 transition-all hover:scale-105"
+                    className="flex-1 px-6 py-3 rounded-xl bg-red-500 text-qabas-purple font-bold hover:bg-red-600 shadow-lg shadow-red-500/30 transition-all hover:scale-105"
                   >
                     Delete Column
                   </button>
@@ -1371,7 +1255,7 @@ const AdminSettings = () => {
               initial={{ opacity: 0, y: 50 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 50 }}
-              className={`fixed bottom-10 left-1/2 -translate-x-1/2 px-8 py-4 rounded-2xl shadow-2xl backdrop-blur-md border border-white/20 z-50 flex items-center gap-3 ${toast.type === 'success' ? 'bg-slate-900 text-white' : 'bg-red-600 text-white'}`}
+              className={`fixed bottom-10 left-1/2 -translate-x-1/2 px-8 py-4 rounded-2xl shadow-2xl backdrop-blur-md border border-white/20 z-50 flex items-center gap-3 ${toast.type === 'success' ? 'bg-slate-900 text-qabas-purple' : 'bg-red-600 text-qabas-purple'}`}
             >
               {toast.type === 'success' ? <CheckCircle2 size={24} className="text-green-400" /> : <AlertTriangle size={24} />}
               <span className="font-bold tracking-wide">{toast.message}</span>

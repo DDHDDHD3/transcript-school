@@ -1,5 +1,6 @@
+'use client';
+
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { getUserSession, getSchoolBilling, getConfig } from '../services/api';
 import SubscriptionPaywall from './SubscriptionPaywall';
 

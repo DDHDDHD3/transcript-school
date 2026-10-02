@@ -114,8 +114,12 @@ const StandaloneVerify = () => {
     const downloadPDF = async () => {
         if (result && config) {
             setLoading(true);
-            await new Promise(r => setTimeout(r, 100));
-            await generateCertificatePDF(result, 'certificate-view');
+            // Wait for layout to settle and images to be potentially ready
+            await new Promise(r => setTimeout(r, 800));
+            const ok = await generateCertificatePDF(result, 'certificate-view');
+            if (!ok) {
+                alert(t('attendance.messages.pdfError') || 'Unable to generate certificate PDF.');
+            }
             setLoading(false);
         }
     };
@@ -123,7 +127,12 @@ const StandaloneVerify = () => {
         if (result && config) {
             setLoading(true);
             const filename = `Attendance_${result.studentId}_${perceivedMonth}`;
-            await generateAttendancePDF('public-attendance-report', filename, i18n.language, 'portrait');
+            // Ensure the hidden report is correctly populated
+            await new Promise(r => setTimeout(r, 800));
+            const ok = await generateAttendancePDF('public-attendance-report', filename, i18n.language, 'portrait');
+            if (!ok) {
+                alert(t('attendance.messages.pdfError') || 'Unable to generate attendance PDF.');
+            }
             setLoading(false);
         }
     };
@@ -183,8 +192,8 @@ const StandaloneVerify = () => {
                     <div className="relative">
                         <div className="w-20 h-20 border-core border-4 border-amber-400/20 rounded-full"></div>
                         <div className="absolute top-0 left-0 w-20 h-20 border-t-4 border-amber-500 rounded-full animate-spin"></div>
-                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 rounded-xl bg-gradient-to-br from-qabas-purple to-purple-900 flex items-center justify-center text-white overflow-hidden shadow-lg border border-white/20">
-                            <img src={systemLogo} alt="Logo" className="w-full h-full object-contain" />
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 rounded-xl bg-gradient-to-br from-qabas-purple to-purple-900 flex items-center justify-center text-qabas-purple overflow-hidden shadow-lg border border-white/20">
+                            <img src={systemLogo} crossOrigin="anonymous" alt="Logo" className="w-full h-full object-contain" />
                         </div>
                     </div>
                     <div className="text-center">
@@ -205,8 +214,8 @@ const StandaloneVerify = () => {
                     className="max-w-md w-full bg-[var(--bg-card)] border border-red-500/20 p-10 rounded-[2.5rem] shadow-2xl text-center"
                 >
                     <div className="w-24 h-24 bg-red-500/5 p-4 rounded-3xl flex items-center justify-center mx-auto mb-6 border border-red-500/10">
-                        <div className="w-full h-full rounded-2xl bg-gradient-to-br from-qabas-purple to-purple-900 flex items-center justify-center text-white overflow-hidden shadow-xl border border-white/20">
-                            <img src={systemLogo} alt="Logo" className="w-full h-full object-contain scale-110" />
+                        <div className="w-full h-full rounded-2xl bg-gradient-to-br from-qabas-purple to-purple-900 flex items-center justify-center text-qabas-purple overflow-hidden shadow-xl border border-white/20">
+                            <img src={systemLogo} crossOrigin="anonymous" alt="Logo" className="w-full h-full object-contain scale-110" />
                         </div>
                     </div>
                     <h2 className="text-2xl font-black text-[var(--text-main)] mb-4 font-cairo">
@@ -287,7 +296,7 @@ const StandaloneVerify = () => {
                                         <div className="flex items-center gap-3">
                                             {config.logoUrl && (
                                                 <div className="w-20 h-20 bg-white rounded-2xl shadow-xl flex items-center justify-center p-3 border border-slate-100 relative group overflow-hidden shrink-0">
-                                                    <img src={config.logoUrl} alt="School Logo" className="w-full h-full object-contain" />
+                                                    <img src={config.logoUrl} crossOrigin="anonymous" alt="School Logo" className="w-full h-full object-contain" />
                                                 </div>
                                             )}
                                             <div>
@@ -325,10 +334,7 @@ const StandaloneVerify = () => {
                                 </div>
                             </div>
 
-                            <div
-                                className="flex justify-center overflow-hidden rounded-2xl"
-                                style={{ height: `${3508 * previewScale}px` }}
-                            >
+                            <div className="flex justify-center overflow-x-auto overflow-y-hidden rounded-2xl" style={{ height: `${3508 * previewScale}px` }}>
                                 <div
                                     id="certificate-view"
                                     style={{
@@ -433,13 +439,14 @@ const StandaloneVerify = () => {
                 </div>
             </div>
 
-            {/* Hidden Templates for PDF */}
-            <div className="absolute top-[-9999px] left-[-9999px] opacity-0 pointer-events-none">
+            {/* Hidden PDF capture zone — uses off-screen positioning (NOT opacity) to avoid
+                 CSS stacking-context opacity multiplication that would corrupt the captured image */}
+            <div className="absolute -top-[9999px] -left-[9999px] pointer-events-none overflow-visible">
                 {result && config && (
                     <div 
                         id="public-attendance-report" 
                         className="bg-white"
-                        style={{ width: '2480px', height: '3508px', overflow: 'hidden' }}
+                        style={{ width: '2480px', height: '3508px', opacity: 1 }}
                     >
                         <AttendanceTemplates
                             type="student"
@@ -473,7 +480,7 @@ const StandaloneVerify = () => {
                     <p className="text-xs font-black text-[var(--text-muted)] uppercase tracking-[4px] mb-4">Powered by</p>
                     <div className="flex items-center justify-center gap-3">
                         <div className="w-20 h-20 bg-white/10 backdrop-blur-md rounded-3xl flex items-center justify-center p-4 shadow-inner">
-                            {systemLogo ? <img src={systemLogo} alt="Logo" className="w-full h-full object-contain" /> : <Shield className="text-white" size={40} />}
+                            {systemLogo ? <img src={systemLogo} crossOrigin="anonymous" alt="Logo" className="w-full h-full object-contain" /> : <Shield className="text-qabas-purple" size={40} />}
                         </div>
                         <h2 className="text-xl font-black text-[var(--text-main)] font-cairo">{systemName}</h2>
                     </div>
