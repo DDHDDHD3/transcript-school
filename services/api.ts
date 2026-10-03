@@ -807,65 +807,10 @@ export const deleteContactInquiry = async (id: string) => {
   }
 };
 
-// Resend Email Integration
-const RESEND_API_KEY = '[REDACTED_RESEND_KEY]';
-
-export const sendReplyEmail = async (inquiryId: string, replyMessage: string) => {
-  try {
-    await seedDatabase();
-
-    // 1. Get inquiry details
-    const inquiryData = await sql`SELECT email, full_name, school_name, message FROM contact_inquiries WHERE id = ${inquiryId}`;
-    if (inquiryData.length === 0) throw new Error('Inquiry not found');
-    const inquiry = inquiryData[0];
-
-    // 2. Send email via Resend
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${RESEND_API_KEY}`
-      },
-      body: JSON.stringify({
-        from: 'Aqooni Digital <onboarding@resend.dev>',
-        to: [inquiry.email],
-        subject: `Response to your inquiry - Aqooni Digital`,
-        html: `
-          <div style="font-family: sans-serif; padding: 20px; color: #333;">
-            <h2 style="color: #6366f1;">Hello ${inquiry.full_name},</h2>
-            <p>Thank you for contacting us regarding <strong>${inquiry.school_name || 'your inquiry'}</strong>.</p>
-            <div style="background: #f9fafb; padding: 15px; border-radius: 8px; margin: 20px 0;">
-              <p style="margin: 0; color: #6b7280; font-style: italic;">" ${inquiry.message} "</p>
-            </div>
-            <p style="white-space: pre-wrap;">${replyMessage}</p>
-            <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 30px 0;" />
-            <p style="font-size: 12px; color: #9ca3af;">Aqooni Digital Team<br />Support: +2520614163362</p>
-          </div>
-        `
-      })
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to send email');
-    }
-
-    // 3. Update database
-    await sql`
-      UPDATE contact_inquiries 
-      SET 
-        status = 'replied', 
-        reply_message = ${replyMessage}, 
-        replied_at = CURRENT_TIMESTAMP 
-      WHERE id = ${inquiryId}
-    `;
-
-    return { success: true };
-  } catch (error) {
-    console.error("Failed to send reply email:", error);
-    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
-  }
-};
+export const sendReplyEmail = async (_inquiryId: string, _replyMessage: string) => ({
+  success: false,
+  error: 'Email replies are unavailable until a server-side email endpoint is configured.'
+});
 
 
 // --- Super Admin School Management ---
